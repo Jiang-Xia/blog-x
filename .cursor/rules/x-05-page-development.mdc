@@ -1,0 +1,46 @@
+---
+description: blog-x 新页面开发与样式规范（pages.json、uvue 样式约束）
+globs: pages/**/*.uvue
+alwaysApply: false
+---
+
+# 页面开发规范
+
+完整说明见 `docs/page-development-guide.md`。
+
+## 新建页面
+
+1. `pages/<模块>/<页面>.uvue`；页面私有组件放 `pages/<模块>/components/`
+2. `pages.json` → `pages` 数组登记 `{ path, style }`；首页保持数组第一项
+3. 页面标题用 `style.navigationBarTitleText` 配置，不要写死在模板里
+4. 需要 tabBar 的页面：`pages.json` → `tabBar.list` 登记（图标放 `static/`）
+
+## 页面跳转与参数
+
+- `uni.navigateTo({ url: '/pages/detail/detail?id=xx' })`；`onLoad(options)` 接参并做类型处理
+- 简单状态传递可用 `uni.$emit / uni.$on`（注意页面卸载时 `uni.$off`，防内存泄漏）
+
+## 样式约束（App 端原生渲染）
+
+| 项 | 规则 |
+|------|------|
+| 选择器 | 仅用 class 选择器；App 端不支持标签/后代/通配等复杂选择器 |
+| 单位 | `rpx` / `px`；避免 `em/rem/vh/vw` 等 web 单位 |
+| 布局 | 默认 flex；行布局显式声明 `flex-direction: row`（或复用 `App.uvue` 的 `.uni-row`） |
+| 颜色 | 页面独有色值可写死；主题变量走 `uni.scss`（`$uni-*`） |
+| 不支持 | `float` 布局、复杂伪元素/伪类；`position: fixed` 行为差异需真机验证 |
+| 样式隔离 | manifest `styleIsolationVersion: 2`；跨组件样式用 externalClass（见 `x-06-uni-modules.mdc`） |
+
+## 组件样式优先级
+
+1. uni-ui x 组件 + class 自定义样式（组件属性只控功能，样式全走 class）
+2. `uni.scss` 全局变量
+3. 页面 `<style>`（App 端页面样式默认不影响子组件内部）
+
+## 新增页面 Checklist
+
+- [ ] `pages.json` 已登记且标题/导航样式正确？
+- [ ] 文字是否都包在 `<text>` 内？
+- [ ] 是否只用 class 选择器、rpx/px 单位？
+- [ ] `onLoad` 参数有判空/类型处理？
+- [ ] 端差异（如有）已用条件编译 + 注释？

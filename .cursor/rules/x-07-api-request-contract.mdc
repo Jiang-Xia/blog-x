@@ -1,0 +1,36 @@
+---
+description: blog-x 请求封装与 blog-server 联调契约（预留规范）
+globs: api/**/*.ts,utils/**/*.ts
+alwaysApply: false
+---
+
+# API 请求契约
+
+> 项目当前未建 `api/` 层；首个业务接口接入时按下述规范搭建，此后按此维护。与 blog-home-nuxt 的 `api/request.ts` 契约保持同构。
+
+## 入口
+
+- 统一封装 `api/request.ts`：基于 `uni.request`，暴露 `get` / `post` / `put` / `del`
+- baseURL 从环境变量读取（`.env.development` / `.env.production`，`VITE_` 前缀，如 `VITE_API_ORIGIN` + `VITE_API_PREFIX`）
+- 业务模块（`api/article.ts` 等）只封装 URL 与参数，不重复处理 token
+
+## 响应协议
+
+```typescript
+// blog-server 标准：{ code, data, message }
+// request 层统一解包：code 成功 → resolve(data)；失败 → reject(message)
+const data = await get('/article/info', { id });
+```
+
+- 禁止在页面/组件层二次解析协议
+
+## Token 与 401
+
+- Storage 读写集中在 `utils/storage.ts`（`TokenKey` / `RefreshTokenKey`），用 `uni.getStorageSync` / `uni.setStorageSync`
+- Header：`Authorization: Bearer <token>`
+- 401 走无感 refresh + 请求重放队列，禁止静默吞错
+
+## 错误提示
+
+- 统一 `uni.showToast({ title: message, icon: 'none' })`
+- HTTP 语义与 blog-home-nuxt 保持一致：401 重新登录 · 403 无权限 · 404 资源不存在 · 500 服务器错误

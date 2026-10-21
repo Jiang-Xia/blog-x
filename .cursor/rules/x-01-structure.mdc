@@ -1,0 +1,39 @@
+---
+description: blog-x 目录与模块边界规范
+globs: **/*.{uvue,uts,ts}
+alwaysApply: false
+---
+
+# 目录与模块边界
+
+## 分层
+
+```
+pages/                    → 路由入口，组合组件与业务逻辑
+pages/<模块>/components/  → 仅该页面使用的组件
+components/               → 跨页面复用组件（easycom 规范命名）
+composables/              → useXxx 组合式逻辑（待建）
+api/                      → HTTP 封装，页面不直接写 uni.request（待建）
+types/                    → 类型定义，避免同一结构多处重复（待建）
+utils/                    → 无 Vue 依赖的纯函数（待建）
+uni_modules/              → 三方/官方插件（uni-ui x、uts-openSchema 等）
+```
+
+## 组件放置
+
+- 跨页面复用 → `components/<组件名>/<组件名>.uvue`（easycom 目录规范）
+- 仅单页面使用 → `pages/<页面>/components/`
+- 与 uni-app（vue）不同：uvue 页面用到的自定义组件同样支持 easycom，但非 easycom 命名的组件须显式 import，保持来源直观
+
+## 类型与 API
+
+- 业务接口函数放 `api/<模块>.ts`，通过 `api/index.ts` 聚合导出
+- 模块专属类型放 `types/<模块>.ts`；全局 interface 放 `types/global.d.ts`
+- 消费响应默认 `res.data`，不在页面层再解析 `{ code, data, message }`
+
+## 禁止
+
+- 在 composable/页面之外散落 token 读写逻辑（uni-app x 用 `uni.setStorageSync` 等同步 API，读写须集中在 utils）
+- 修改 `uni_modules/` 内第三方组件源码（定制方式见 `x-06-uni-modules.mdc`）
+- 手改 `unpackage/` 下编译产物
+- 引入依赖 DOM/window 的 web 专属 npm 库 — App 端原生渲染不可用

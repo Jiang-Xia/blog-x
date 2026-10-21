@@ -1,0 +1,38 @@
+---
+description: blog-x 条件编译与多端差异约束
+globs: **/*.{uvue,uts,ts,json}
+alwaysApply: false
+---
+
+# 条件编译与平台
+
+## 当前编译目标
+
+`platformConfig.json` → `targets: ["APP-ANDROID"]`。新增平台时先更新该文件，再补条件编译与验证。
+
+## 条件编译写法
+
+```vue
+<script setup lang="ts">
+// #ifdef APP-ANDROID || APP-HARMONY
+// 仅 App 端逻辑（如 onLastPageBackPress 返回键处理，见 App.uvue 双击退出）
+// #endif
+
+// #ifdef H5
+// 仅 H5 逻辑
+// #endif
+</script>
+```
+
+- 样式块：`/* #ifdef H5 */ … /* #endif */`
+- JSON：`pages.json` / `manifest.json` 支持字段级条件编译注释（参考官方文档）
+
+## 常用平台标识
+
+`APP-ANDROID` · `APP-IOS` · `APP-HARMONY` · `APP` · `H5` · `MP-WEIXIN` 等
+
+## 要求
+
+- 端差异逻辑集中封装（utils / 专用模块），避免页面内大量散落 `#ifdef`
+- 每处条件编译必须注释「为什么该端需要差异」
+- App 端返回键、退出等行为参考 `App.uvue` 既有实现（双击退出，2 秒窗口）

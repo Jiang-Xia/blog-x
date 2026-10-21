@@ -1,0 +1,60 @@
+---
+description: blog-x uvue + TS 编码风格规范
+globs: **/*.uvue
+alwaysApply: false
+---
+
+# uvue + TS 风格
+
+## Script
+
+- 统一 `<script setup lang="ts">` + Composition API（项目 `vueVersion: 3`）
+- `ref` / `computed` / `watch` 等组合式 API 为自动导入，无需显式 import（与现有模板保持一致）
+- 复杂模板逻辑下沉到 `computed` 或具名函数
+
+## 模板
+
+- 只用 uni-app x 内置组件：`view / text / image / scroll-view / swiper / button / input / textarea / …`
+- **文字必须包在 `<text>` 内**（App 端原生渲染要求），不要在 `view` 里写裸文本
+- 图片用 `<image>` 并显式给宽高；`<div>/<span>/<img>` 等浏览器标签禁止
+
+## 页面模式示例
+
+```vue
+<template>
+	<view class="page">
+		<text class="title">{{ title }}</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 页面职责说明（保留文件头注释）
+ */
+const title = ref('Hello');
+</script>
+
+<style>
+.title {
+	font-size: 18px;
+}
+</style>
+```
+
+## 生命周期
+
+| 场景 | 用法 |
+|------|------|
+| 应用级 | `App.uvue`：`onLaunch` / `onAppShow` / `onAppHide` / `onExit` |
+| 页面级 | `onLoad(options)` / `onShow` / `onReady` / `onHide` / `onUnload` |
+| 组件级 | Vue 生命周期 `onMounted` / `onBeforeUnmount` |
+
+## 格式化
+
+2 空格缩进跟随现有文件 · 单引号 · 分号/无分号同一文件内保持一致
+
+## 禁止
+
+- 操作 DOM（`document.*`、`window.*`）— App 端不存在
+- web 专属 CSS 特性（float 布局、复杂选择器等）— 见 `x-05-page-development.mdc` 样式约束
+- 模板中写复杂表达式链；提取为 computed

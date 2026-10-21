@@ -1,0 +1,46 @@
+---
+description: blog-x 项目总览与变更原则
+alwaysApply: true
+---
+
+# blog-x 核心约定
+
+## 技术栈
+
+uni-app x（uvue）· Vue 3 `<script setup>` + TypeScript · 蒸汽模式（manifest `vapor: true`）· uni-ui x 组件库
+
+后端联调对象：`blog-server`，响应协议 `{ code, data, message }`（与 blog-home-nuxt / blog-home-uniapp 同源）。
+
+## 当前形态
+
+项目处于初始化阶段（HBuilderX uni-app x 默认模板 + uni_modules 组件库），编译目标以 `platformConfig.json` 为准（当前 `APP-ANDROID`）。新功能落地时须同步补充本规则体系与 `docs/`。
+
+## 目录职责
+
+| 目录/文件 | 用途 |
+|------|------|
+| `pages/` | 路由页面（uvue）；页面私有组件放 `pages/<模块>/components/` |
+| `App.uvue` | 应用生命周期（`onLaunch` / `onAppShow` / `onAppHide` / Android 返回键） |
+| `main.ts` | 入口：`createSSRApp(App)`，勿改为其他模式 |
+| `pages.json` | 页面注册、globalStyle、tabBar；新增页面必须在此登记 |
+| `manifest.json` | 应用信息（appid、版本、`vapor`、`styleIsolationVersion`） |
+| `platformConfig.json` | 编译目标平台（`targets`） |
+| `uni.scss` | 全局 SCSS 变量（`$uni-*`），跨端主题令牌 |
+| `uni_modules/` | uni-ui x 等组件插件（见 `x-06-uni-modules.mdc`） |
+| `static/` | 静态资源（logo、tabBar 图标等） |
+| `unpackage/` | 编译产物，禁止手改、禁止提交（见 `x-09-testing-and-artifacts.mdc`） |
+| `components/`（待建） | 跨页面复用组件 |
+| `composables/`（待建） | `useXxx` 组合式逻辑 |
+| `api/`（待建） | 请求封装与业务接口（见 `x-07-api-request-contract.mdc`） |
+| `types/`（待建） | TS 类型定义 |
+| `utils/`（待建） | 纯工具函数 |
+
+## 变更原则
+
+- 最小 diff：只改任务相关文件，不重构无关模块。
+- 复用现有抽象：uni-ui x 组件、`uni.*` API、`uni.scss` 变量。
+- 跨端优先：优先写全端兼容代码，端差异用条件编译并注释（见 `x-03-conditional-platform.mdc`）。
+- uvue 模板只用 uni-app x 内置组件（view/text/image…），禁用 div/span 等浏览器标签。
+- 页面开发细则见 `x-05-page-development.mdc`（详 `docs/page-development-guide.md`）。
+- 注释约束见 `x-04-commenting-hard-requirement.mdc`。
+- 提交信息见 `x-08-commit-message.mdc`。

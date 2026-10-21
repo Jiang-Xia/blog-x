@@ -1,0 +1,23 @@
+---
+description: blog-x 测试验收与编译产物约束（HBuilderX 运行，Agent 勿自动启动）
+alwaysApply: true
+---
+
+# 测试与产物
+
+## 运行方式
+
+uni-app x 项目由 **HBuilderX** 运行（运行到 Android 基座 / H5），无独立 dev server：
+
+- Agent **不要尝试**用 npm/node 启动或编译本项目（uvue 编译器只在 HBuilderX 内）
+- 功能完成后提示用户在 HBuilderX 中运行验证，由用户触发，Agent 勿自动执行
+
+## 验收要点
+
+- 当前 targets 仅 `APP-ANDROID`：样式/行为改动以 Android 基座运行结果为准
+- 涉及返回键、storage、网络等端能力时，在真机/自定义基座验证，勿只看 H5
+
+## 产物约束
+
+- `unpackage/` 为编译产物：禁止手改、禁止提交（初始化 git 后加入 `.gitignore`）
+- `static/` 仅放静态资源（logo、tabBar 图标等）

@@ -1,0 +1,29 @@
+---
+description: blog-x uni_modules 与 uni-ui x 组件使用规范
+globs: pages/**/*.uvue
+alwaysApply: false
+---
+
+# uni_modules 与组件库
+
+## 现有插件
+
+| 模块 | 用途 |
+|------|------|
+| `uni-ui-x` | DCloud 官方 uni-app x 组件库（蒸汽模式最佳实践；样式全走 class，属性只控功能） |
+| `uni-tab-bar` | 自定义 tabBar（`uni-tab / uni-tab-bar / uni-tab-content / uni-tab-item / uni-tab-midbutton`） |
+| `uni-nav-bar-x` / `uni-collapse-x` / `uni-combox-x` / `uni-rate-x` / `uni-badge-view` 等 | 导航/折叠/下拉/评分/徽标等独立组件 |
+| `uni-refresh-box` / `uni-index-bar` / `uni-drag-cell` / `uni-fab-button` / `uni-number-box-x` / `uni-link-x` / `uni-time-format` | 刷新/索引/拖拽/悬浮按钮/数字步进/链接/时间格式化 |
+| `uts-openSchema` | UTS 插件：打开外部链接/应用 |
+
+## 使用规则
+
+- **优先复用** `uni_modules/` 内组件，easycom 自动注册，模板直接写 `<uni-rate />` 等，无需 import
+- 组件**样式通过 class / externalClass 自定义**；禁止试图用页面样式穿透组件内部
+- 禁止修改 `uni_modules/` 源码；确需定制 → 复制为自有组件放 `components/`，文件头注明来源与修改原因
+- 新增第三方插件须评估：是否支持 uni-app x（uvue/UTS）、是否兼容蒸汽模式、目标端（App-Android）支持度
+
+## 自有组件
+
+- 跨页面复用放 `components/<组件名>/<组件名>.uvue`，遵循 easycom 目录规范
+- 组件根节点样式由使用方 class 设置；子节点样式通过 externalClass 开放
