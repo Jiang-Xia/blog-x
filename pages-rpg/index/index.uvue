@@ -1,0 +1,32 @@
+<!--
+  职责：RPG 冒险中心分包占位（pages-rpg）；Tab 壳页后续放主包 pages/rpg/entry。
+  数据来源：暂无；玩法接口对齐 blog-server / blog-home-uniapp。
+-->
+<template>
+	<view class="page">
+		<text class="title">{{ title }}</text>
+		<text class="hint">微信小程序分包 root：pages-rpg</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+	/** 分包占位标题 */
+	const title = ref('冒险中心占位')
+</script>
+
+<style>
+	.page {
+		padding: 48rpx;
+	}
+
+	.title {
+		font-size: 36rpx;
+		color: #333333;
+	}
+
+	.hint {
+		margin-top: 24rpx;
+		font-size: 26rpx;
+		color: #8f8f94;
+	}
+</style>

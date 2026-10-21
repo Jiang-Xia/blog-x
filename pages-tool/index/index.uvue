@@ -1,0 +1,32 @@
+<!--
+  职责：实用工具分包占位（pages-tool），后续放加密/二维码等体积较大的工具页。
+  数据来源：暂无；多数工具为纯前端能力。
+-->
+<template>
+	<view class="page">
+		<text class="title">{{ title }}</text>
+		<text class="hint">微信小程序分包 root：pages-tool</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+	/** 分包占位标题 */
+	const title = ref('工具箱占位')
+</script>
+
+<style>
+	.page {
+		padding: 48rpx;
+	}
+
+	.title {
+		font-size: 36rpx;
+		color: #333333;
+	}
+
+	.hint {
+		margin-top: 24rpx;
+		font-size: 26rpx;
+		color: #8f8f94;
+	}
+</style>

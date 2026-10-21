@@ -1,7 +1,9 @@
 
 // 参考链接 https://doc.dcloud.net.cn/uni-app-x/tutorial/ls-plugin.html#setting
+// APP-ANDROID：本地基座联调；MP-WEIXIN：微信小程序发行（须配合 pages.json 分包控制主包体积）
 {
     "targets": [
-        "APP-ANDROID"
+        "APP-ANDROID",
+        "MP-WEIXIN"
     ]
 }

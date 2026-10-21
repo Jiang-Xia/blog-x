@@ -9,8 +9,11 @@ alwaysApply: false
 ## 分层
 
 ```
-pages/                    → 路由入口，组合组件与业务逻辑
-pages/<模块>/components/  → 仅该页面使用的组件
+pages/                    → 主包路由（冷启动 + TabBar + 高频入口）
+pages-blog/               → 分包：阅读 / 用户内容
+pages-rpg/                → 分包：RPG 冒险
+pages-tool/               → 分包：实用工具
+pages*/<模块>/components/ → 仅该页面使用的组件
 components/               → 跨页面复用组件（easycom 规范命名）
 composables/              → useXxx 组合式逻辑（待建）
 api/                      → HTTP 封装，页面不直接写 uni.request（待建）
@@ -19,10 +22,23 @@ utils/                    → 无 Vue 依赖的纯函数（待建）
 uni_modules/              → 三方/官方插件（uni-ui x、uts-openSchema 等）
 ```
 
+## 主包 vs 分包（微信小程序体积）
+
+| 放哪里 | 放什么 |
+|--------|--------|
+| `pages/` | 首页、详情、搜索、登录、Tab 壳页（如 `rpg/entry`）、404 |
+| `pages-blog/` | 归档、分类、标签、友链、留言、项目、用户中心/公开主页、写文章 |
+| `pages-rpg/` | 冒险中心、玩法说明等完整 RPG 页 |
+| `pages-tool/` | 工具箱及各工具页（体积大、低频） |
+
+- 新页面默认按上表归类；**禁止**把大体量/低频页塞进主包导致微信主包超限。
+- `pages.json`：主包写 `pages`；分包写 `subPackages[].root` + 相对 `path`；需要时补 `preloadRule`。
+- 跳转：`uni.navigateTo({ url: '/pages-blog/archives/index' })`（绝对路径含 root）。
+
 ## 组件放置
 
 - 跨页面复用 → `components/<组件名>/<组件名>.uvue`（easycom 目录规范）
-- 仅单页面使用 → `pages/<页面>/components/`
+- 仅单页面使用 → 对应页面目录下 `components/`（主包或分包均可）
 - 与 uni-app（vue）不同：uvue 页面用到的自定义组件同样支持 easycom，但非 easycom 命名的组件须显式 import，保持来源直观
 
 ## 类型与 API

@@ -1,0 +1,32 @@
+<!--
+  职责：博客分包占位入口（pages-blog），后续承载归档/分类/友链/用户中心等低频页。
+  数据来源：暂无；业务落地后走 api/ 解包后的 data。
+-->
+<template>
+	<view class="page">
+		<text class="title">{{ title }}</text>
+		<text class="hint">微信小程序分包 root：pages-blog</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+	/** 分包占位标题 */
+	const title = ref('博客分包占位')
+</script>
+
+<style>
+	.page {
+		padding: 48rpx;
+	}
+
+	.title {
+		font-size: 36rpx;
+		color: #333333;
+	}
+
+	.hint {
+		margin-top: 24rpx;
+		font-size: 26rpx;
+		color: #8f8f94;
+	}
+</style>

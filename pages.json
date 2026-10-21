@@ -1,15 +1,63 @@
 {
-	"pages": [ //pages数组中第一项表示应用启动页，参考：https://doc.dcloud.net.cn/uni-app-x/collocation/pagesjson.html
+	"pages": [
+		// 主包：冷启动 + 后续 TabBar 页（首页保持第一项）
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "uni-app x"
+				"navigationBarTitleText": "首页"
 			}
 		}
 	],
+	"subPackages": [
+		// 阅读 / 用户内容分包（对齐 blog-home-uniapp pages-blog；参考 shopkeeper-cli 分包体积拆分）
+		{
+			"root": "pages-blog",
+			"pages": [
+				{
+					"path": "index/index",
+					"style": {
+						"navigationBarTitleText": "博客分包"
+					}
+				}
+			]
+		},
+		// RPG 冒险分包（完整玩法页；Tab 入口后续放主包 pages/rpg/entry）
+		{
+			"root": "pages-rpg",
+			"pages": [
+				{
+					"path": "index/index",
+					"style": {
+						"navigationBarTitleText": "冒险中心"
+					}
+				}
+			]
+		},
+		// 实用工具分包（体积大、低频访问）
+		{
+			"root": "pages-tool",
+			"pages": [
+				{
+					"path": "index/index",
+					"style": {
+						"navigationBarTitleText": "工具箱"
+					}
+				}
+			]
+		}
+	],
+	"preloadRule": {
+		// 进入首页后预下载博客分包（wifi/all 可按需调整）
+		"pages/index/index": {
+			"network": "all",
+			"packages": [
+				"pages-blog"
+			]
+		}
+	},
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "uni-app x",
+		"navigationBarTitleText": "blog-x",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
 	},

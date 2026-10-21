@@ -7,8 +7,9 @@ uni-app x 版博客前端（规划中）：与 `blog-home-nuxt`（Web 主站）�
 - uni-app x（uvue）· Vue 3 `<script setup>` + TypeScript
 - 蒸汽模式（manifest `vapor: true`）· 样式隔离 `styleIsolationVersion: 2`
 - uni-ui x 官方组件库（easycom）
-- 编译目标：`APP-ANDROID`（`platformConfig.json`）
-- 运行/编译：HBuilderX（无独立 dev server）
+- 编译目标：`APP-ANDROID` + `MP-WEIXIN`（`platformConfig.json`）
+- 运行/编译：HBuilderX（无独立 Vite / CLI dev server）
+- 微信小程序：主包 + `pages-blog` / `pages-rpg` / `pages-tool` 分包（见 README「分包约定」）
 
 ## Cursor 规则索引
 
@@ -31,8 +32,9 @@ uni-app x 版博客前端（规划中）：与 `blog-home-nuxt`（Web 主站）�
 
 1. **模板**：只用 uni-app x 内置组件；文字包 `<text>`；禁 DOM/web 库。
 2. **样式**：class 选择器 + rpx/px + flex；主题变量走 `uni.scss`；组件样式走 class/externalClass。
-3. **路由**：新页面必须在 `pages.json` 登记；首页保持第一项。
-4. **注释**：新文件顶 + 导出函数中文 JSDoc；条件编译必注释；展示数据只用 API 字段。
-5. **请求**（预留）：统一 `api/request.ts` 解包 `{ code, data, message }`；token 集中 `utils/storage.ts`。
-6. **提交**：Conventional Commits + 中文 subject（`<type>(<scope>): <中文简述>`）。
-7. **产物**：`unpackage/` 禁改禁提交；验证由用户在 HBuilderX 触发。
+3. **路由**：新页面按主包/分包归类后在 `pages.json` 登记；首页保持 `pages` 第一项；TabBar 仅主包。
+4. **分包**：低频/大体量进 `pages-blog|pages-rpg|pages-tool`；跳转 path 含 root；可用 `preloadRule` 预下载。
+5. **注释**：新文件顶 + 导出函数中文 JSDoc；条件编译必注释；展示数据只用 API 字段。
+6. **请求**（预留）：统一 `api/request.ts` 解包 `{ code, data, message }`；token 集中 `utils/storage.ts`。
+7. **提交**：Conventional Commits + 中文 subject（`<type>(<scope>): <中文简述>`）。
+8. **产物**：`unpackage/` 禁改禁提交；验证由用户在 HBuilderX / 微信开发者工具触发。

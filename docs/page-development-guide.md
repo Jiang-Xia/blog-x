@@ -4,22 +4,42 @@
 
 ## 1. 新建页面流程
 
-1. **建文件**：在 `pages/<模块>/` 下创建 `<页面名>.uvue`（kebab-case）；页面私有组件放 `pages/<模块>/components/`。
-2. **登记路由**：`pages.json` → `pages` 数组追加：
+1. **归类建文件**（微信主包体积预算；对齐 blog-home-uniapp）：
+   - 主包（启动 / TabBar / 高频）：`pages/<模块>/<页面名>.uvue`
+   - 博客分包：`pages-blog/<模块>/<页面名>.uvue`
+   - RPG 分包：`pages-rpg/<模块>/<页面名>.uvue`
+   - 工具分包：`pages-tool/<模块>/<页面名>.uvue`
+   - 页面私有组件放同级 `components/`
+2. **登记路由**：
+   - 主包 → `pages.json` → `pages`：
 
 ```jsonc
 {
-  "path": "pages/article/detail", // 文章详情页
+  "path": "pages/detail/detail", // 文章详情（主包高频）
   "style": {
     "navigationBarTitleText": "文章详情"
   }
 }
 ```
 
-   - 首页必须保持数组第一项（应用启动页）
-   - 页面标题走 `navigationBarTitleText`，不写死在模板
+   - 分包 → `subPackages` 对应 root 下追加相对 path：
+
+```jsonc
+{
+  "root": "pages-blog",
+  "pages": [
+    {
+      "path": "archives/index", // 文章归档（分包）
+      "style": { "navigationBarTitleText": "文章归档" }
+    }
+  ]
+}
+```
+
+   - 首页必须保持主包 `pages` 第一项；标题走 `navigationBarTitleText`
+   - 可选：`preloadRule` 在进入主包页后预下载分包（示例见现有首页 → `pages-blog`）
 3. **写页面**：`<script setup lang="ts">` + uni-app x 内置组件（见 §2）。
-4. **验证**：HBuilderX 运行到 Android 基座（见 `x-09-testing-and-artifacts.mdc`，Agent 勿自动启动）。
+4. **验证**：HBuilderX 运行 Android 基座；发行微信小程序后用微信开发者工具核对分包（见 `x-09`，Agent 勿自动启动）。
 
 ## 2. uvue 模板与内置组件
 
@@ -56,8 +76,9 @@ onUnload(() => {}); // 页面卸载（清理 uni.$on 监听、定时器）
 </script>
 ```
 
-- 跳转：`uni.navigateTo({ url: '/pages/article/detail?id=1' })`；返回 `uni.navigateBack()`。
-- tabBar 页跳转用 `uni.switchTab`。
+- 主包跳转：`uni.navigateTo({ url: '/pages/detail/detail?id=1' })`；返回 `uni.navigateBack()`。
+- 分包跳转：`uni.navigateTo({ url: '/pages-blog/archives/index' })`（path **必须含** root）。
+- tabBar 页跳转用 `uni.switchTab`（仅主包页可进 tabBar）。
 - 轻量跨页事件：`uni.$emit / uni.$on / uni.$off`（onUnload 必须 $off）。
 
 ## 4. 样式体系
@@ -97,7 +118,7 @@ App 端为原生渲染，CSS 是**子集**：
 </script>
 ```
 
-当前 `platformConfig.json` 仅 `APP-ANDROID`；新增平台先改 targets。
+当前 `platformConfig.json` 含 `APP-ANDROID` 与 `MP-WEIXIN`；增减平台先改 targets。
 
 ## 7. 使用 uni-ui x 组件
 
@@ -107,10 +128,11 @@ App 端为原生渲染，CSS 是**子集**：
 
 ## 8. 新增页面 Checklist
 
-- [ ] `pages.json` 已登记（含标题、注释）
+- [ ] 已按主包/分包归类，`pages.json` 已登记（含标题、注释）
+- [ ] 分包跳转 path 含 root（如 `/pages-rpg/index/index`）
 - [ ] 文字都在 `<text>` 内；无浏览器标签
 - [ ] 只用 class 选择器、rpx/px 单位、flex 布局
 - [ ] `onLoad` 参数有判空；`onUnload` 清理了监听/定时器
 - [ ] 新增函数有中文 JSDoc（`x-04`）
 - [ ] 端差异已条件编译 + 注释
-- [ ] HBuilderX Android 基座运行通过
+- [ ] HBuilderX Android 基座 / 微信开发者工具验证通过
