@@ -60,12 +60,12 @@ function onMask(): void {
 }
 
 /**
- * 示意支付成功
+ * 支付成功：抛出 paid 由详情页调 tipArticle；文案仍示意
  */
 function onPay(): void {
 	emit('paid')
 	emit('close')
-	showXToast('☕', '打赏成功', '微信支付示意')
+	showXToast('☕', '打赏成功', '已提交')
 }
 </script>
 

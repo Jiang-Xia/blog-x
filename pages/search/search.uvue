@@ -30,17 +30,35 @@
 
 <script setup lang="ts">
 /**
- * 搜索页：原型固定示意「微信支付」
- * 数据来源：mock searchResults
+ * 搜索页：联调 POST /article/list?title=；失败回落 mock
  */
 import { searchResults } from '../../mock/data'
+import type { ArticleSummary } from '../../types/article'
+import { fetchArticleList } from '../../api/modules/article'
+import { apiOrMock } from '../../composables/useApiOrMock'
 import { showXToast } from '../../utils/toast'
 
 const query = ref('微信支付')
-const results = searchResults
+const results = ref(searchResults as ArticleSummary[])
+
+/**
+ * 按关键词搜文章
+ */
+async function doSearch(): Promise<void> {
+	const q = query.value
+	results.value = await apiOrMock(async () => {
+		const res = await fetchArticleList({ page: 1, pageSize: 20, title: q, client: true })
+		return res.list
+	}, searchResults)
+}
+
+onMounted(() => {
+	doSearch()
+})
 
 function onClear(): void {
 	query.value = ''
+	results.value = []
 	showXToast('⌫', '已清除', '')
 }
 

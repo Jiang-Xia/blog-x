@@ -78,19 +78,42 @@
 <script setup lang="ts">
 /**
  * 首页 Tab 面板：对齐小卡原型 home
- * 数据来源：mock/data + useMockStore（角标/今日文案）
+ * 数据来源：USE_MOCK 时 mock；联调 POST /article/list、GET /category、未读通知
  */
 import { homeArticles, homeCategories } from '../../mock/data'
+import type { ArticleSummary } from '../../types/article'
+import { fetchArticleList, fetchCategoryNames } from '../../api/modules/article'
+import { fetchUnreadCount } from '../../api/modules/notification'
+import { apiOrMock } from '../../composables/useApiOrMock'
 import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 import { goTab, TAB_DISCOVER, TAB_RPG } from '../../utils/tabNav'
 
-const list = homeArticles
-const categories = homeCategories
+const list = ref(homeArticles as ArticleSummary[])
+const categories = ref(homeCategories as string[])
 const store = useMockStore()
 const notifyBadge = store.notifyBadge
 const homeTodayTitle = store.homeTodayTitle
 const homeStreakLabel = store.homeStreakLabel
+
+/**
+ * 拉取首页列表与分类；失败回落 mock
+ */
+async function loadHome(): Promise<void> {
+	const articles = await apiOrMock(async () => {
+		const res = await fetchArticleList({ page: 1, pageSize: 10, client: true })
+		return res.list
+	}, homeArticles)
+	list.value = articles
+	const cats = await apiOrMock(() => fetchCategoryNames(), homeCategories)
+	categories.value = cats
+	const unread = await apiOrMock(() => fetchUnreadCount(), store.notifyBadge.value)
+	store.notifyBadge.value = unread
+}
+
+onMounted(() => {
+	loadHome()
+})
 
 /** 进搜索 */
 function goSearch(): void {

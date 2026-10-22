@@ -24,6 +24,21 @@
 - [ ] 主包体积可接受；preloadRule 不报错
 - [ ] 无非法 WXSS / 编译错误
 
+## 联调（blog-server）
+
+前置：`api/config.ts` 中 `USE_MOCK=false`，`API_ORIGIN` 指向可用后端（默认 `http://localhost:5000`），已启动 Nest/Go。
+
+- [ ] 首页文章列表来自 `POST /article/list`（非仅 mock 三篇）
+- [ ] 详情 `GET /article/info`；赞/藏打到 `/like` `/collect`
+- [ ] 搜索带 `title` 参数有结果或空列表
+- [ ] 归档 / 友链 / 留言列表为服务端数据
+- [ ] 微信小程序：登录页 `POST /user/auth/wechat/miniprogram` 成功后有 token
+- [ ] 401 后 refresh 成功可重放；refresh 失败跳登录
+- [ ] 冒险签到 `POST /rpg/sign`；抽奖 `POST /rpg/lottery/draw`；排行 `GET /rpg/leaderboard`
+- [ ] 充值下单返回 `outTradeNo`（真支付到账需支付宝环境）
+- [ ] 通知 / 收件箱有列表或空态；AI 页配额文案来自 `/rag/quota`
+- [ ] `USE_MOCK=true` 时仍可离线演示原型交互
+
 ## 对照原型功能清单
 
 | 原型 | 路径 | 状态 |
@@ -42,8 +57,8 @@
 | favorites | `/pages-blog/favorites/index` | |
 | inbox | `/pages-blog/inbox/index` | |
 | profile | `/pages-blog/profile/index` | |
-| audit | `/pages-blog/audit/index` | |
-| ai | `/pages-blog/ai/index` | |
+| audit | `/pages-blog/audit/index` | mock 保留 |
+| ai | `/pages-blog/ai/index` | 配额联调；对话流式后置 |
 | lottery | `/pages-rpg/lottery/index` | |
 | rank | `/pages-rpg/rank/index` | |
 | calendar | `/pages-rpg/calendar/index` | |
@@ -52,5 +67,5 @@
 
 ## 本阶段不做
 
-- blog-server 真实联调、微信支付真单
-- 写文章 / 标签墙 / 背包独立页
+- 审核台真实 C 端 API、写文章 / 标签墙 / 背包独立页
+- 微信支付真单、AI 流式问答（端能力就绪后再接）

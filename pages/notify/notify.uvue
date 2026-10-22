@@ -32,18 +32,34 @@
 
 <script setup lang="ts">
 /**
- * 消息中心：分段切换仅高亮，内容不筛选（同原型）
+ * 消息中心：联调 /notification/list + read；分段仅 UI
  */
 import { notifyItems } from '../../mock/data'
+import type { NotifyItem } from '../../types/notify'
+import { fetchNotifications, markNotificationsRead } from '../../api/modules/notification'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
 import { clearNotifyBadge } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 
 const segs = ['全部', '评论', '赞藏', '系统']
 const segIndex = ref(0)
-const items = notifyItems
+const items = ref(notifyItems as NotifyItem[])
 
-function onReadAll(): void {
+onMounted(async () => {
+	items.value = await apiOrMock(() => fetchNotifications(1, 30), notifyItems)
+})
+
+/**
+ * 全部已读
+ */
+async function onReadAll(): Promise<void> {
 	clearNotifyBadge()
+	if (!USE_MOCK) {
+		try {
+			await markNotificationsRead()
+		} catch (_) {}
+	}
 	showXToast('✓', '全部已读', '角标已清')
 }
 </script>

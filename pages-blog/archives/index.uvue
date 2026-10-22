@@ -29,11 +29,18 @@
 
 <script setup lang="ts">
 /**
- * 归档页：mock archiveMonths
+ * 归档页：联调 GET /article/archives
  */
 import { archiveMonths } from '../../mock/data'
+import type { ArchiveMonth } from '../../types/notify'
+import { fetchArchives } from '../../api/modules/article'
+import { apiOrMock } from '../../composables/useApiOrMock'
 
-const months = archiveMonths
+const months = ref(archiveMonths as ArchiveMonth[])
+
+onMounted(async () => {
+	months.value = await apiOrMock(() => fetchArchives(), archiveMonths)
+})
 
 function goDetail(id: string): void {
 	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })

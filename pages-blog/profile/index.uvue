@@ -6,8 +6,8 @@
 			<view class="big-avatar">
 				<text class="em">🦊</text>
 			</view>
-			<text class="name">江夏</text>
-			<text class="bio">Lv.12 像素匠 · 连续签到 {{ rpg.streakDays }} 天</text>
+			<text class="name">{{ nickname }}</text>
+			<text class="bio">{{ bio }}</text>
 		</view>
 		<view class="x-card">
 			<text class="sec">公开 RPG</text>
@@ -15,25 +15,82 @@
 			<text class="line">公会 {{ rpg.guildName }}</text>
 			<text class="line">{{ rpg.rankLabel }}</text>
 			<text class="line">宠物 {{ rpg.petLabel }}</text>
+			<text class="line">连续签到 {{ rpg.streakDays }} 天</text>
 		</view>
 		<view class="x-section-head">
 			<text class="x-section-title">TA 的文章</text>
 		</view>
-		<view class="x-card" @click="goDetail(firstArticle.id)">
-			<text class="art-t">{{ firstArticle.title }}</text>
-			<text class="x-meta">{{ firstArticle.categoryName }} · {{ firstArticle.timeLabel }}</text>
+		<view
+			v-for="art in articleList"
+			:key="art.id"
+			class="x-card"
+			@click="goDetail(art.id)"
+		>
+			<text class="art-t">{{ art.title }}</text>
+			<text class="x-meta">{{ art.categoryName }} · {{ art.timeLabel }}</text>
 		</view>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 公开主页：mock meProfile / publicRpg / articles
+ * 公开主页：联调 /user/public/:uid + /rpg/public/:uid/status + 文章列表
  */
-import { articles, publicRpg } from '../../mock/data'
+import { articles, meProfile, publicRpg } from '../../mock/data'
+import type { ArticleSummary } from '../../types/article'
+import type { PublicRpgCard } from '../../types/user'
+import { fetchPublicProfile, fetchPublicRpg, fetchUserInfo } from '../../api/modules/auth'
+import { get } from '../../api/request'
+import { mapArticleSummary } from '../../api/adapters/article'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { getToken } from '../../utils/storage'
 
-const rpg = publicRpg
-const firstArticle = articles[0]
+const nickname = ref(meProfile.nickname)
+const bio = ref(meProfile.bio)
+const rpg = ref(publicRpg as PublicRpgCard)
+const articleList = ref([articles[0]] as ArticleSummary[])
+const uid = ref(0)
+
+/**
+ * 解析当前用户 uid 后拉公开数据
+ */
+async function loadProfile(): Promise<void> {
+	if (getToken().length > 0) {
+		try {
+			const me = await fetchUserInfo()
+			nickname.value = me.nickname
+			bio.value = me.bio
+		} catch (_) {}
+		const raw = await apiOrMock(async () => {
+			const info = await get('/user/info', null, { silent: true })
+			return info
+		}, null)
+		if (raw != null && raw.id != null) {
+			uid.value = Number(raw.id)
+		}
+	}
+	if (uid.value > 0) {
+		const pub = await apiOrMock(() => fetchPublicProfile(uid.value), null)
+		if (pub != null) {
+			if (pub.nickname != null) nickname.value = '' + pub.nickname
+			if (pub.intro != null) bio.value = '' + pub.intro
+		}
+		rpg.value = await apiOrMock(() => fetchPublicRpg(uid.value), publicRpg)
+		articleList.value = await apiOrMock(async () => {
+			const res = await get('/user/public/' + uid.value + '/articles', { page: 1, pageSize: 10 }, { silent: true })
+			const arr = res != null && res.list != null ? res.list : Array.isArray(res) ? res : []
+			const out: ArticleSummary[] = []
+			for (let i = 0; i < arr.length; i++) {
+				out.push(mapArticleSummary(arr[i]))
+			}
+			return out.length > 0 ? out : [articles[0]]
+		}, [articles[0]])
+	}
+}
+
+onMounted(() => {
+	loadProfile()
+})
 
 function goDetail(id: string): void {
 	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
@@ -80,10 +137,9 @@ function goDetail(id: string): void {
 }
 
 .line {
-	font-size: 13px;
+	font-size: 12px;
 	color: #5c574f;
 	margin-bottom: 4px;
-	line-height: 1.4;
 }
 
 .art-t {

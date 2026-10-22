@@ -3,7 +3,7 @@
 	<view class="x-page">
 		<x-navbar title="签到日历"></x-navbar>
 		<view class="x-card summary">
-			<text class="sum-t">已签 21/31 · 连续 33 天 · 本周全勤</text>
+			<text class="sum-t">{{ summaryText }}</text>
 			<view class="ring">
 				<text class="ring-pct">68%</text>
 			</view>
@@ -24,11 +24,21 @@
 
 <script setup lang="ts">
 /**
- * 签到日历：mock calendarHits；固定 2026-10 示意
+ * 签到日历：网格仍用 mock hits；摘要联调 sign-info 连续天数
  */
 import { calendarHits } from '../../mock/data'
+import { fetchSignInfo } from '../../api/modules/rpg'
+import { apiOrMock } from '../../composables/useApiOrMock'
 
 const weekHeads = ['日', '一', '二', '三', '四', '五', '六']
+const summaryText = ref('已签 ' + calendarHits.length + '/31 · 连续 — 天 · 本周全勤')
+
+onMounted(async () => {
+	const sign = await apiOrMock(() => fetchSignInfo(), { signedToday: false, streakDays: 0 })
+	const streak = sign.streakDays > 0 ? sign.streakDays : 33
+	summaryText.value =
+		'已签 ' + calendarHits.length + '/31 · 连续 ' + streak + ' 天 · 本周全勤'
+})
 
 type DayCell = { label: string; muted: boolean; hit: boolean; on: boolean }
 

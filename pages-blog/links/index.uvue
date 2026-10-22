@@ -16,15 +16,34 @@
 
 <script setup lang="ts">
 /**
- * 友链页：mock friendLinks
+ * 友链页：联调 GET/POST /link
  */
 import { friendLinks } from '../../mock/data'
+import type { FriendLink } from '../../types/notify'
+import { createLink, fetchLinks } from '../../api/modules/interact'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
 import { showXToast } from '../../utils/toast'
 
-const links = friendLinks
+const links = ref(friendLinks as FriendLink[])
 
-function onApply(): void {
-	showXToast('🔗', '申请友链', '示意已提交审核')
+onMounted(async () => {
+	links.value = await apiOrMock(() => fetchLinks(), friendLinks)
+})
+
+/**
+ * 申请友链
+ */
+async function onApply(): Promise<void> {
+	if (USE_MOCK) {
+		showXToast('🔗', '申请友链', '示意已提交审核')
+		return
+	}
+	try {
+		await createLink({ title: '申请友链', url: 'https://example.com', desp: '来自 blog-x' })
+		showXToast('🔗', '已提交', '等待审核')
+		links.value = await fetchLinks()
+	} catch (_) {}
 }
 </script>
 

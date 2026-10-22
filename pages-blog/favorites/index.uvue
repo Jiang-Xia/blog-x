@@ -1,21 +1,51 @@
 <template>
-	<!-- 我的收藏：空态 + 去首页 -->
+	<!-- 我的收藏：有数据列卡片，无数据空态 -->
 	<view class="x-page">
 		<x-navbar title="我的收藏"></x-navbar>
-		<x-empty emoji="⭐" text="还没有收藏，去首页逛逛吧" action-text="去首页" @action="goHome"></x-empty>
+		<view v-if="list.length == 0">
+			<x-empty emoji="⭐" text="还没有收藏，去首页逛逛吧" action-text="去首页" @action="goHome"></x-empty>
+		</view>
+		<view
+			v-for="item in list"
+			:key="item.id"
+			class="x-card article"
+			@click="goDetail(item.id)"
+		>
+			<text class="article-title">{{ item.title }}</text>
+			<text class="x-meta">{{ item.categoryName }} · {{ item.timeLabel }}</text>
+		</view>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 收藏页：原型空态
+ * 收藏页：联调 GET /collect/list
  */
+import type { ArticleSummary } from '../../types/article'
+import { fetchCollectList } from '../../api/modules/interact'
+import { apiOrMock } from '../../composables/useApiOrMock'
 import { goTab, TAB_HOME } from '../../utils/tabNav'
+
+const list = ref([] as ArticleSummary[])
+
+onMounted(async () => {
+	list.value = await apiOrMock(() => fetchCollectList(1, 50), [])
+})
 
 function goHome(): void {
 	goTab(TAB_HOME)
 }
+
+function goDetail(id: string): void {
+	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
+}
 </script>
 
 <style>
+.article-title {
+	font-size: 14px;
+	font-weight: 650;
+	color: #1c1a17;
+	margin-bottom: 4px;
+}
 </style>

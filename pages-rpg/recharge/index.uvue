@@ -25,15 +25,19 @@
 
 <script setup lang="ts">
 /**
- * 钻石充值：mock rechargeSkus；支付写 useMockStore
+ * 钻石充值：联调 create + 轮询 status；USE_MOCK 写本地钻石
  */
 import { rechargeSkus } from '../../mock/data'
+import { USE_MOCK } from '../../api/config'
+import { createRpgRecharge, getRpgRechargeStatus, fetchRpgHero } from '../../api/modules/rpg'
 import { addMockDiamonds, useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 
 const skus = rechargeSkus
 const selectedId = ref('300')
-const diamonds = useMockStore().diamonds
+const store = useMockStore()
+const diamonds = store.diamonds
+const paying = ref(false)
 
 /**
  * 按 id 查找充值档
@@ -55,17 +59,73 @@ function selectSku(id: string): void {
 }
 
 /**
- * 示意支付成功并加钻
+ * 轮询充值到账
  */
-function onPay(): void {
-	const s = findSku(selectedId.value)
-	if (s == null) return
-	let add = s.diamonds
-	if (s.bonusLabel != null && s.bonusLabel.indexOf('+') === 0) {
-		add = add + parseInt(s.bonusLabel.substring(1))
+function pollRecharge(outTradeNo: string, left: number): void {
+	if (left <= 0) {
+		paying.value = false
+		showXToast('⏳', '支付处理中', '请稍后在冒险中心查看钻石')
+		return
 	}
-	addMockDiamonds(add)
-	showXToast('💎', '充值成功', '+' + add + ' 钻石')
+	getRpgRechargeStatus(outTradeNo)
+		.then(async (res) => {
+			const paid =
+				res != null &&
+				(res.status === 'paid' || res.status === 'success' || res.paid === true)
+			if (paid) {
+				paying.value = false
+				try {
+					const hero = await fetchRpgHero()
+					store.diamonds.value = hero.diamonds
+				} catch (_) {}
+				showXToast('💎', '充值成功', '')
+				return
+			}
+			setTimeout(() => {
+				pollRecharge(outTradeNo, left - 1)
+			}, 2000)
+		})
+		.catch(() => {
+			setTimeout(() => {
+				pollRecharge(outTradeNo, left - 1)
+			}, 2000)
+		})
+}
+
+/**
+ * 下单或 mock 加钻
+ */
+async function onPay(): Promise<void> {
+	const s = findSku(selectedId.value)
+	if (s == null || paying.value) return
+	if (USE_MOCK) {
+		let add = s.diamonds
+		if (s.bonusLabel != null && s.bonusLabel.indexOf('+') === 0) {
+			add = add + parseInt(s.bonusLabel.substring(1))
+		}
+		addMockDiamonds(add)
+		showXToast('💎', '充值成功', '+' + add + ' 钻石')
+		return
+	}
+	paying.value = true
+	try {
+		const res = await createRpgRecharge(s.priceYuan)
+		const outTradeNo =
+			res != null && res.outTradeNo != null
+				? '' + res.outTradeNo
+				: res != null && res.out_trade_no != null
+					? '' + res.out_trade_no
+					: ''
+		if (outTradeNo.length == 0) {
+			paying.value = false
+			showXToast('⚠️', '下单失败', '')
+			return
+		}
+		showXToast('💳', '请完成支付', '正在确认到账…')
+		pollRecharge(outTradeNo, 15)
+	} catch (_) {
+		paying.value = false
+	}
 }
 </script>
 

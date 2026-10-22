@@ -20,17 +20,18 @@
 
 <script setup lang="ts">
 /**
- * 登录页：原型示意，不接真实微信 OAuth
+ * 登录页：联调微信小程序登录；USE_MOCK 或非微信端回落示意 token
  */
+import { USE_MOCK } from '../../api/config'
+import { loginByWeixin } from '../../api/modules/auth'
 import { showXToast } from '../../utils/toast'
 import { setToken } from '../../utils/storage'
 import { goTab, TAB_ME } from '../../utils/tabNav'
 
 /**
- * 示意登录成功
+ * 登录成功后回退
  */
-function onLogin(): void {
-	setToken('mock_token_' + Date.now())
+function afterLoginOk(): void {
 	showXToast('✅', '登录成功', '欢迎回来')
 	setTimeout(() => {
 		uni.navigateBack({
@@ -39,6 +40,23 @@ function onLogin(): void {
 			},
 		})
 	}, 500)
+}
+
+/**
+ * 微信一键登录（或 mock）
+ */
+async function onLogin(): Promise<void> {
+	if (USE_MOCK) {
+		setToken('mock_token_' + Date.now())
+		afterLoginOk()
+		return
+	}
+	try {
+		await loginByWeixin()
+		afterLoginOk()
+	} catch (_) {
+		showXToast('⚠️', '登录失败', '可改 USE_MOCK 或检查微信登录配置')
+	}
 }
 </script>
 

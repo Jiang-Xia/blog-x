@@ -4,7 +4,7 @@ uni-app x（uvue）版博客前端：与 `blog-home-nuxt`、`blog-home-uniapp` �
 
 编译目标见 `platformConfig.json`：本地以 **APP-ANDROID** 为主，发行目标含 **MP-WEIXIN**（微信小程序）。
 
-当前阶段已按 [`prototypes/blog-app-xiaoka-style.html`](../prototypes/blog-app-xiaoka-style.html) 落地 **小卡风格 UI + mock 交互**；`api/request.ts` 仅为联调占位，页面数据走 `mock/` 与 `composables/useMockStore.ts`。
+UI 对齐 [`prototypes/blog-app-xiaoka-style.html`](../prototypes/blog-app-xiaoka-style.html)。**联调层已接入**：`api/` 请求核 + 注册表 + 业务 modules；页面默认打真实接口，失败回落 `mock/`（`USE_MOCK=true` 可整页挡板）。
 
 ## 目录结构
 
@@ -15,14 +15,36 @@ blog-x/
 ├── pages-rpg/        # 分包：抽奖 / 排行 / 日历 / 充值
 ├── pages-tool/       # 分包：实用工具（占位）
 ├── components/       # x-tab-* / x-navbar / x-toast / x-empty / x-tip-sheet
-├── composables/      # useMockStore 跨页状态
-├── mock/             # 原型静态数据
+├── composables/      # useMockStore / useApiOrMock
+├── mock/             # 原型静态数据与失败回落
 ├── types/            # TS 类型
-├── api/              # request 占位（未联调）
+├── api/              # 联调：config / request / registry / modules / mocks
 ├── utils/            # storage / toast / tabNav
 ├── pages.json
 ├── manifest.json
 └── docs/
+```
+
+## API 联调
+
+| 文件 | 作用 |
+|------|------|
+| [`api/config.ts`](api/config.ts) | `API_ORIGIN` + `API_PREFIX`、`USE_MOCK`（HBuilderX 无 Vite 时改此文件） |
+| [`api/request.ts`](api/request.ts) | `uni.request`，解包 `{ code, data, message }`，Bearer + 401 refresh |
+| [`api/registry.ts`](api/registry.ts) | 接口注册表（新增接口追加一行） |
+| [`api/createApi.ts`](api/createApi.ts) | 按注册表生成薄封装（类 shopkeeper-cli） |
+| [`api/modules/*`](api/modules) | 带适配的业务方法（页面优先用这里） |
+| [`api/mocks/`](api/mocks) | 同名方法挡板，`USE_MOCK` 时合并 |
+
+默认 baseURL：`http://localhost:5000/api/v1`（Nest `blog-server`）。改 Go 本地：`API_ORIGIN = 'http://localhost:8000'`。
+
+路径与 [blog-home-uniapp/src/api](../blog-home-uniapp/src/api) / [blog-home-nuxt/api](../blog-home-nuxt/api) 对齐，**禁止自造 URL**。
+
+```ts
+import { fetchArticleList } from '@/api/modules/article'
+// 或
+import { apis } from '@/api'
+await apis.getAllTag()
 ```
 
 ## 常用页面（原型 ↔ 路径）
@@ -36,9 +58,9 @@ blog-x/
 | lottery / rank / calendar / recharge | `/pages-rpg/<模块>/index` | RPG 分包 |
 | tipSheet | 详情页内 `x-tip-sheet` | 组件 |
 
-底栏：`uni_modules/uni-tab-bar` 的 **tab-bar-blur**（半透明毛玻璃悬浮），图标文案对齐原型 ⌂ / ◎ / ✦ / ☺。切 Tab 用 `utils/tabNav.goTab`，**不要**用 `uni.switchTab`（已无 pages.json 原生 tabBar）。
+底栏：`uni_modules/uni-tab-bar` 的 **tab-bar-blur**。切 Tab 用 `utils/tabNav.goTab`，**不要**用 `uni.switchTab`。
 
-示意 Toast（无独立页）：写文章、标签墙、背包装扮。
+示意 Toast（无独立页）：写文章、标签墙、背包装扮。审核台仍 mock（无 C 端对等 API）。
 
 ## 分包约定
 
@@ -49,11 +71,10 @@ blog-x/
 | `pages-rpg/` | 玩法页（中心 UI 在主壳 `x-tab-rpg`） |
 | `pages-tool/` | 工具箱 |
 
-跳转示例：`uni.navigateTo({ url: '/pages-blog/archives/index' })`（path 含 root）；回 Tab：`goTab(TAB_HOME)`。
-
 ## 开发与验证
 
 - 运行/编译：HBuilderX（无独立 Vite dev server）。
+- 联调前启动 `blog-server`（默认 :5000），按需改 `api/config.ts`。
 - Android：运行到自定义基座；微信：发行后用微信开发者工具打开产物。
 - Agent 勿自动启动 HBuilderX / 开发者工具。
 - 验收清单：[`docs/qa-checklist.md`](docs/qa-checklist.md)。

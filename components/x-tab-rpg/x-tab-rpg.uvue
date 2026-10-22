@@ -92,23 +92,68 @@
 <script setup lang="ts">
 /**
  * 冒险中心面板：对齐原型 rpg 屏
- * 数据来源：mock rpgHeroSeed + useMockStore 钻石/签到
+ * 数据来源：联调 /rpg/status|sign|my-quests；失败回落 mock
  */
-import { rpgHeroSeed } from '../../mock/data'
+import { rpgHeroSeed, rpgQuestsSeed } from '../../mock/data'
+import type { RpgHero, RpgQuest } from '../../types/rpg'
+import {
+	fetchMyQuests,
+	fetchRpgHero,
+	fetchSignInfo,
+	rpgSignIn,
+} from '../../api/modules/rpg'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
 import { doMockCheckin, useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 import { goTab, TAB_HOME } from '../../utils/tabNav'
 
-const hero = rpgHeroSeed
+const hero = ref(rpgHeroSeed as RpgHero)
+const quests = ref(rpgQuestsSeed as RpgQuest[])
 const store = useMockStore()
 const diamonds = store.diamonds
 const streakDays = store.streakDays
 const checkedInToday = store.checkedInToday
 
+/**
+ * 同步 RPG 状态到本地 store 与 hero
+ */
+async function loadRpg(): Promise<void> {
+	const h = await apiOrMock(() => fetchRpgHero(), rpgHeroSeed)
+	hero.value = h
+	store.diamonds.value = h.diamonds
+	store.streakDays.value = h.streakDays
+	const sign = await apiOrMock(() => fetchSignInfo(), {
+		signedToday: store.checkedInToday.value,
+		streakDays: store.streakDays.value,
+	})
+	store.checkedInToday.value = sign.signedToday
+	if (sign.streakDays > 0) store.streakDays.value = sign.streakDays
+	quests.value = await apiOrMock(() => fetchMyQuests(), rpgQuestsSeed)
+}
+
+onMounted(() => {
+	loadRpg()
+})
+
 /** 每日签到 */
-function onCheckin(): void {
-	const r = doMockCheckin()
-	showXToast(r.ok ? '☀️' : '📌', r.toastTitle, r.toastDesc)
+async function onCheckin(): Promise<void> {
+	if (USE_MOCK) {
+		const r = doMockCheckin()
+		showXToast(r.ok ? '☀️' : '📌', r.toastTitle, r.toastDesc)
+		return
+	}
+	if (checkedInToday.value) {
+		showXToast('📌', '今日已签到', '明天再来哦')
+		return
+	}
+	try {
+		await rpgSignIn()
+		showXToast('☀️', '签到成功', '')
+		await loadRpg()
+		store.homeTodayTitle.value = '已签到'
+		store.homeStreakLabel.value = '连续 ' + store.streakDays.value + ' 天'
+	} catch (_) {}
 }
 
 /** 回首页读文章 */

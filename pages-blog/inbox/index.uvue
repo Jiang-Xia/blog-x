@@ -16,14 +16,23 @@
 
 <script setup lang="ts">
 /**
- * 评论收件箱：mock inboxItems
+ * 评论收件箱：联调 GET /comment/on-my-articles
  */
 import { inboxItems } from '../../mock/data'
+import type { InboxItem } from '../../types/notify'
+import { fetchInbox } from '../../api/modules/interact'
+import { apiOrMock } from '../../composables/useApiOrMock'
 import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 
-const items = inboxItems
-const badge = useMockStore().inboxBadge
+const items = ref(inboxItems as InboxItem[])
+const store = useMockStore()
+const badge = store.inboxBadge
+
+onMounted(async () => {
+	items.value = await apiOrMock(() => fetchInbox(1, 30), inboxItems)
+	store.inboxBadge.value = items.value.length
+})
 
 function onReply(): void {
 	showXToast('↩️', '回复', '示意回复框')

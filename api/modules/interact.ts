@@ -1,0 +1,154 @@
+/**
+ * 点赞 / 收藏 / 评论 / 留言 / 友链 / 打赏
+ */
+import { get, post } from '../request'
+import { mapFriendLinks, mapGuestbookItems, mapInboxItems } from '../adapters/user'
+import type { FriendLink, GuestbookItem, InboxItem } from '../../types/notify'
+import type { ArticleSummary } from '../../types/article'
+import { mapArticleSummary } from '../adapters/article'
+
+/**
+ * 切换点赞
+ */
+export function toggleLike(articleId: string | number): Promise<any> {
+	return post('/like', { articleId: '' + articleId })
+}
+
+/**
+ * 是否已赞
+ */
+export async function checkLiked(articleId: string | number): Promise<boolean> {
+	try {
+		const res = await get('/like/check', { articleId: '' + articleId }, { silent: true })
+		return res != null && res.liked === true
+	} catch (_) {
+		return false
+	}
+}
+
+/**
+ * 切换收藏
+ */
+export function toggleCollect(articleId: string | number): Promise<any> {
+	return post('/collect', { articleId: '' + articleId })
+}
+
+/**
+ * 是否已藏
+ */
+export async function checkCollected(articleId: string | number): Promise<boolean> {
+	try {
+		const res = await get('/collect/check', { articleId: '' + articleId }, { silent: true })
+		return res != null && (res.collected === true || res.isCollect === true)
+	} catch (_) {
+		return false
+	}
+}
+
+/**
+ * 我的收藏列表
+ */
+export async function fetchCollectList(page = 1, pageSize = 20): Promise<ArticleSummary[]> {
+	const res = await get('/collect/list', { page, pageSize })
+	const arr = res != null && res.list != null ? res.list : Array.isArray(res) ? res : []
+	const list: ArticleSummary[] = []
+	for (let i = 0; i < arr.length; i++) {
+		const item = arr[i].article != null ? arr[i].article : arr[i]
+		list.push(mapArticleSummary(item))
+	}
+	return list
+}
+
+/**
+ * 文章评论列表
+ */
+export function fetchComments(articleId: string | number, page = 1, pageSize = 20): Promise<any> {
+	return get('/comment/findAll', { articleId: '' + articleId, page, pageSize })
+}
+
+/**
+ * 发表评论
+ */
+export function addComment(articleId: string | number, content: string): Promise<any> {
+	return post('/comment/create', { articleId: '' + articleId, content })
+}
+
+/**
+ * 发表回复
+ */
+export function addReply(data: {
+	parentId: string | number
+	content: string
+	replyUid: string | number
+}): Promise<any> {
+	return post('/reply/create', {
+		parentId: '' + data.parentId,
+		content: data.content,
+		replyUid: '' + data.replyUid,
+	})
+}
+
+/**
+ * 留言列表
+ */
+export async function fetchMsgboard(page = 1, pageSize = 30): Promise<GuestbookItem[]> {
+	const res = await get('/msgboard', { page, pageSize })
+	return mapGuestbookItems(res)
+}
+
+/**
+ * 发表留言
+ */
+export function postMsgboard(data: {
+	name: string
+	comment: string
+	eamil?: string
+	address?: string
+}): Promise<any> {
+	return post('/msgboard', {
+		name: data.name,
+		comment: data.comment,
+		eamil: data.eamil != null ? data.eamil : '',
+		address: data.address != null ? data.address : '',
+	})
+}
+
+/**
+ * 友链列表
+ */
+export async function fetchLinks(): Promise<FriendLink[]> {
+	const res = await get('/link', { client: true })
+	return mapFriendLinks(res)
+}
+
+/**
+ * 申请友链
+ */
+export function createLink(data: { title: string; url: string; desp?: string; icon?: string }): Promise<any> {
+	return post('/link', data)
+}
+
+/**
+ * 文章钻石打赏
+ */
+export function tipArticle(articleId: number, amount: number): Promise<any> {
+	return post('/rpg/article/tip', { articleId, amount })
+}
+
+/**
+ * 站点赞赏下单（支付宝）
+ */
+export function createSiteTip(payload: {
+	amountYuan: number
+	displayName?: string
+}): Promise<any> {
+	return post('/site/tip/create', payload)
+}
+
+/**
+ * 评论收件箱
+ */
+export async function fetchInbox(page = 1, pageSize = 20): Promise<InboxItem[]> {
+	const res = await get('/comment/on-my-articles', { page, pageSize })
+	return mapInboxItems(res)
+}

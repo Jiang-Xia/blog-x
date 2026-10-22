@@ -30,13 +30,33 @@
 
 <script setup lang="ts">
 /**
- * 排行榜：mock rankRows；分段不筛选数据
+ * 排行榜：联调 GET /rpg/leaderboard；分段切换 type
  */
 import { rankRows } from '../../mock/data'
+import type { RankRow } from '../../types/rpg'
+import { fetchLeaderboard } from '../../api/modules/rpg'
+import { apiOrMock } from '../../composables/useApiOrMock'
 
 const segs = ['本周经验', '钻石', '连续签到']
+const types = ['exp', 'currency', 'signDays']
 const segIndex = ref(0)
-const rows = rankRows
+const rows = ref(rankRows as RankRow[])
+
+/**
+ * 按分段拉榜
+ */
+async function loadRank(): Promise<void> {
+	const type = types[segIndex.value]
+	rows.value = await apiOrMock(() => fetchLeaderboard(type, 20, 'week'), rankRows)
+}
+
+onMounted(() => {
+	loadRank()
+})
+
+watch(segIndex, () => {
+	loadRank()
+})
 </script>
 
 <style>

@@ -6,7 +6,7 @@
 				<text class="pub" @click="onPublish">发布</text>
 			</template>
 		</x-navbar>
-		<text class="count">共 128 条留言</text>
+		<text class="count">{{ totalLabel }}</text>
 		<view v-for="item in items" :key="item.id" class="x-card">
 			<view class="row">
 				<text class="author">{{ item.author }}</text>
@@ -22,15 +22,43 @@
 
 <script setup lang="ts">
 /**
- * 留言板：mock guestbookItems；发布仅 toast
+ * 留言板：联调 GET/POST /msgboard
  */
 import { guestbookItems } from '../../mock/data'
+import type { GuestbookItem } from '../../types/notify'
+import { fetchMsgboard, postMsgboard } from '../../api/modules/interact'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
 import { showXToast } from '../../utils/toast'
 
-const items = guestbookItems
+const items = ref(guestbookItems as GuestbookItem[])
+const totalLabel = ref('共 ' + guestbookItems.length + ' 条留言')
 
-function onPublish(): void {
-	showXToast('💬', '已发布', '示意留言已提交')
+/**
+ * 加载留言列表
+ */
+async function loadList(): Promise<void> {
+	items.value = await apiOrMock(() => fetchMsgboard(1, 30), guestbookItems)
+	totalLabel.value = '共 ' + items.value.length + ' 条留言'
+}
+
+onMounted(() => {
+	loadList()
+})
+
+/**
+ * 发布留言（联调真实接口；mock 仅 toast）
+ */
+async function onPublish(): Promise<void> {
+	if (USE_MOCK) {
+		showXToast('💬', '已发布', '示意留言已提交')
+		return
+	}
+	try {
+		await postMsgboard({ name: '访客', comment: '来自 blog-x 的留言' })
+		showXToast('💬', '已发布', '')
+		await loadList()
+	} catch (_) {}
 }
 </script>
 

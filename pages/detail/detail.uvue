@@ -85,16 +85,32 @@
 			</view>
 		</view>
 
-		<x-tip-sheet :open="tipOpen" @close="tipOpen = false"></x-tip-sheet>
+		<x-tip-sheet :open="tipOpen" @close="tipOpen = false" @paid="onTipPaid"></x-tip-sheet>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 文章详情：mock articles；赞/藏写 useMockStore；赏打开 tip-sheet
+ * 文章详情：联调 info/views/related/comment + 赞藏
+ * 失败回落 mock；赏打开 tip-sheet（钻石 tip 见组件 paid）
  */
 import { articles, detailComments, relatedMinis } from '../../mock/data'
 import type { ArticleDetail } from '../../types/article'
+import {
+	fetchArticleInfo,
+	fetchRelatedArticles,
+	reportArticleViews,
+} from '../../api/modules/article'
+import {
+	checkCollected,
+	checkLiked,
+	fetchComments,
+	tipArticle,
+	toggleCollect,
+	toggleLike,
+} from '../../api/modules/interact'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
 import {
 	isMockFaved,
 	isMockLiked,
@@ -104,24 +120,72 @@ import {
 import { showXToast } from '../../utils/toast'
 
 const article = ref(articles[0] as ArticleDetail)
-const related = relatedMinis
-const comments = detailComments
+const related = ref(relatedMinis as Array<{ id: string; emoji: string; title: string }>)
+const comments = ref(detailComments as Array<{ emoji: string; name: string; tag: string; text: string }>)
 const tipOpen = ref(false)
 const liked = ref(false)
 const faved = ref(false)
 const articleId = ref('0')
 
-onLoad((options) => {
-	const id = options != null && options['id'] != null ? ('' + options['id']) : '0'
-	articleId.value = id
+/**
+ * 加载详情、相关、评论与赞藏状态
+ */
+async function loadDetail(id: string): Promise<void> {
+	const mockArt = articles[0]
 	for (let i = 0; i < articles.length; i++) {
 		if (articles[i].id === id) {
 			article.value = articles[i]
 			break
 		}
 	}
-	liked.value = isMockLiked(id)
-	faved.value = isMockFaved(id)
+	const info = await apiOrMock(() => fetchArticleInfo(id), null as ArticleDetail | null)
+	if (info != null) {
+		article.value = info
+	} else if (article.value.id !== id) {
+		article.value = mockArt
+	}
+	reportArticleViews(id).catch(() => {})
+
+	const rel = await apiOrMock(async () => {
+		const list = await fetchRelatedArticles(id, 6)
+		return list.map((a) => ({
+			id: a.id,
+			emoji: a.coverEmoji,
+			title: a.title,
+		}))
+	}, relatedMinis)
+	related.value = rel
+
+	const cmt = await apiOrMock(async () => {
+		const res = await fetchComments(id)
+		const arr = res != null && res.list != null ? res.list : []
+		const out: Array<{ emoji: string; name: string; tag: string; text: string }> = []
+		for (let i = 0; i < arr.length; i++) {
+			const c = arr[i]
+			out.push({
+				emoji: '💬',
+				name: c.userInfo != null && c.userInfo.nickname != null ? '' + c.userInfo.nickname : '用户',
+				tag: '',
+				text: c.content != null ? '' + c.content : '',
+			})
+		}
+		return out.length > 0 ? out : detailComments
+	}, detailComments)
+	comments.value = cmt
+
+	if (USE_MOCK) {
+		liked.value = isMockLiked(id)
+		faved.value = isMockFaved(id)
+	} else {
+		liked.value = await checkLiked(id)
+		faved.value = await checkCollected(id)
+	}
+}
+
+onLoad((options) => {
+	const id = options != null && options['id'] != null ? ('' + options['id']) : '0'
+	articleId.value = id
+	loadDetail(id)
 })
 
 function goAi(): void {
@@ -132,14 +196,48 @@ function goDetail(id: string): void {
 	uni.redirectTo({ url: '/pages/detail/detail?id=' + id })
 }
 
-function onLike(): void {
-	liked.value = toggleMockLike(articleId.value)
-	showXToast(liked.value ? '❤️' : '🤍', liked.value ? '已点赞' : '取消点赞', '')
+/**
+ * 点赞：联调 POST /like
+ */
+async function onLike(): Promise<void> {
+	if (USE_MOCK) {
+		liked.value = toggleMockLike(articleId.value)
+		showXToast(liked.value ? '❤️' : '🤍', liked.value ? '已点赞' : '取消点赞', '')
+		return
+	}
+	try {
+		await toggleLike(articleId.value)
+		liked.value = await checkLiked(articleId.value)
+		showXToast(liked.value ? '❤️' : '🤍', liked.value ? '已点赞' : '取消点赞', '')
+	} catch (_) {}
 }
 
-function onFav(): void {
-	faved.value = toggleMockFav(articleId.value)
-	showXToast(faved.value ? '⭐' : '☆', faved.value ? '已收藏' : '取消收藏', '')
+/**
+ * 收藏：联调 POST /collect
+ */
+async function onFav(): Promise<void> {
+	if (USE_MOCK) {
+		faved.value = toggleMockFav(articleId.value)
+		showXToast(faved.value ? '⭐' : '☆', faved.value ? '已收藏' : '取消收藏', '')
+		return
+	}
+	try {
+		await toggleCollect(articleId.value)
+		faved.value = await checkCollected(articleId.value)
+		showXToast(faved.value ? '⭐' : '☆', faved.value ? '已收藏' : '取消收藏', '')
+	} catch (_) {}
+}
+
+/**
+ * tip-sheet 支付成功：联调钻石打赏
+ */
+async function onTipPaid(): Promise<void> {
+	if (USE_MOCK) return
+	const idNum = parseInt(articleId.value, 10)
+	if (isNaN(idNum)) return
+	try {
+		await tipArticle(idNum, 1)
+	} catch (_) {}
 }
 </script>
 

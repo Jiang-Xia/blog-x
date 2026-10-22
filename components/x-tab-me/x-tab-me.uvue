@@ -69,14 +69,33 @@
 <script setup lang="ts">
 /**
  * 我的 Tab 面板：对齐原型 me
- * 数据来源：mock meProfile + useMockStore 角标
+ * 数据来源：联调 GET /user/info；角标来自收件箱/通知
  */
 import { meProfile } from '../../mock/data'
+import type { UserProfile } from '../../types/user'
+import { fetchUserInfo } from '../../api/modules/auth'
+import { fetchInbox } from '../../api/modules/interact'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { getToken } from '../../utils/storage'
 import { useMockStore } from '../../composables/useMockStore'
 
-const profile = meProfile
+const profile = ref(meProfile as UserProfile)
 const store = useMockStore()
 const inboxBadge = store.inboxBadge
+
+/**
+ * 已登录则拉用户信息与收件箱角标
+ */
+async function loadMe(): Promise<void> {
+	if (getToken().length == 0) return
+	profile.value = await apiOrMock(() => fetchUserInfo(), meProfile)
+	const inbox = await apiOrMock(() => fetchInbox(1, 20), [])
+	store.inboxBadge.value = inbox.length
+}
+
+onMounted(() => {
+	loadMe()
+})
 
 function goFavorites(): void {
 	uni.navigateTo({ url: '/pages-blog/favorites/index' })

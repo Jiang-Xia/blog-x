@@ -16,21 +16,31 @@
 		<view class="x-section-head">
 			<text class="x-section-title">最近获得</text>
 		</view>
-		<text class="recent">宠物蛋 · 钻石+10</text>
+		<text class="recent">{{ recentLabel }}</text>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 幸运抽奖：mock lotteryCells；定时器高亮后 toast
+ * 幸运抽奖：联调 pool + draw；UI 轮转后 toast 服务端结果
  */
 import { lotteryCells } from '../../mock/data'
+import type { LotteryCell } from '../../types/rpg'
+import { fetchLotteryPool, lotteryDraw } from '../../api/modules/rpg'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
 import { showXToast } from '../../utils/toast'
 
 /** 外围 8 格顺序（跳过中心 index 4） */
 const ringOrder = [0, 1, 2, 5, 8, 7, 6, 3]
 const hiIndex = ref(-1)
 const spinning = ref(false)
+const pool = ref(lotteryCells as LotteryCell[])
+const recentLabel = ref('宠物蛋 · 钻石+10')
+
+onMounted(async () => {
+	pool.value = await apiOrMock(() => fetchLotteryPool(), lotteryCells)
+})
 
 type CellView = { emoji: string; label: string; isGo: boolean }
 
@@ -40,11 +50,12 @@ type CellView = { emoji: string; label: string; isGo: boolean }
 const displayCells = computed((): CellView[] => {
 	const list: CellView[] = []
 	let prizeIdx = 0
+	const cells = pool.value
 	for (let i = 0; i < 9; i++) {
 		if (i === 4) {
 			list.push({ emoji: '🎰', label: '抽一次', isGo: true })
 		} else {
-			const p = lotteryCells[prizeIdx]
+			const p = cells[prizeIdx] != null ? cells[prizeIdx] : { emoji: '✨', label: '奖', index: prizeIdx }
 			prizeIdx++
 			list.push({ emoji: p.emoji, label: p.label, isGo: false })
 		}
@@ -70,13 +81,34 @@ function onCellClick(i: number): void {
 }
 
 /**
- * 轮转高亮后出结果
+ * 轮转高亮后出结果；联调时先请求 draw 再播动画
  */
-function spinLottery(): void {
+async function spinLottery(): Promise<void> {
 	if (spinning.value) return
 	spinning.value = true
+	let winLabel = ''
+	let winEmoji = '✨'
+	if (!USE_MOCK) {
+		try {
+			const res = await lotteryDraw(1, 'ticket')
+			const first =
+				res != null && res.rewards != null && res.rewards.length > 0
+					? res.rewards[0]
+					: res != null && res.list != null && res.list.length > 0
+						? res.list[0]
+						: res
+			if (first != null) {
+				winLabel = first.name != null ? '' + first.name : first.label != null ? '' + first.label : '奖品'
+				winEmoji = first.icon != null ? '' + first.icon : first.emoji != null ? '' + first.emoji : '✨'
+			}
+		} catch (_) {
+			spinning.value = false
+			return
+		}
+	}
 	let step = 0
 	const total = 16 + Math.floor(Math.random() * 8)
+	const cells = pool.value
 	const timer = setInterval(() => {
 		const ringPos = step % ringOrder.length
 		hiIndex.value = ringOrder[ringPos]
@@ -85,8 +117,17 @@ function spinLottery(): void {
 			clearInterval(timer)
 			const winRing = ringOrder[(step - 1) % ringOrder.length]
 			const prizePos = ringOrder.indexOf(winRing)
-			const prize = lotteryCells[prizePos]
-			showXToast(prize.emoji, '恭喜获得', prize.label)
+			const prize = cells[prizePos]
+			if (USE_MOCK && prize != null) {
+				winEmoji = prize.emoji
+				winLabel = prize.label
+			}
+			if (winLabel.length == 0 && prize != null) {
+				winEmoji = prize.emoji
+				winLabel = prize.label
+			}
+			recentLabel.value = winLabel
+			showXToast(winEmoji, '恭喜获得', winLabel)
 			spinning.value = false
 			setTimeout(() => {
 				hiIndex.value = -1

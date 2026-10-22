@@ -3,7 +3,7 @@
 	<view class="x-page chat-page">
 		<x-navbar title="AI 助手">
 			<template v-slot:right>
-				<text class="quota">8/10</text>
+				<text class="quota">{{ quotaLabel }}</text>
 			</template>
 		</x-navbar>
 
@@ -42,16 +42,43 @@
 
 <script setup lang="ts">
 /**
- * AI 助手：原型示意对话，不接真实模型
+ * AI 助手：联调展示 RAG 配额；流式对话 uni-app x 暂不接，chips 仍示意
  */
+import { fetchRagQuota, fetchRagStatus } from '../../api/modules/notification'
+import { apiOrMock } from '../../composables/useApiOrMock'
 import { showXToast } from '../../utils/toast'
 
+const quotaLabel = ref('—/—')
+
+onMounted(async () => {
+	const quota = await apiOrMock(() => fetchRagQuota(), null)
+	const status = await apiOrMock(() => fetchRagStatus(), null)
+	let used = 0
+	let total = 10
+	if (quota != null) {
+		if (quota.used != null) used = Number(quota.used)
+		if (quota.remaining != null && quota.limit != null) {
+			used = Number(quota.limit) - Number(quota.remaining)
+			total = Number(quota.limit)
+		} else if (quota.limit != null) {
+			total = Number(quota.limit)
+		} else if (quota.total != null) {
+			total = Number(quota.total)
+		}
+	}
+	if (status != null && status.ready === false) {
+		quotaLabel.value = '不可用'
+	} else {
+		quotaLabel.value = used + '/' + total
+	}
+})
+
 function onChip(name: string): void {
-	showXToast('✦', name, '示意已发送')
+	showXToast('✦', name, '示意已发送（流式待接）')
 }
 
 function onSend(): void {
-	showXToast('↑', '已发送', '')
+	showXToast('↑', '已发送', '流式问答待端能力就绪')
 }
 </script>
 
