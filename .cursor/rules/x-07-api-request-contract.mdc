@@ -7,12 +7,13 @@ alwaysApply: false
 # API 请求契约
 
 与 blog-home-nuxt / blog-home-uniapp 契约同构；组织方式参考 shopkeeper-cli（config + http + 注册表 + mocks）。
+加密网关与开发日志对齐 **blog-home-nuxt** `api/request.ts` + `utils/gateway-crypto`。
 
 ## 目录
 
 ```
 api/
-  config.ts      # API_ORIGIN / API_PREFIX / USE_MOCK
+  config.ts      # API_ORIGIN / USE_MOCK / OPEN_ENCRYPT / OPEN_REQUEST_LOG / GATEWAY_CRYPTO
   request.ts     # get/post/put/patch/del，解包 { code, data, message }
   registry.ts    # 接口注册表（新增接口只改这里 + modules）
   createApi.ts   # 按注册表生成 apis.xxx
@@ -20,14 +21,29 @@ api/
   adapters/      # 服务端字段 → types/*
   mocks/         # USE_MOCK 时同名覆盖
   index.ts       # 统一出口
+utils/
+  gateway-crypto/ # /encrypt 信封加解密（aes）
+  vendor/         # crypto-js.js / jsencrypt.min.js（UMD，挂 globalThis）
+  lib/            # crypto-js.ts / jsencrypt.ts / ensure-crypto-random / runtime-global
+  ssh.ts          # 服务端 RSA 公钥
 ```
+
+## 加密库跨端（App 蒸汽 / H5 / 微信小程序）
+
+- **禁止**业务侧直接 `import` npm 包；统一 `utils/lib/crypto-js.ts`、`jsencrypt.ts`
+- **加载链**：`ensure-crypto-random` → 副作用 `import '../vendor/*.js'` → `getRuntimeGlobal().CryptoJS|JSEncrypt`
+- **禁止**对 CJS bridge 写 `import { CryptoJS } from '...bridge.js'`：H5 Vite 是 ESM，会报 *does not provide an export named 'CryptoJS'*
+- **禁止** `import * as mod from UMD`：App/小程序常编成 `require(...).mod`，整包 UMD 读不到
+- **UMD `this`**：ESM 严格模式为 `undefined`；vendor 引导须用 `globalThis`，且 **CJS 分支也要挂全局**（供副作用读取）
+- **随机数**：小程序无 `window.crypto`；`wx.getRandomValues` 异步，不能直接给 crypto-js → `ensure-crypto-random` 同步回落
+- `main.ts` 靠前 import `ensure-crypto-random`
 
 ## 入口
 
 - 统一 `api/request.ts`：`uni.request`，暴露 `get` / `post` / `put` / `patch` / `del`
 - baseURL：HBuilderX 改 [`api/config.ts`](api/config.ts) 的 `API_ORIGIN` + `API_PREFIX`（无 Vite 时不依赖 `.env`）
 - `USE_MOCK=true`：整页挡板 + `apis` 合并 mocks；页面亦可用 `apiOrMock(task, fallback)` 失败回落
-- 业务 modules 只封装 URL / 参数 / 适配，不重复处理 token
+- 业务 modules 只封装 URL / 参数 / 适配，不重复处理 token / 加密
 
 ## 响应协议
 
@@ -39,12 +55,31 @@ const data = await get('/article/info', { id });
 
 - 禁止在页面/组件层二次解析 `code` / `message`
 
-## Token 与 401
+## Token、自定义头与 401
 
 - Storage：`utils/storage.ts`（`TokenKey` / `RefreshTokenKey` / `UserProfileKey`）
 - 业务登录态：Pinia `store/user.ts`（登录 / 退出 / `tryAutoLogin`）；request 层仍只读 storage token
-- Header：`Authorization: Bearer <token>`
-- 401：单飞 refresh（`GET /user/refresh`）+ 队列重放；失败清 token 并跳登录
+- **鉴权头**（有 token 时）：`Authorization: Bearer <token>`（与 Nuxt 一致）
+- **加密网关头**（`OPEN_ENCRYPT` 且 GET/DELETE）：`X-Gateway-Alg` / `X-Gateway-Enc-Key` / `X-Gateway-Ts` / `X-Gateway-Sign`
+- 401：单飞 refresh（走 `/encrypt` 前缀时同样加密）+ 队列重放；失败清 token 并跳登录
+
+## 加密传输（对齐 Nuxt）
+
+- 开关：`api/config.ts` → `OPEN_ENCRYPT`（对齐 `VITE_NUXT_OPEN_ENCRYPT`）
+- 套件：`GATEWAY_CRYPTO = 'aes'`（须与 Nest `app_gatewayCrypto` 一致；gm 尚未实现）
+- 开启后相对路径自动加 `/encrypt` 前缀
+- POST/PUT/PATCH：body → `{ alg, encKey, iv, content, ts, sign }`
+- 响应：`openGatewayEnvelope` 验签解密后再解包业务 `code/data`
+- 登录密码：`encryptLoginPassword`（RSA），见 `api/modules/auth.ts`
+
+## 开发模式规范打印
+
+- 开关：`OPEN_REQUEST_LOG`（对齐 Nuxt `import.meta.dev`）
+- 格式示例：
+  - `请求开始 req --------------> /encrypt/user/info [GET] encrypt=aes auth=Bearer`
+  - `请求结束 res --------------> ...`
+  - `请求结束 fail ... --------------> ...`
+- 发行前可将 `OPEN_REQUEST_LOG` 改为 false
 
 ## 错误提示
 

@@ -121,7 +121,7 @@ export const useUserStore = defineStore('user', () => {
 	}
 
 	/**
-	 * 账号密码登录（密码明文联调；服务端 RSA 解密失败会回落原文）
+	 * 账号密码登录（api 层 RSA 加密密码，对齐 Nuxt encryptLoginPassword）
 	 * @returns 是否完成登录（重复点击返回 false）
 	 */
 	async function loginByAccount(form: {

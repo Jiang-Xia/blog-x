@@ -35,7 +35,8 @@ uni-app x 版博客前端（规划中）：与 `blog-home-nuxt`（Web 主站）�
 3. **路由**：新页面按主包/分包归类后在 `pages.json` 登记；首页保持 `pages` 第一项；四 Tab 在主壳 `pages/index`（`uni-tab` tab-bar-blur），用 `goTab` 切换，无原生 tabBar。
 4. **分包**：低频/大体量进 `pages-blog|pages-rpg|pages-tool`；跳转 path 含 root；可用 `preloadRule` 预下载。
 5. **注释**：新文件顶 + 导出函数中文 JSDoc；条件编译必注释；展示数据只用 API 字段。
-6. **请求**：统一 `api/request.ts` 解包 `{ code, data, message }`；token 集中 `utils/storage.ts`。baseURL / `USE_MOCK` 见 `api/config.ts`。新增接口改 `api/registry.ts` + `modules/`。页面用 `apiOrMock` 失败回落 `mock/`。
-7. **登录态**：Pinia `store/user.ts`（`main.ts` 已 `app.use(createPinia())`）。账号 / 微信登录、退出、冷启动 `tryAutoLogin` 只走 Store；页面勿散落写 token。蒸汽模式用原版 Pinia（见官方 store 文档）。
-8. **提交**：Conventional Commits + 中文 subject（`<type>(<scope>): <中文简述>`）。
-9. **产物**：`unpackage/` 禁改禁提交；验证由用户在 HBuilderX / 微信开发者工具触发。
+6. **请求**：统一 `api/request.ts` 解包 `{ code, data, message }`；token 集中 `utils/storage.ts`。baseURL / `USE_MOCK` / `OPEN_ENCRYPT` / `OPEN_REQUEST_LOG` 见 `api/config.ts`。新增接口改 `api/registry.ts` + `modules/`。页面用 `apiOrMock` 失败回落 `mock/`。
+7. **鉴权与加密**：有 token 带 `Authorization: Bearer`；`OPEN_ENCRYPT` 时走 `/encrypt` + `utils/gateway-crypto`（对齐 Nuxt）；开发态 `OPEN_REQUEST_LOG` 规范打印请求起止。
+8. **登录态**：Pinia `store/user.ts`（`main.ts` 已 `app.use(createPinia())`）。账号 / 微信登录、退出、冷启动 `tryAutoLogin` 只走 Store；页面勿散落写 token。蒸汽模式用原版 Pinia（见官方 store 文档）。
+9. **提交**：Conventional Commits + 中文 subject（`<type>(<scope>): <中文简述>`）。
+10. **产物**：`unpackage/` 禁改禁提交；验证由用户在 HBuilderX / 微信开发者工具触发。

@@ -1,7 +1,8 @@
 /**
- * 认证 / 用户 API（对齐 blog-home-uniapp api/login）
+ * 认证 / 用户 API（对齐 blog-home-uniapp / Nuxt：密码 RSA 加密后提交）
  */
 import { get, post } from '../request'
+import { encryptLoginPassword } from '../../utils/gateway-crypto'
 import { clearToken, setAuthTokens } from '../../utils/storage'
 import { mapPublicRpg, mapUserProfile } from '../adapters/user'
 import type { PublicRpgCard, UserProfile } from '../../types/user'
@@ -31,7 +32,7 @@ export function fetchAuthCode(): Promise<any> {
 }
 
 /**
- * 账号密码登录
+ * 账号密码登录（密码 RSA 加密，与 Nuxt encryptLoginPassword 一致）
  */
 export async function loginByAccount(form: {
 	username: string
@@ -42,7 +43,7 @@ export async function loginByAccount(form: {
 	const res = await post('/user/login', {
 		loginType: 'account',
 		username: form.username,
-		password: form.password,
+		password: encryptLoginPassword(form.password),
 		authCode: form.authCode,
 		captchaId: form.captchaId,
 	})

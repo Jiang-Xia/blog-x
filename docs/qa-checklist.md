@@ -34,8 +34,10 @@
 - [ ] 搜索带 `title` 参数有结果或空列表
 - [ ] 归档 / 友链 / 留言列表为服务端数据
 - [ ] 微信小程序：登录页 `POST /user/auth/wechat/miniprogram` 成功后有 token
-- [ ] 账号登录：`GET /user/authCode` + `POST /user/login`；Pinia `loggedIn` 为 true
-- [ ] 冷启动自动登录：本地有 token 时不进登录页即可带鉴权请求
+- [ ] 账号登录：`GET /user/authCode` + `POST /user/login`（密码 RSA）；Pinia `loggedIn` 为 true
+- [ ] 冷启动自动登录：本地有 token 时请求带 `Authorization: Bearer`
+- [ ] `OPEN_ENCRYPT=true`：控制台可见 `/encrypt` 路径；GET 带 `X-Gateway-*`；响应可正常解包
+- [ ] `OPEN_REQUEST_LOG=true`：有 `请求开始 req -------------->` / `请求结束 res -------------->` 规范日志
 - [ ] 401 后 refresh 成功可重放；refresh 失败跳登录
 - [ ] 冒险签到 `POST /rpg/sign`；抽奖 `POST /rpg/lottery/draw`；排行 `GET /rpg/leaderboard`
 - [ ] 充值下单返回 `outTradeNo`（真支付到账需支付宝环境）

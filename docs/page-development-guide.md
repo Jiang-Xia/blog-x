@@ -119,6 +119,7 @@ App 端为原生渲染，CSS 是**子集**：
 
 - 页面只调 `api/modules/*`（或 `apis`），拿到的已是解包后的 `data`
 - token 读写集中在 `utils/storage.ts`；**业务登录态用 Pinia** `useUserStore()`（登录 / 退出 / 自动登录），勿在页面直接 `setToken`
+- 鉴权头 / `/encrypt` 网关 / 开发日志由 `api/request.ts` 统一处理，页面勿手写 Header
 - 冷启动：`App.uvue` → `tryAutoLogin()`；401 清 token 经 `auth-events` 同步 Store
 - 错误提示统一 `uni.showToast` 或 `showXToast`
 

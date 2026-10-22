@@ -1,5 +1,5 @@
 /**
- * 接口环境配置（对齐 shopkeeper-cli request/config + env 组织方式）
+ * 接口环境配置（对齐 shopkeeper-cli request/config + env；加密/日志对齐 blog-home-nuxt）
  * 数据来源：常量默认值；HBuilderX 无 Vite 时改本文件即可切换联调目标
  */
 
@@ -28,3 +28,21 @@ export const REQUEST_TIMEOUT = 60000
 
 /** 业务成功码（与 blog-server / uniapp 一致） */
 export const SUCCESS_CODES = [0, 200] as const
+
+/**
+ * 是否开启加密网关（对齐 Nuxt VITE_NUXT_OPEN_ENCRYPT）
+ * true：相对路径前加 `/encrypt`，body/头走 gateway-crypto；须与 Nest 网关一致
+ */
+export const OPEN_ENCRYPT = false
+
+/**
+ * 网关算法套件（对齐 Nuxt VITE_NUXT_GATEWAY_CRYPTO / Nest app_gatewayCrypto）
+ * blog-x 当前实现 aes；gm 未实现勿改
+ */
+export const GATEWAY_CRYPTO: 'aes' | 'gm' = 'aes'
+
+/**
+ * 开发模式请求规范打印（对齐 Nuxt import.meta.dev + openRequestLog）
+ * 发行前可改为 false
+ */
+export const OPEN_REQUEST_LOG = true

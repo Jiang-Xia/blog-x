@@ -20,7 +20,7 @@ blog-x/
 ├── mock/             # 原型静态数据与失败回落
 ├── types/            # TS 类型
 ├── api/              # 联调：config / request / registry / modules / mocks
-├── utils/            # storage / auth-events / toast / tabNav
+├── utils/            # storage / gateway-crypto / vendor / toast / tabNav
 ├── pages.json
 ├── manifest.json
 └── docs/
@@ -38,14 +38,23 @@ blog-x/
 
 | 文件 | 作用 |
 |------|------|
-| [`api/config.ts`](api/config.ts) | `API_ORIGIN` + `API_PREFIX`、`USE_MOCK`（HBuilderX 无 Vite 时改此文件） |
-| [`api/request.ts`](api/request.ts) | `uni.request`，解包 `{ code, data, message }`，Bearer + 401 refresh |
+| [`api/config.ts`](api/config.ts) | `API_ORIGIN` / `USE_MOCK` / `OPEN_ENCRYPT` / `OPEN_REQUEST_LOG` / `GATEWAY_CRYPTO` |
+| [`api/request.ts`](api/request.ts) | `uni.request`：解包、Bearer、加密网关、401 refresh、开发日志 |
 | [`api/registry.ts`](api/registry.ts) | 接口注册表（新增接口追加一行） |
 | [`api/createApi.ts`](api/createApi.ts) | 按注册表生成薄封装（类 shopkeeper-cli） |
 | [`api/modules/*`](api/modules) | 带适配的业务方法（页面优先用这里） |
 | [`api/mocks/`](api/mocks) | 同名方法挡板，`USE_MOCK` 时合并 |
+| [`utils/gateway-crypto/`](utils/gateway-crypto) | 对齐 Nuxt：`/encrypt` 信封加解密（aes） |
 
 默认 baseURL：`http://localhost:5000/api/v1`（Nest `blog-server`）。改 Go 本地：`API_ORIGIN = 'http://localhost:8000'`。
+
+### 鉴权头 / 加密 / 开发日志（对齐 Nuxt）
+
+- 登录后请求自动带 `Authorization: Bearer <token>`。
+- `OPEN_ENCRYPT=true`（默认）：路径加 `/encrypt`；有 body 走信封，GET/DELETE 走 `X-Gateway-*` 自定义头；响应验签解密。
+- 账号登录密码经 `encryptLoginPassword`（RSA）后再提交。
+- `OPEN_REQUEST_LOG=true`：控制台打印 `请求开始 req -------------->` / `请求结束 res|fail -------------->`。
+- 开关均在 `api/config.ts`；须与 Nest `app_gatewayCrypto=aes` 一致。若后端未开网关，将 `OPEN_ENCRYPT` 改为 `false`。
 
 路径与 [blog-home-uniapp/src/api](../blog-home-uniapp/src/api) / [blog-home-nuxt/api](../blog-home-nuxt/api) 对齐，**禁止自造 URL**。
 

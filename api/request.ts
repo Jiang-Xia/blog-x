@@ -1,8 +1,21 @@
 /**
  * HTTP 请求核：uni.request + 解包 { code, data, message }
- * 对齐 x-07 / blog-home-uniapp http；组织方式参考 shopkeeper-cli http.js
+ * 对齐 blog-home-nuxt request：Bearer 鉴权头、/encrypt 网关、开发态规范日志
  */
-import { getBaseUrl, REQUEST_TIMEOUT, SUCCESS_CODES } from './config'
+import {
+	GATEWAY_CRYPTO,
+	getBaseUrl,
+	OPEN_ENCRYPT,
+	OPEN_REQUEST_LOG,
+	REQUEST_TIMEOUT,
+	SUCCESS_CODES,
+} from './config'
+import {
+	createGatewayEnvelope,
+	createGatewayKeyHeaders,
+	openGatewayEnvelope,
+	type GatewaySession,
+} from '../utils/gateway-crypto'
 import {
 	clearToken,
 	getRefreshToken,
@@ -23,6 +36,20 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 let refreshing = false
 let refreshQueue: Array<() => void> = []
+
+/**
+ * 开发态规范日志（对齐 Nuxt：请求开始 / 结束 / 失败）
+ */
+function reqLog(msg: string, level: string = 'log'): void {
+	if (!OPEN_REQUEST_LOG) return
+	if (level == 'warn') {
+		console.warn(msg)
+	} else if (level == 'error') {
+		console.error(msg)
+	} else {
+		console.log(msg)
+	}
+}
 
 /**
  * 判断业务码是否成功
@@ -51,6 +78,17 @@ function appendQuery(url: string, query: Record<string, any> | null): string {
 	if (parts.length == 0) return url
 	const qs = parts.join('&')
 	return url.indexOf('?') >= 0 ? url + '&' + qs : url + '?' + qs
+}
+
+/**
+ * 相对路径加 /encrypt 前缀（已含 encrypt 或绝对 URL 不改）
+ */
+function withEncryptPrefix(path: string): string {
+	if (!OPEN_ENCRYPT) return path
+	if (path.indexOf('http://') == 0 || path.indexOf('https://') == 0) return path
+	if (path.indexOf('/encrypt') == 0 || path.indexOf('encrypt/') >= 0) return path
+	const p = path.indexOf('/') == 0 ? path : '/' + path
+	return '/encrypt' + p
 }
 
 /**
@@ -99,20 +137,96 @@ function pickMessage(body: any): string {
 }
 
 /**
- * 用 refreshToken 换新 access（原生 uni.request，避免递归进 401 队列）
+ * 解密网关响应；URL 含 encrypt 且有 session 才解
+ */
+function decryptMsg(body: any, url: string, session: GatewaySession | null): any {
+	const need = url.indexOf('encrypt') >= 0
+	if (need && body != null && body.content != null && body.iv != null && session != null) {
+		return openGatewayEnvelope(body, session)
+	}
+	return body
+}
+
+/**
+ * 组装鉴权 + 网关自定义头
+ * - 登录后：Authorization: Bearer <token>
+ * - 加密 GET/DELETE：X-Gateway-Alg / Enc-Key / Ts / Sign
+ */
+function buildHeaders(
+	method: HttpMethod,
+	body: any,
+	extra: Record<string, string> | null,
+	encryptPath: string,
+): { header: Record<string, string>; session: GatewaySession | null; body: any } {
+	const header: Record<string, string> = {
+		'Content-Type': 'application/json;charset=UTF-8',
+	}
+	if (extra != null) {
+		const hk = Object.keys(extra)
+		for (let i = 0; i < hk.length; i++) {
+			header[hk[i]] = extra[hk[i]]
+		}
+	}
+
+	// 登录后鉴权头（与 Nuxt getTk 一致）
+	const token = getToken()
+	if (token.length > 0) {
+		header['Authorization'] = 'Bearer ' + token
+	}
+
+	let session: GatewaySession | null = null
+	let finalBody = body
+	const openEncrypt = OPEN_ENCRYPT && encryptPath.indexOf('encrypt') >= 0
+	const canHaveBody = method == 'POST' || method == 'PUT' || method == 'PATCH'
+
+	if (openEncrypt) {
+		if (canHaveBody && finalBody != null) {
+			const packed = createGatewayEnvelope(finalBody)
+			finalBody = packed.envelope
+			session = packed.session
+		} else {
+			const keyed = createGatewayKeyHeaders()
+			const gh = keyed.headers
+			const ghk = Object.keys(gh)
+			for (let i = 0; i < ghk.length; i++) {
+				header[ghk[i]] = gh[ghk[i]]
+			}
+			session = keyed.session
+		}
+	}
+
+	return { header, session, body: finalBody }
+}
+
+/**
+ * 用 refreshToken 换新 access（原生 uni.request，避免递归进 401 队列；同样走加密网关）
  */
 function rawRefreshToken(): Promise<boolean> {
 	const rt = getRefreshToken()
 	if (rt.length == 0) {
 		return Promise.resolve(false)
 	}
+	const path = withEncryptPrefix('/user/refresh')
+	const finalUrl = appendQuery(resolveUrl(path), { token: rt })
+	const built = buildHeaders('GET', null, null, path)
+	reqLog('请求开始 req --------------> ' + path + ' (refresh)')
+
 	return new Promise((resolve) => {
 		uni.request({
-			url: resolveUrl('/user/refresh') + '?token=' + encodeURIComponent(rt),
+			url: finalUrl,
 			method: 'GET',
+			header: built.header,
 			timeout: REQUEST_TIMEOUT,
 			success: (res) => {
-				const body = res.data as any
+				reqLog('请求结束 res --------------> ' + path + ' (refresh)')
+				let body = res.data as any
+				try {
+					body = decryptMsg(body, path, built.session)
+				} catch (e) {
+					reqLog('请求结束 fail decrypt --------------> ' + path, 'error')
+					resolve(false)
+					return
+				}
 				if (res.statusCode == 200 && body != null && isBizOk(body.code) && body.data != null) {
 					const d = body.data
 					const access = d.accessToken != null ? '' + d.accessToken : ''
@@ -126,6 +240,7 @@ function rawRefreshToken(): Promise<boolean> {
 				resolve(false)
 			},
 			fail: () => {
+				reqLog('请求结束 fail onRequestError --------------> ' + path, 'error')
 				resolve(false)
 			},
 		})
@@ -147,8 +262,10 @@ export function request(
 ): Promise<any> {
 	const silent = opts != null && opts.silent == true
 	const skipRefresh = opts != null && opts.skipAuthRefresh == true
+	const extraHeader = opts != null && opts.header != null ? opts.header : null
 
-	let finalUrl = resolveUrl(url)
+	const encryptPath = withEncryptPrefix(url)
+	let finalUrl = resolveUrl(encryptPath)
 	let body: any = data
 	if (method == 'GET' || method == 'DELETE') {
 		if (data != null) {
@@ -157,19 +274,21 @@ export function request(
 		body = null
 	}
 
-	const header: Record<string, string> = {
-		'Content-Type': 'application/json;charset=UTF-8',
-	}
-	if (opts != null && opts.header != null) {
-		const hk = Object.keys(opts.header)
-		for (let i = 0; i < hk.length; i++) {
-			header[hk[i]] = opts.header[hk[i]]
-		}
-	}
-	const token = getToken()
-	if (token.length > 0) {
-		header['Authorization'] = 'Bearer ' + token
-	}
+	const built = buildHeaders(method, body, extraHeader, encryptPath)
+	const header = built.header
+	const gatewaySession = built.session
+	body = built.body
+
+	const hasAuth = header['Authorization'] != null && header['Authorization'].length > 0
+	reqLog(
+		'请求开始 req --------------> ' +
+			encryptPath +
+			' [' +
+			method +
+			']' +
+			(OPEN_ENCRYPT ? ' encrypt=' + GATEWAY_CRYPTO : '') +
+			(hasAuth ? ' auth=Bearer' : ''),
+	)
 
 	return new Promise((resolve, reject) => {
 		uni.request({
@@ -180,11 +299,21 @@ export function request(
 			timeout: REQUEST_TIMEOUT,
 			success: async (res) => {
 				const status = res.statusCode
-				const bodyRes = res.data as any
+				let bodyRes = res.data as any
+				try {
+					bodyRes = decryptMsg(bodyRes, encryptPath, gatewaySession)
+				} catch (e) {
+					reqLog('请求结束 fail decrypt --------------> ' + encryptPath, 'error')
+					if (!silent) showErrToast('响应解密失败')
+					reject(e)
+					return
+				}
+
 				const code = bodyRes != null ? bodyRes.code : null
 				const is401 = status == 401 || code == 401
 
 				if (is401 && !skipRefresh) {
+					reqLog('请求结束 fail 401 --------------> ' + encryptPath, 'warn')
 					const rt = getRefreshToken()
 					if (rt.length == 0) {
 						clearToken()
@@ -219,18 +348,22 @@ export function request(
 				if (status >= 200 && status < 300) {
 					if (code != null && !isBizOk(code)) {
 						const errMsg = pickMessage(bodyRes)
+						reqLog('请求结束 fail biz --------------> ' + encryptPath + ' ' + errMsg, 'warn')
 						if (!silent) showErrToast(errMsg)
 						reject(bodyRes)
 						return
 					}
+					reqLog('请求结束 res --------------> ' + encryptPath)
 					resolve(bodyRes != null ? bodyRes.data : null)
 					return
 				}
 
+				reqLog('请求结束 fail onResponseError --------------> ' + encryptPath, 'error')
 				if (!silent) showErrToast(pickMessage(bodyRes))
 				reject(res)
 			},
 			fail: () => {
+				reqLog('请求结束 fail onRequestError --------------> ' + encryptPath, 'error')
 				if (!silent) showErrToast('网络错误，换个网络试试')
 				reject(new Error('network'))
 			},
