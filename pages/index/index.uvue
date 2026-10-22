@@ -54,6 +54,7 @@
  * 主壳页：自定义 tab-bar-blur（半透明毛玻璃）承载四 Tab
  * 图标与文案对齐原型 ⌂/◎/✦/☺；切 Tab 用 utils/tabNav.goTab，勿用 switchTab
  */
+import { useUserStore } from '../../store/user'
 import { tabActiveIndex, TAB_HOME, TAB_ME } from '../../utils/tabNav'
 
 /** 左右边距（对齐原型 14px） */
@@ -132,6 +133,8 @@ onReady(() => {
 
 onShow(() => {
 	syncTabBarStyle()
+	// 从登录页返回时，对齐 storage 与 Pinia（含 401 清态）
+	useUserStore().hydrateFromStorage()
 })
 </script>
 

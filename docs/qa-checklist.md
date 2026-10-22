@@ -14,7 +14,8 @@
 - [ ] 签到成功后按钮变「已签」、钻石/连续天数变化；首页今日文案同步
 - [ ] 抽奖：中心「抽一次」高亮轮转后 Toast
 - [ ] 充值：选档支付后钻石增加，回冒险中心可见
-- [ ] 登录：微信一键登录 Toast 后返回
+- [ ] 登录：账号登录（验证码）与微信一键登录均可；成功后回「我的」可见资料
+- [ ] 杀进程重进：有 token 缓存时自动登录，无需再点登录
 - [ ] 二级页左上角返回正常
 
 ## 微信开发者工具
@@ -33,6 +34,8 @@
 - [ ] 搜索带 `title` 参数有结果或空列表
 - [ ] 归档 / 友链 / 留言列表为服务端数据
 - [ ] 微信小程序：登录页 `POST /user/auth/wechat/miniprogram` 成功后有 token
+- [ ] 账号登录：`GET /user/authCode` + `POST /user/login`；Pinia `loggedIn` 为 true
+- [ ] 冷启动自动登录：本地有 token 时不进登录页即可带鉴权请求
 - [ ] 401 后 refresh 成功可重放；refresh 失败跳登录
 - [ ] 冒险签到 `POST /rpg/sign`；抽奖 `POST /rpg/lottery/draw`；排行 `GET /rpg/leaderboard`
 - [ ] 充值下单返回 `outTradeNo`（真支付到账需支付宝环境）

@@ -23,8 +23,9 @@ uni-app x（uvue）· Vue 3 `<script setup>` + TypeScript · 蒸汽模式（mani
 | `pages-blog/` | **分包**：阅读 / 用户内容（归档、分类、友链、用户中心等） |
 | `pages-rpg/` | **分包**：RPG 玩法页（冒险中心 UI 在主壳 `x-tab-rpg`） |
 | `pages-tool/` | **分包**：实用工具（体积大、低频） |
-| `App.uvue` | 应用生命周期（`onLaunch` / `onAppShow` / `onAppHide` / Android 返回键） |
-| `main.ts` | 入口：`createSSRApp(App)`，勿改为其他模式 |
+| `App.uvue` | 应用生命周期（`onLaunch` 自动登录 / `onAppShow` / `onAppHide` / Android 返回键） |
+| `main.ts` | 入口：`createSSRApp(App)` + `createPinia()`，勿改为其他模式 |
+| `store/` | Pinia：登录态与用户资料（`useUserStore`） |
 | `pages.json` | 页面注册、`subPackages`、`preloadRule`、globalStyle；新增页面必须在此登记（四 Tab 用自定义 uni-tab，无原生 tabBar） |
 | `manifest.json` | 应用信息（appid、版本、`vapor`、`styleIsolationVersion`、`mp-weixin`） |
 | `platformConfig.json` | 编译目标平台（`targets`） |

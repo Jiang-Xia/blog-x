@@ -16,14 +16,23 @@ blog-x/
 ├── pages-tool/       # 分包：实用工具（占位）
 ├── components/       # x-tab-* / x-navbar / x-toast / x-empty / x-tip-sheet
 ├── composables/      # useMockStore / useApiOrMock
+├── store/            # Pinia：user（登录态 / 资料 / 自动登录）
 ├── mock/             # 原型静态数据与失败回落
 ├── types/            # TS 类型
 ├── api/              # 联调：config / request / registry / modules / mocks
-├── utils/            # storage / toast / tabNav
+├── utils/            # storage / auth-events / toast / tabNav
 ├── pages.json
 ├── manifest.json
 └── docs/
 ```
+
+## 登录与 Pinia
+
+- `main.ts` 挂载 `createPinia()`；业务态用 `useUserStore()`。
+- 支持 **账号登录**（验证码）与 **微信一键登录**（小程序 `uni.login` → `/user/auth/wechat/miniprogram`）。
+- 双 token 仍落在 `utils/storage.ts`；资料缓存 `UserProfileKey` 供冷启动瞬时展示。
+- `App.uvue` `onLaunch` 调用 `tryAutoLogin()`：有缓存 token 则自动恢复并拉 `/user/info`。
+- 登录页：`/pages/login/login`；「我的」未登录引导登录，已登录可退出。
 
 ## API 联调
 

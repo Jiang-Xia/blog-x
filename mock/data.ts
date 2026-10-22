@@ -125,6 +125,7 @@ export const searchResults: ArticleSummary[] = [
 ]
 
 export const meProfile: UserProfile = {
+	id: 1,
 	nickname: '江夏',
 	avatarEmoji: '🦊',
 	bio: 'Lv.12 像素匠 · 写字 · 写代码 · 偶尔冒险',

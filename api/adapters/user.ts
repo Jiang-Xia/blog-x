@@ -14,7 +14,9 @@ import type {
  * /user/info → UserProfile
  */
 export function mapUserProfile(raw: any, extras: Record<string, number> = {}): UserProfile {
+	const idRaw = raw != null && raw.id != null ? Number(raw.id) : 0
 	return {
+		id: isNaN(idRaw) ? 0 : idRaw,
 		nickname: raw != null && raw.nickname != null ? '' + raw.nickname : '游客',
 		avatarEmoji: '🦊',
 		bio: raw != null && raw.intro != null ? '' + raw.intro : '',

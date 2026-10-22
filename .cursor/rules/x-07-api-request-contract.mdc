@@ -41,7 +41,8 @@ const data = await get('/article/info', { id });
 
 ## Token 与 401
 
-- Storage：`utils/storage.ts`（`TokenKey` / `RefreshTokenKey`）
+- Storage：`utils/storage.ts`（`TokenKey` / `RefreshTokenKey` / `UserProfileKey`）
+- 业务登录态：Pinia `store/user.ts`（登录 / 退出 / `tryAutoLogin`）；request 层仍只读 storage token
 - Header：`Authorization: Bearer <token>`
 - 401：单飞 refresh（`GET /user/refresh`）+ 队列重放；失败清 token 并跳登录
 

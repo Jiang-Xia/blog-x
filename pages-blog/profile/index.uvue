@@ -39,12 +39,13 @@
 import { articles, meProfile, publicRpg } from '../../mock/data'
 import type { ArticleSummary } from '../../types/article'
 import type { PublicRpgCard } from '../../types/user'
-import { fetchPublicProfile, fetchPublicRpg, fetchUserInfo } from '../../api/modules/auth'
+import { fetchPublicProfile, fetchPublicRpg } from '../../api/modules/auth'
 import { get } from '../../api/request'
 import { mapArticleSummary } from '../../api/adapters/article'
 import { apiOrMock } from '../../composables/useApiOrMock'
-import { getToken } from '../../utils/storage'
+import { useUserStore } from '../../store/user'
 
+const userStore = useUserStore()
 const nickname = ref(meProfile.nickname)
 const bio = ref(meProfile.bio)
 const rpg = ref(publicRpg as PublicRpgCard)
@@ -52,21 +53,21 @@ const articleList = ref([articles[0]] as ArticleSummary[])
 const uid = ref(0)
 
 /**
- * 解析当前用户 uid 后拉公开数据
+ * 解析当前用户 uid 后拉公开数据（优先 Pinia 已登录资料）
  */
 async function loadProfile(): Promise<void> {
-	if (getToken().length > 0) {
-		try {
-			const me = await fetchUserInfo()
-			nickname.value = me.nickname
-			bio.value = me.bio
-		} catch (_) {}
-		const raw = await apiOrMock(async () => {
-			const info = await get('/user/info', null, { silent: true })
-			return info
-		}, null)
-		if (raw != null && raw.id != null) {
-			uid.value = Number(raw.id)
+	if (userStore.loggedIn) {
+		if (userStore.profile.id > 0) {
+			uid.value = userStore.profile.id
+			nickname.value = userStore.profile.nickname
+			bio.value = userStore.profile.bio
+		} else {
+			try {
+				const me = await userStore.refreshProfile()
+				nickname.value = me.nickname
+				bio.value = me.bio
+				uid.value = me.id
+			} catch (_) {}
 		}
 	}
 	if (uid.value > 0) {

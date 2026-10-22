@@ -15,10 +15,11 @@ pages-rpg/                → 分包：RPG 冒险
 pages-tool/               → 分包：实用工具
 pages*/<模块>/components/ → 仅该页面使用的组件
 components/               → 跨页面复用组件（easycom 规范命名）
-composables/              → useXxx 组合式逻辑（待建）
-api/                      → HTTP 封装，页面不直接写 uni.request（待建）
-types/                    → 类型定义，避免同一结构多处重复（待建）
-utils/                    → 无 Vue 依赖的纯函数（待建）
+composables/              → useXxx 组合式逻辑
+store/                    → Pinia（登录态等跨页响应式状态）
+api/                      → HTTP 封装，页面不直接写 uni.request
+types/                    → 类型定义，避免同一结构多处重复
+utils/                    → 无 Vue 依赖的纯函数（token / toast 等）
 uni_modules/              → 三方/官方插件（uni-ui x、uts-openSchema 等）
 ```
 

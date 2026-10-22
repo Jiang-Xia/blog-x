@@ -1,69 +1,225 @@
 <template>
-	<!-- 登录：品牌 + 微信一键登录示意 -->
+	<!-- 登录：账号密码 + 微信一键；成功后由 Pinia 统一写态 -->
 	<view class="x-page">
 		<x-navbar title="登录"></x-navbar>
 		<view class="brand">
 			<text class="brand-em">🦊</text>
 			<text class="brand-name">江夏的博客</text>
+			<text class="brand-sub">账号登录或微信一键登录</text>
 		</view>
-		<view class="wx-btn" @click="onLogin">
-			<text class="wx-text">微信一键登录</text>
+
+		<view class="mode-row">
+			<view
+				class="mode-chip"
+				:class="mode == 'account' ? 'mode-on' : ''"
+				@click="setModeAccount"
+			>
+				<text class="mode-t" :class="mode == 'account' ? 'mode-t-on' : ''">账号登录</text>
+			</view>
+			<view
+				class="mode-chip"
+				:class="mode == 'weixin' ? 'mode-on' : ''"
+				@click="setModeWeixin"
+			>
+				<text class="mode-t" :class="mode == 'weixin' ? 'mode-t-on' : ''">微信登录</text>
+			</view>
 		</view>
+
+		<view v-if="mode == 'account'" class="form">
+			<input
+				class="field"
+				type="text"
+				v-model="username"
+				placeholder="用户名 / 手机号"
+				placeholder-class="ph"
+			/>
+			<input
+				class="field"
+				type="password"
+				password="true"
+				v-model="password"
+				placeholder="密码"
+				placeholder-class="ph"
+			/>
+			<view class="captcha-row">
+				<input
+					class="field captcha-input"
+					type="text"
+					v-model="authCode"
+					placeholder="验证码"
+					placeholder-class="ph"
+					@confirm="onAccountLogin"
+				/>
+				<view class="captcha-box" @click="loadCaptcha">
+					<image
+						v-if="captchaSrc.length > 0"
+						class="captcha-img"
+						:src="captchaSrc"
+						mode="aspectFit"
+					></image>
+					<text v-else class="captcha-tip">点此获取</text>
+				</view>
+			</view>
+			<view
+				class="submit-btn"
+				:class="submitting ? 'btn-disabled' : ''"
+				@click="onAccountLogin"
+			>
+				<text class="submit-t">{{ submitting ? '登录中…' : '登录' }}</text>
+			</view>
+		</view>
+
+		<view v-else class="wx-wrap">
+			<view
+				class="wx-btn"
+				:class="submitting ? 'btn-disabled' : ''"
+				@click="onWxLogin"
+			>
+				<text class="wx-text">{{ submitting ? '登录中…' : '微信一键登录' }}</text>
+			</view>
+			<!-- #ifndef MP-WEIXIN -->
+			<text class="wx-hint">微信一键登录需在微信小程序端使用；其它端请用账号登录</text>
+			<!-- #endif -->
+		</view>
+
 		<view class="unlock">
 			<text class="x-chip">评论回复</text>
 			<text class="x-chip x-chip-peach">签到抽奖</text>
 			<text class="x-chip x-chip-lav">收藏同步</text>
 		</view>
-		<text class="proto">登录即表示同意用户协议与隐私政策（示意）</text>
+		<text class="proto">登录即表示同意用户协议与隐私政策</text>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 登录页：联调微信小程序登录；USE_MOCK 或非微信端回落示意 token
+ * 登录页：账号密码（验证码）+ 微信一键登录
+ * 数据来源：GET /user/authCode、POST /user/login、微信 miniprogram；态写入 Pinia useUserStore
  */
-import { USE_MOCK } from '../../api/config'
-import { loginByWeixin } from '../../api/modules/auth'
+import { storeToRefs } from 'pinia'
+import { fetchAuthCode } from '../../api/modules/auth'
+import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
-import { setToken } from '../../utils/storage'
 import { goTab, TAB_ME } from '../../utils/tabNav'
 
+const userStore = useUserStore()
+const { submitting } = storeToRefs(userStore)
+
+/** account | weixin */
+const mode = ref('account')
+const username = ref('')
+const password = ref('')
+const authCode = ref('')
+const captchaId = ref('')
+const captchaSrc = ref('')
+
 /**
- * 登录成功后回退
+ * 切换到账号登录并刷新验证码
  */
-function afterLoginOk(): void {
-	showXToast('✅', '登录成功', '欢迎回来')
+function setModeAccount(): void {
+	mode.value = 'account'
+	loadCaptcha()
+}
+
+/**
+ * 切换到微信登录
+ */
+function setModeWeixin(): void {
+	mode.value = 'weixin'
+}
+
+/**
+ * 加载图形验证码
+ */
+async function loadCaptcha(): Promise<void> {
+	try {
+		const res = await fetchAuthCode()
+		const b64 = res != null && res.captchaBase64 != null ? '' + res.captchaBase64 : ''
+		const id = res != null && res.captchaId != null ? '' + res.captchaId : ''
+		captchaId.value = id
+		captchaSrc.value = b64.length > 0 ? 'data:image/svg+xml;base64,' + b64 : ''
+	} catch (_) {
+		captchaSrc.value = ''
+		captchaId.value = ''
+	}
+}
+
+/**
+ * 回退或回「我的」
+ * @param toast 是否弹出登录成功提示
+ */
+function leaveLogin(toast: boolean): void {
+	if (toast) {
+		showXToast('✅', '登录成功', '欢迎回来')
+	}
 	setTimeout(() => {
 		uni.navigateBack({
 			fail: () => {
 				goTab(TAB_ME)
 			},
 		})
-	}, 500)
+	}, toast ? 500 : 0)
 }
 
 /**
- * 微信一键登录（或 mock）
+ * 账号密码登录
  */
-async function onLogin(): Promise<void> {
-	if (USE_MOCK) {
-		setToken('mock_token_' + Date.now())
-		afterLoginOk()
+async function onAccountLogin(): Promise<void> {
+	if (userStore.submitting) return
+	const u = username.value.trim()
+	const p = password.value
+	const code = authCode.value.trim()
+	if (u.length == 0 || p.length == 0 || code.length == 0) {
+		showXToast('⚠️', '请填写完整', '用户名、密码与验证码')
+		return
+	}
+	if (captchaId.value.length == 0) {
+		showXToast('⚠️', '验证码失效', '请点击验证码刷新')
+		await loadCaptcha()
 		return
 	}
 	try {
-		await loginByWeixin()
-		afterLoginOk()
+		const ok = await userStore.loginByAccount({
+			username: u,
+			password: p,
+			authCode: code,
+			captchaId: captchaId.value,
+		})
+		if (ok) leaveLogin(true)
 	} catch (_) {
-		showXToast('⚠️', '登录失败', '可改 USE_MOCK 或检查微信登录配置')
+		authCode.value = ''
+		await loadCaptcha()
+		showXToast('⚠️', '登录失败', '请检查账号或验证码')
 	}
 }
+
+/**
+ * 微信一键登录
+ */
+async function onWxLogin(): Promise<void> {
+	if (userStore.submitting) return
+	try {
+		const ok = await userStore.loginByWeixin()
+		if (ok) leaveLogin(true)
+	} catch (_) {
+		showXToast('⚠️', '登录失败', '请确认微信登录配置或改用账号登录')
+	}
+}
+
+onLoad(() => {
+	// 已登录（含自动登录）则直接离开，不再弹成功 Toast
+	if (userStore.isLoggedIn) {
+		leaveLogin(false)
+		return
+	}
+	loadCaptcha()
+})
 </script>
 
 <style>
 .brand {
 	align-items: center;
-	padding: 48px 0 32px;
+	padding: 36px 0 20px;
 }
 
 .brand-em {
@@ -75,6 +231,111 @@ async function onLogin(): Promise<void> {
 	font-size: 20px;
 	font-weight: 700;
 	color: #1c1a17;
+	margin-bottom: 6px;
+}
+
+.brand-sub {
+	font-size: 12px;
+	color: #9a948a;
+}
+
+.mode-row {
+	flex-direction: row;
+	justify-content: center;
+	margin-bottom: 18px;
+}
+
+.mode-chip {
+	padding: 8px 18px;
+	border-radius: 999px;
+	background-color: #ebe6df;
+	margin: 0 6px;
+}
+
+.mode-on {
+	background-color: #1c1a17;
+}
+
+.mode-t {
+	font-size: 13px;
+	font-weight: 600;
+	color: #5c574f;
+}
+
+.mode-t-on {
+	color: #ffffff;
+}
+
+.form {
+	width: 100%;
+	padding: 0 8px;
+	margin-bottom: 16px;
+}
+
+.field {
+	height: 44px;
+	background-color: #ffffff;
+	border-radius: 14px;
+	padding: 0 14px;
+	font-size: 14px;
+	color: #1c1a17;
+	margin-bottom: 10px;
+}
+
+.ph {
+	color: #9a948a;
+	font-size: 14px;
+}
+
+.captcha-row {
+	flex-direction: row;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.captcha-input {
+	flex: 1;
+	margin-bottom: 0;
+	margin-right: 10px;
+}
+
+.captcha-box {
+	width: 110px;
+	height: 44px;
+	border-radius: 14px;
+	background-color: #ffffff;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.captcha-img {
+	width: 110px;
+	height: 44px;
+}
+
+.captcha-tip {
+	font-size: 11px;
+	color: #9a948a;
+}
+
+.submit-btn {
+	background-color: #3db89a;
+	border-radius: 999px;
+	padding: 13px;
+	align-items: center;
+	margin-top: 6px;
+}
+
+.submit-t {
+	font-size: 14px;
+	font-weight: 600;
+	color: #ffffff;
+}
+
+.wx-wrap {
+	align-items: center;
+	margin-bottom: 16px;
 }
 
 .wx-btn {
@@ -84,13 +345,25 @@ async function onLogin(): Promise<void> {
 	align-items: center;
 	align-self: center;
 	width: 260px;
-	margin-bottom: 20px;
+	margin-bottom: 10px;
 }
 
 .wx-text {
 	font-size: 14px;
 	font-weight: 600;
 	color: #ffffff;
+}
+
+.wx-hint {
+	font-size: 11px;
+	color: #9a948a;
+	text-align: center;
+	line-height: 1.5;
+	padding: 0 24px;
+}
+
+.btn-disabled {
+	opacity: 0.55;
 }
 
 .unlock {

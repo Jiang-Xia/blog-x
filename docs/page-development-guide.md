@@ -113,13 +113,14 @@ App 端为原生渲染，CSS 是**子集**：
 - 组件若使用 `x-card` / `x-chip` / `x-page-tab` 等，须在自身 `<style>` 中 `@import '../../styles/x-base.css';`（或相对路径）
 - 自定义组件子节点样式 → 通过 **externalClass** 开放（uni-ui x 全系组件遵循此约定）
 
-## 5. 数据请求（预留）
+## 5. 数据请求与登录态
 
-`api/` 层搭建后遵循 `x-07-api-request-contract.mdc`：
+遵循 `x-07-api-request-contract.mdc`：
 
-- 页面只调 `api/<模块>.ts` 的函数，拿到的已是解包后的 `data`
-- token 读写集中在 `utils/storage.ts`
-- 错误提示统一 `uni.showToast({ title, icon: 'none' })`
+- 页面只调 `api/modules/*`（或 `apis`），拿到的已是解包后的 `data`
+- token 读写集中在 `utils/storage.ts`；**业务登录态用 Pinia** `useUserStore()`（登录 / 退出 / 自动登录），勿在页面直接 `setToken`
+- 冷启动：`App.uvue` → `tryAutoLogin()`；401 清 token 经 `auth-events` 同步 Store
+- 错误提示统一 `uni.showToast` 或 `showXToast`
 
 ## 6. 条件编译
 

@@ -1,8 +1,8 @@
 <template>
-	<!-- 我的 Tab 面板：资料、统计、菜单 -->
+	<!-- 我的 Tab 面板：资料来自 Pinia；未登录引导登录 -->
 	<scroll-view class="x-page-tab" scroll-y="true">
 		<view class="status-pad"></view>
-		<view class="profile-top">
+		<view class="profile-top" @click="onProfileTap">
 			<view class="big-avatar">
 				<text class="big-em">{{ profile.avatarEmoji }}</text>
 			</view>
@@ -52,9 +52,14 @@
 				</view>
 				<text class="chev">›</text>
 			</view>
-			<view class="mrow" @click="goLogin">
+			<view v-if="!loggedIn" class="mrow" @click="goLogin">
 				<view class="m-ico"><text>💬</text></view>
-				<text class="m-label">微信登录 / 绑定</text>
+				<text class="m-label">登录 / 绑定</text>
+				<text class="chev">›</text>
+			</view>
+			<view v-else class="mrow" @click="onLogout">
+				<view class="m-ico"><text>🚪</text></view>
+				<text class="m-label">退出登录</text>
 				<text class="chev">›</text>
 			</view>
 			<view class="mrow last" @click="goNotify">
@@ -69,26 +74,28 @@
 <script setup lang="ts">
 /**
  * 我的 Tab 面板：对齐原型 me
- * 数据来源：联调 GET /user/info；角标来自收件箱/通知
+ * 数据来源：Pinia useUserStore（冷启动自动登录后已有资料）；角标来自收件箱
  */
-import { meProfile } from '../../mock/data'
-import type { UserProfile } from '../../types/user'
-import { fetchUserInfo } from '../../api/modules/auth'
+import { storeToRefs } from 'pinia'
 import { fetchInbox } from '../../api/modules/interact'
 import { apiOrMock } from '../../composables/useApiOrMock'
-import { getToken } from '../../utils/storage'
 import { useMockStore } from '../../composables/useMockStore'
+import { useUserStore } from '../../store/user'
+import { showXToast } from '../../utils/toast'
 
-const profile = ref(meProfile as UserProfile)
+const userStore = useUserStore()
+const { profile, loggedIn } = storeToRefs(userStore)
 const store = useMockStore()
 const inboxBadge = store.inboxBadge
 
 /**
- * 已登录则拉用户信息与收件箱角标
+ * 已登录则刷新资料与收件箱角标
  */
 async function loadMe(): Promise<void> {
-	if (getToken().length == 0) return
-	profile.value = await apiOrMock(() => fetchUserInfo(), meProfile)
+	if (!userStore.loggedIn) return
+	try {
+		await userStore.refreshProfile()
+	} catch (_) {}
 	const inbox = await apiOrMock(() => fetchInbox(1, 20), [])
 	store.inboxBadge.value = inbox.length
 }
@@ -97,15 +104,45 @@ onMounted(() => {
 	loadMe()
 })
 
+// 登录成功 / 退出后即时刷新（组件常驻主壳，不会重新 mount）
+watch(loggedIn, (v: boolean) => {
+	if (v) {
+		loadMe()
+	} else {
+		store.inboxBadge.value = 0
+	}
+})
+
+/**
+ * 点头像区：未登录去登录
+ */
+function onProfileTap(): void {
+	if (!userStore.loggedIn) {
+		goLogin()
+	}
+}
+
 function goFavorites(): void {
+	if (!userStore.loggedIn) {
+		goLogin()
+		return
+	}
 	uni.navigateTo({ url: '/pages-blog/favorites/index' })
 }
 
 function goInbox(): void {
+	if (!userStore.loggedIn) {
+		goLogin()
+		return
+	}
 	uni.navigateTo({ url: '/pages-blog/inbox/index' })
 }
 
 function goProfile(): void {
+	if (!userStore.loggedIn) {
+		goLogin()
+		return
+	}
 	uni.navigateTo({ url: '/pages-blog/profile/index' })
 }
 
@@ -115,6 +152,14 @@ function goAudit(): void {
 
 function goLogin(): void {
 	uni.navigateTo({ url: '/pages/login/login' })
+}
+
+/**
+ * 退出登录
+ */
+function onLogout(): void {
+	userStore.logout()
+	showXToast('👋', '已退出', '可随时重新登录')
 }
 
 function goNotify(): void {

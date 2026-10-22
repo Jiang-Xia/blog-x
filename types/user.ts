@@ -1,12 +1,15 @@
 /**
- * 用户 / 个人中心类型（mock）
+ * 用户 / 个人中心类型
+ * 联调字段对齐 GET /user/info；展示勿本地 dict 回显
  */
 
-/** 「我的」页资料 */
+/** 「我的」页 / Pinia 资料 */
 export type UserProfile = {
+	/** 用户 id，未登录为 0 */
+	id: number
 	nickname: string
 	avatarEmoji: string
-	/** 简介一行 */
+	/** 简介一行（服务端 intro） */
 	bio: string
 	articleCount: number
 	favoriteCount: number

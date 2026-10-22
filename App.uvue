@@ -1,14 +1,27 @@
 <script setup lang="ts">
+	/**
+	 * 应用生命周期：冷启动有缓存 token 时走 Pinia 自动登录
+	 */
+	import { useUserStore } from './store/user'
+	import { onAuthCleared } from './utils/auth-events'
+
 	// #ifdef APP-ANDROID || APP-HARMONY
 	let firstBackTime = 0
 	// #endif
 
 	onLaunch(() => {
-		console.log('App Launch')
+		const userStore = useUserStore()
+		// request 层 clearToken（401）时同步 Pinia，避免 UI 仍显示已登录
+		onAuthCleared(() => {
+			userStore.hydrateFromStorage()
+		})
+		// 有本地 token 则静默恢复登录态并拉 /user/info
+		userStore.tryAutoLogin()
 	})
 
 	onAppShow(() => {
-		console.log('App Show')
+		const userStore = useUserStore()
+		userStore.hydrateFromStorage()
 	})
 
 	onAppHide(() => {
