@@ -50,10 +50,10 @@ blog-x/
 
 ### 鉴权头 / 加密 / 开发日志（对齐 Nuxt）
 
-- 登录后请求自动带 `Authorization: Bearer <token>`。
-- `OPEN_ENCRYPT=true`（默认）：路径加 `/encrypt`；有 body 走信封，GET/DELETE 走 `X-Gateway-*` 自定义头；响应验签解密。
+- 登录后请求自动带 `Authorization: Bearer <token>`（从登录响应 `info.accessToken` 落盘）。
+- `OPEN_ENCRYPT=true`：路径加 `/encrypt`；有 body 走信封，GET/DELETE 走 `X-Gateway-*` 自定义头；响应验签解密。
 - 账号登录密码经 `encryptLoginPassword`（RSA）后再提交。
-- `OPEN_REQUEST_LOG=true`：控制台打印 `请求开始 req -------------->` / `请求结束 res|fail -------------->`。
+- `OPEN_REQUEST_LOG=true`：仅打印加解密密文出入参（`[gateway-crypto] encrypt out` / `decrypt in`）与失败类日志；**不打印明文 body / 请求起止**。
 - 开关均在 `api/config.ts`；须与 Nest `app_gatewayCrypto=aes` 一致。若后端未开网关，将 `OPEN_ENCRYPT` 改为 `false`。
 
 路径与 [blog-home-uniapp/src/api](../blog-home-uniapp/src/api) / [blog-home-nuxt/api](../blog-home-nuxt/api) 对齐，**禁止自造 URL**。

@@ -42,7 +42,8 @@ export const OPEN_ENCRYPT = false
 export const GATEWAY_CRYPTO: 'aes' | 'gm' = 'aes'
 
 /**
- * 开发模式请求规范打印（对齐 Nuxt import.meta.dev + openRequestLog）
- * 发行前可改为 false
+ * 开发模式日志开关
+ * - true：打印加解密密文出入参（gateway-crypto）与请求失败类日志；不打印明文 body / 请求起止
+ * - 发行前可改为 false
  */
 export const OPEN_REQUEST_LOG = true

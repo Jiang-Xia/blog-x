@@ -9,16 +9,20 @@ import type { PublicRpgCard, UserProfile } from '../../types/user'
 
 /**
  * 从登录响应取出双 token 并落盘
+ * Nest 返回 `{ info: { accessToken, refreshToken, token } }`；亦兼容扁平结构
  */
 export function applyLoginTokens(data: any): void {
 	if (data == null) return
+	// 兼容 info 包装（blog-server login）与扁平（refresh / 部分端）
+	const payload =
+		data.info != null && typeof data.info === 'object' ? data.info : data
 	const access =
-		data.accessToken != null
-			? '' + data.accessToken
-			: data.token != null
-				? '' + data.token
+		payload.accessToken != null
+			? '' + payload.accessToken
+			: payload.token != null
+				? '' + payload.token
 				: ''
-	const refresh = data.refreshToken != null ? '' + data.refreshToken : ''
+	const refresh = payload.refreshToken != null ? '' + payload.refreshToken : ''
 	if (access.length > 0) {
 		setAuthTokens(access, refresh)
 	}

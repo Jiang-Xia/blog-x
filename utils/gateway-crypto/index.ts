@@ -8,7 +8,7 @@
 import { GATEWAY_CRYPTO } from '../../api/config'
 import { CryptoJS } from '../lib/crypto-js'
 import { bodyCanonical, keyOnlyCanonical, timingSafeEqualHex } from './hmac'
-import { logTimingSince } from './log'
+import { logCrypto, logTimingSince, shortHex } from './log'
 import { suiteAes } from './suite-aes'
 import type {
 	GatewayAlg,
@@ -64,6 +64,15 @@ export function createGatewayEnvelope(plainBody: any): {
 	const sign = suite.hmac(symKeyHex, bodyCanonical(iv, content, ts))
 	const encKey = suite.publicEncrypt(symKeyHex)
 	logTimingSince('createGatewayEnvelope(' + alg + ') total', t0)
+	// 只打加密出参（密文），明文 body 不打印
+	logCrypto('encrypt out', {
+		alg,
+		iv,
+		ts,
+		encKey: shortHex(encKey),
+		content: shortHex(content),
+		sign: shortHex(sign),
+	})
 	return {
 		envelope: { alg, encKey, iv, content, ts, sign },
 		session: { alg, symKeyHex },
@@ -85,6 +94,13 @@ export function createGatewayKeyHeaders(): {
 	const encKey = suite.publicEncrypt(symKeyHex)
 	const sign = suite.hmac(symKeyHex, keyOnlyCanonical(ts))
 	logTimingSince('createGatewayKeyHeaders(' + alg + ') total', t0)
+	// GET/DELETE：加密出参为自定义头（密文侧）
+	logCrypto('encrypt out (headers)', {
+		alg,
+		ts,
+		encKey: shortHex(encKey),
+		sign: shortHex(sign),
+	})
 	const headers: Record<string, string> = {}
 	headers[GATEWAY_HEADER.alg] = alg
 	headers[GATEWAY_HEADER.encKey] = encKey
@@ -105,6 +121,14 @@ export function openGatewayEnvelope(payload: GatewayResponseEnvelope, session: G
 		throw new Error('invalid gateway response envelope')
 	}
 	const alg = payload.alg != null ? payload.alg : session.alg
+	// 解密前只打密文入参，解密后的明文不打印
+	logCrypto('decrypt in', {
+		alg,
+		iv: payload.iv != null ? '' + payload.iv : '',
+		ts: payload.ts,
+		content: shortHex(payload.content != null ? '' + payload.content : ''),
+		sign: shortHex(payload.sign != null ? '' + payload.sign : ''),
+	})
 	const suite = getSuite(alg)
 	const expect = suite.hmac(session.symKeyHex, bodyCanonical(payload.iv, payload.content, payload.ts))
 	if (!timingSafeEqualHex(expect, '' + payload.sign)) {

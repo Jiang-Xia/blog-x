@@ -37,7 +37,7 @@
 - [ ] 账号登录：`GET /user/authCode` + `POST /user/login`（密码 RSA）；Pinia `loggedIn` 为 true
 - [ ] 冷启动自动登录：本地有 token 时请求带 `Authorization: Bearer`
 - [ ] `OPEN_ENCRYPT=true`：控制台可见 `/encrypt` 路径；GET 带 `X-Gateway-*`；响应可正常解包
-- [ ] `OPEN_REQUEST_LOG=true`：有 `请求开始 req -------------->` / `请求结束 res -------------->` 规范日志
+- [ ] `OPEN_REQUEST_LOG=true`：有 `[gateway-crypto] encrypt out` / `decrypt in`（密文截断）；无明文 body / 无 `请求开始 req`
 - [ ] 401 后 refresh 成功可重放；refresh 失败跳登录
 - [ ] 冒险签到 `POST /rpg/sign`；抽奖 `POST /rpg/lottery/draw`；排行 `GET /rpg/leaderboard`
 - [ ] 充值下单返回 `outTradeNo`（真支付到账需支付宝环境）

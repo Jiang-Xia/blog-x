@@ -1,9 +1,9 @@
 /**
  * HTTP 请求核：uni.request + 解包 { code, data, message }
- * 对齐 blog-home-nuxt request：Bearer 鉴权头、/encrypt 网关、开发态规范日志
+ * 对齐 blog-home-nuxt request：Bearer 鉴权头、/encrypt 网关
+ * 开发日志：失败类仍走 reqLog；加解密出入参见 gateway-crypto/log（不打明文）
  */
 import {
-	GATEWAY_CRYPTO,
 	getBaseUrl,
 	OPEN_ENCRYPT,
 	OPEN_REQUEST_LOG,
@@ -38,7 +38,7 @@ let refreshing = false
 let refreshQueue: Array<() => void> = []
 
 /**
- * 开发态规范日志（对齐 Nuxt：请求开始 / 结束 / 失败）
+ * 开发态失败类日志（成功起止与明文 body 不打印；密文出入参见 gateway-crypto）
  */
 function reqLog(msg: string, level: string = 'log'): void {
 	if (!OPEN_REQUEST_LOG) return
@@ -209,7 +209,6 @@ function rawRefreshToken(): Promise<boolean> {
 	const path = withEncryptPrefix('/user/refresh')
 	const finalUrl = appendQuery(resolveUrl(path), { token: rt })
 	const built = buildHeaders('GET', null, null, path)
-	reqLog('请求开始 req --------------> ' + path + ' (refresh)')
 
 	return new Promise((resolve) => {
 		uni.request({
@@ -218,7 +217,6 @@ function rawRefreshToken(): Promise<boolean> {
 			header: built.header,
 			timeout: REQUEST_TIMEOUT,
 			success: (res) => {
-				reqLog('请求结束 res --------------> ' + path + ' (refresh)')
 				let body = res.data as any
 				try {
 					body = decryptMsg(body, path, built.session)
@@ -278,17 +276,6 @@ export function request(
 	const header = built.header
 	const gatewaySession = built.session
 	body = built.body
-
-	const hasAuth = header['Authorization'] != null && header['Authorization'].length > 0
-	reqLog(
-		'请求开始 req --------------> ' +
-			encryptPath +
-			' [' +
-			method +
-			']' +
-			(OPEN_ENCRYPT ? ' encrypt=' + GATEWAY_CRYPTO : '') +
-			(hasAuth ? ' auth=Bearer' : ''),
-	)
 
 	return new Promise((resolve, reject) => {
 		uni.request({
@@ -353,7 +340,6 @@ export function request(
 						reject(bodyRes)
 						return
 					}
-					reqLog('请求结束 res --------------> ' + encryptPath)
 					resolve(bodyRes != null ? bodyRes.data : null)
 					return
 				}
