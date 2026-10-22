@@ -1,0 +1,163 @@
+<template>
+	<!-- AI 助手：配额、示例对话、快捷 chips、发送示意 -->
+	<view class="x-page chat-page">
+		<x-navbar title="AI 助手">
+			<template v-slot:right>
+				<text class="quota">8/10</text>
+			</template>
+		</x-navbar>
+
+		<scroll-view class="chat-scroll" scroll-y="true">
+			<view class="bubble user">
+				<text class="bubble-t-w">微信支付 V3 怎么接入？</text>
+			</view>
+			<view class="bubble bot">
+				<text class="bubble-t">推荐两篇：《NestJS 接入微信支付 V3》《支付回调幂等》。</text>
+				<text class="cite">📎 站内引用</text>
+			</view>
+		</scroll-view>
+
+		<view class="chip-row">
+			<view class="x-chip x-chip-plain" @click="onChip('总结全站')">
+				<text class="chip-t">总结全站</text>
+			</view>
+			<view class="x-chip x-chip-plain" @click="onChip('找教程')">
+				<text class="chip-t">找教程</text>
+			</view>
+			<view class="x-chip x-chip-plain" @click="onChip('RPG 攻略')">
+				<text class="chip-t">RPG 攻略</text>
+			</view>
+		</view>
+
+		<view class="input-bar">
+			<view class="input-box">
+				<text class="ph">问问博客里的任何事…</text>
+			</view>
+			<view class="send" @click="onSend">
+				<text class="send-t">↑</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * AI 助手：原型示意对话，不接真实模型
+ */
+import { showXToast } from '../../utils/toast'
+
+function onChip(name: string): void {
+	showXToast('✦', name, '示意已发送')
+}
+
+function onSend(): void {
+	showXToast('↑', '已发送', '')
+}
+</script>
+
+<style>
+.chat-page {
+	flex: 1;
+}
+
+.quota {
+	font-size: 11px;
+	color: #2a8f76;
+	background-color: rgba(61, 184, 154, 0.12);
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-weight: 600;
+}
+
+.chat-scroll {
+	flex: 1;
+	min-height: 280px;
+	margin-bottom: 12px;
+}
+
+.bubble {
+	max-width: 84%;
+	padding: 10px 12px;
+	border-radius: 16px;
+	margin-bottom: 10px;
+}
+
+.user {
+	align-self: flex-end;
+	background-color: #3db89a;
+}
+
+.bot {
+	align-self: flex-start;
+	background-color: #ffffff;
+}
+
+.bubble-t-w {
+	font-size: 13px;
+	color: #ffffff;
+	line-height: 1.55;
+}
+
+.bubble-t {
+	font-size: 13px;
+	color: #1c1a17;
+	line-height: 1.55;
+}
+
+.cite {
+	font-size: 10px;
+	color: #2a8f76;
+	background-color: rgba(61, 184, 154, 0.12);
+	border-radius: 999px;
+	padding: 3px 8px;
+	margin-top: 6px;
+	align-self: flex-start;
+}
+
+.chip-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+	margin-bottom: 10px;
+}
+
+.chip-t {
+	font-size: 11px;
+	color: #5c574f;
+}
+
+.input-bar {
+	flex-direction: row;
+	align-items: center;
+	padding-bottom: 12px;
+}
+
+.input-box {
+	flex: 1;
+	height: 40px;
+	border-radius: 20px;
+	background-color: #ffffff;
+	justify-content: center;
+	padding: 0 14px;
+	margin-right: 8px;
+}
+
+.ph {
+	font-size: 13px;
+	color: #9a948a;
+}
+
+.send {
+	width: 40px;
+	height: 40px;
+	border-radius: 20px;
+	background-color: #3db89a;
+	align-items: center;
+	justify-content: center;
+}
+
+.send-t {
+	font-size: 16px;
+	color: #ffffff;
+	font-weight: 700;
+}
+</style>

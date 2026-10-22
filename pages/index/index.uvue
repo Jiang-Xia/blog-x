@@ -1,24 +1,197 @@
 <template>
-	<view>
-		<image class="logo" src="/static/logo.png"></image>
-		<text class="title">{{title}}</text>
-	</view>
+	<!-- 主壳：uni-tab + tab-bar-blur 毛玻璃悬浮底栏（对齐官方示例与小卡原型） -->
+	<uni-tab
+		class="tab-shell"
+		style="flex: 1; --uni-tab-bar-height: 62px"
+		:active-index="activeIndex"
+		:tab-content-height-full="tabContentHeightFull"
+		@change="handleChange"
+	>
+		<uni-tab-content :style="tabContentStyle">
+			<x-tab-home></x-tab-home>
+		</uni-tab-content>
+		<uni-tab-content :style="tabContentStyle">
+			<x-tab-discover></x-tab-discover>
+		</uni-tab-content>
+		<uni-tab-content :style="tabContentStyle">
+			<x-tab-rpg></x-tab-rpg>
+		</uni-tab-content>
+		<uni-tab-content :style="tabContentStyle">
+			<x-tab-me></x-tab-me>
+		</uni-tab-content>
+
+		<uni-tab-bar class="blur-tab-list" :style="tabBarStyle">
+			<uni-tab-item class="blur-tab-item">
+				<view :class="activeIndex == 0 ? 'tab-inner tab-inner-on' : 'tab-inner'">
+					<text :class="activeIndex == 0 ? 'ti ti-on' : 'ti'">⌂</text>
+					<text :class="activeIndex == 0 ? 'tl tl-on' : 'tl'">首页</text>
+				</view>
+			</uni-tab-item>
+			<uni-tab-item class="blur-tab-item">
+				<view :class="activeIndex == 1 ? 'tab-inner tab-inner-on' : 'tab-inner'">
+					<text :class="activeIndex == 1 ? 'ti ti-on' : 'ti'">◎</text>
+					<text :class="activeIndex == 1 ? 'tl tl-on' : 'tl'">发现</text>
+				</view>
+			</uni-tab-item>
+			<uni-tab-item class="blur-tab-item">
+				<view :class="activeIndex == 2 ? 'tab-inner tab-inner-on' : 'tab-inner'">
+					<text :class="activeIndex == 2 ? 'ti ti-on' : 'ti'">✦</text>
+					<text :class="activeIndex == 2 ? 'tl tl-on' : 'tl'">冒险</text>
+				</view>
+			</uni-tab-item>
+			<uni-tab-item class="blur-tab-item">
+				<view :class="activeIndex == 3 ? 'tab-inner tab-inner-on' : 'tab-inner'">
+					<text :class="activeIndex == 3 ? 'ti ti-on' : 'ti'">☺</text>
+					<text :class="activeIndex == 3 ? 'tl tl-on' : 'tl'">我的</text>
+				</view>
+			</uni-tab-item>
+		</uni-tab-bar>
+	</uni-tab>
 </template>
 
 <script setup lang="ts">
-	const title = ref('Hello')
+/**
+ * 主壳页：自定义 tab-bar-blur（半透明毛玻璃）承载四 Tab
+ * 图标与文案对齐原型 ⌂/◎/✦/☺；切 Tab 用 utils/tabNav.goTab，勿用 switchTab
+ */
+import { tabActiveIndex, TAB_HOME, TAB_ME } from '../../utils/tabNav'
+
+/** 左右边距（对齐原型 14px） */
+const TAB_BAR_MARGIN = 14
+/** 底边距（对齐原型 16px） */
+const TAB_BAR_BOTTOM = 16
+
+/**
+ * 计算悬浮底栏定位样式（宽度随窗口变化）
+ */
+function buildTabBarStyle(): string {
+	const windowInfo = uni.getWindowInfo()
+	const tabBarWidth = Math.max(0, windowInfo.windowWidth - TAB_BAR_MARGIN * 2)
+	return (
+		'left: ' +
+		TAB_BAR_MARGIN +
+		'px; bottom: ' +
+		TAB_BAR_BOTTOM +
+		'px; width: ' +
+		tabBarWidth +
+		'px; padding-bottom: 0px; align-items: center; border-radius: 22px; overflow: hidden; border-top-width: 0px; border-width: 1px; border-style: solid; border-color: rgba(255,255,255,0.7); background-color: rgba(255, 255, 255, 0.82);'
+	)
+}
+
+const activeIndex = tabActiveIndex
+const tabBarStyle = ref(buildTabBarStyle())
+
+/** 内容区铺满到底栏下，供毛玻璃透出（支付宝小程序除外） */
+let tabContentHeightFull = true
+let tabContentStyle = 'flex: 1; width: 100%; height: 100%; min-height: 0px;'
+// #ifdef MP-ALIPAY
+tabContentHeightFull = false
+// #endif
+
+/**
+ * 解析 ?tab= 查询参数
+ */
+function applyTabQuery(raw: string | null): void {
+	if (raw == null || raw.length == 0) {
+		return
+	}
+	const n = parseInt(raw)
+	if (isNaN(n) || n < TAB_HOME || n > TAB_ME) {
+		return
+	}
+	activeIndex.value = n
+}
+
+/**
+ * 同步底栏宽度
+ */
+function syncTabBarStyle(): void {
+	tabBarStyle.value = buildTabBarStyle()
+}
+
+/**
+ * Tab 点击切换
+ */
+function handleChange(index: number): void {
+	activeIndex.value = index
+}
+
+onLoad((options) => {
+	if (options != null) {
+		const tab = options['tab']
+		if (tab != null) {
+			applyTabQuery('' + tab)
+		}
+	}
+	syncTabBarStyle()
+})
+
+onReady(() => {
+	syncTabBarStyle()
+})
+
+onShow(() => {
+	syncTabBarStyle()
+})
 </script>
 
 <style>
-	.logo {
-		height: 100px;
-		width: 100px;
-		margin: 100px auto 25px auto;
-	}
+.tab-shell {
+	flex: 1;
+	background-color: #f4f1ec;
+}
 
-	.title {
-		font-size: 18px;
-		color: #8f8f94;
-		text-align: center;
-	}
+.blur-tab-list {
+	/* 官方 tab-bar-blur：backdrop-filter；不支持端仍可见半透明白底 */
+	backdrop-filter: blur(20px);
+	box-shadow: 0px 10px 30px rgba(40, 32, 20, 0.12);
+}
+
+/* #ifdef WEB */
+.blur-tab-list {
+	-webkit-backdrop-filter: blur(20px);
+}
+/* #endif */
+
+.blur-tab-item {
+	position: relative;
+	z-index: 1;
+	height: 100%;
+	padding: 5px;
+}
+
+.tab-inner {
+	flex: 1;
+	width: 100%;
+	height: 100%;
+	border-radius: 17px;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+}
+
+.tab-inner-on {
+	background-color: rgba(61, 184, 154, 0.12);
+}
+
+.ti {
+	font-size: 17px;
+	line-height: 1;
+	color: #9a948a;
+	margin-bottom: 2px;
+}
+
+.tl {
+	font-size: 10px;
+	font-weight: 600;
+	color: #9a948a;
+}
+
+.ti-on {
+	color: #2a8f76;
+}
+
+.tl-on {
+	color: #2a8f76;
+}
 </style>

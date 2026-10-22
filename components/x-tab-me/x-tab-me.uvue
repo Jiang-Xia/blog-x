@@ -1,0 +1,240 @@
+<template>
+	<!-- 我的 Tab 面板：资料、统计、菜单 -->
+	<scroll-view class="x-page-tab" scroll-y="true">
+		<view class="status-pad"></view>
+		<view class="profile-top">
+			<view class="big-avatar">
+				<text class="big-em">{{ profile.avatarEmoji }}</text>
+			</view>
+			<text class="name">{{ profile.nickname }}</text>
+			<text class="bio">{{ profile.bio }}</text>
+		</view>
+
+		<view class="stat-row">
+			<view class="stat">
+				<text class="stat-n">{{ profile.articleCount }}</text>
+				<text class="stat-l">文章</text>
+			</view>
+			<view class="stat">
+				<text class="stat-n">{{ profile.favoriteCount }}</text>
+				<text class="stat-l">收藏</text>
+			</view>
+			<view class="stat">
+				<text class="stat-n">{{ profile.likeReceived }}</text>
+				<text class="stat-l">获赞</text>
+			</view>
+		</view>
+
+		<view class="x-card menu">
+			<view class="mrow" @click="goFavorites">
+				<view class="m-ico"><text>⭐</text></view>
+				<text class="m-label">我的收藏</text>
+				<text class="chev">›</text>
+			</view>
+			<view class="mrow" @click="goInbox">
+				<view class="m-ico"><text>📥</text></view>
+				<text class="m-label">评论收件箱</text>
+				<view v-if="inboxBadge > 0" class="badge">
+					<text class="badge-t">{{ inboxBadge }}</text>
+				</view>
+				<text class="chev">›</text>
+			</view>
+			<view class="mrow" @click="goProfile">
+				<view class="m-ico"><text>👤</text></view>
+				<text class="m-label">公开主页</text>
+				<text class="chev">›</text>
+			</view>
+			<view class="mrow" @click="goAudit">
+				<view class="m-ico"><text>🛡️</text></view>
+				<view class="m-col">
+					<text class="m-label">切换管理模式</text>
+					<text class="m-sub">审核 / 订单</text>
+				</view>
+				<text class="chev">›</text>
+			</view>
+			<view class="mrow" @click="goLogin">
+				<view class="m-ico"><text>💬</text></view>
+				<text class="m-label">微信登录 / 绑定</text>
+				<text class="chev">›</text>
+			</view>
+			<view class="mrow last" @click="goNotify">
+				<view class="m-ico"><text>🔔</text></view>
+				<text class="m-label">站内通知</text>
+				<text class="chev">›</text>
+			</view>
+		</view>
+	</scroll-view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 我的 Tab 面板：对齐原型 me
+ * 数据来源：mock meProfile + useMockStore 角标
+ */
+import { meProfile } from '../../mock/data'
+import { useMockStore } from '../../composables/useMockStore'
+
+const profile = meProfile
+const store = useMockStore()
+const inboxBadge = store.inboxBadge
+
+function goFavorites(): void {
+	uni.navigateTo({ url: '/pages-blog/favorites/index' })
+}
+
+function goInbox(): void {
+	uni.navigateTo({ url: '/pages-blog/inbox/index' })
+}
+
+function goProfile(): void {
+	uni.navigateTo({ url: '/pages-blog/profile/index' })
+}
+
+function goAudit(): void {
+	uni.navigateTo({ url: '/pages-blog/audit/index' })
+}
+
+function goLogin(): void {
+	uni.navigateTo({ url: '/pages/login/login' })
+}
+
+function goNotify(): void {
+	uni.navigateTo({ url: '/pages/notify/notify' })
+}
+</script>
+
+<style>
+@import '../../styles/x-base.css';
+
+.status-pad {
+	height: 48px;
+}
+
+.profile-top {
+	align-items: center;
+	padding: 10px 0 4px;
+}
+
+.big-avatar {
+	width: 72px;
+	height: 72px;
+	border-radius: 36px;
+	background-color: #ffe8d6;
+	border-width: 3px;
+	border-style: solid;
+	border-color: #ffffff;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 10px;
+}
+
+.big-em {
+	font-size: 30px;
+}
+
+.name {
+	font-size: 18px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 4px;
+}
+
+.bio {
+	font-size: 12px;
+	color: #5c574f;
+	text-align: center;
+}
+
+.stat-row {
+	flex-direction: row;
+	justify-content: space-between;
+	margin: 16px 0 12px;
+}
+
+.stat {
+	flex: 1;
+	background-color: #ffffff;
+	border-radius: 14px;
+	padding: 12px 6px;
+	align-items: center;
+	margin: 0 4px;
+}
+
+.stat-n {
+	font-size: 17px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 2px;
+}
+
+.stat-l {
+	font-size: 11px;
+	color: #9a948a;
+}
+
+.menu {
+	padding: 4px 12px;
+}
+
+.mrow {
+	flex-direction: row;
+	align-items: center;
+	padding: 12px 2px;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: rgba(28, 26, 23, 0.06);
+}
+
+.last {
+	border-bottom-width: 0;
+}
+
+.m-ico {
+	width: 34px;
+	height: 34px;
+	border-radius: 11px;
+	background-color: #ebe6df;
+	align-items: center;
+	justify-content: center;
+	margin-right: 10px;
+}
+
+.m-col {
+	flex: 1;
+}
+
+.m-label {
+	flex: 1;
+	font-size: 13px;
+	font-weight: 500;
+	color: #1c1a17;
+}
+
+.m-sub {
+	font-size: 10px;
+	color: #9a948a;
+}
+
+.chev {
+	font-size: 16px;
+	color: #9a948a;
+	margin-left: 6px;
+}
+
+.badge {
+	min-width: 16px;
+	height: 16px;
+	border-radius: 8px;
+	background-color: #e8897a;
+	padding: 0 4px;
+	align-items: center;
+	justify-content: center;
+	margin-right: 4px;
+}
+
+.badge-t {
+	font-size: 9px;
+	font-weight: 600;
+	color: #ffffff;
+}
+</style>

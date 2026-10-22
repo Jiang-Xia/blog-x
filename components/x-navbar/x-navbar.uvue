@@ -1,0 +1,76 @@
+<template>
+	<!-- 二级页顶栏：返回 + 标题 + 右侧插槽区 -->
+	<view class="x-navbar">
+		<view class="x-navbar-back" @click="onBack">
+			<text class="x-navbar-back-icon">‹</text>
+		</view>
+		<text class="x-navbar-title">{{ title }}</text>
+		<view class="x-navbar-right">
+			<slot name="right"></slot>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 通用导航栏：默认 navigateBack；可传 @back 自定义
+ * 无历史栈时回主壳首页 Tab（自定义 tab-bar-blur，不用 switchTab）
+ */
+import { goTab, TAB_HOME } from '../../utils/tabNav'
+
+const props = defineProps({
+	title: { type: String, default: '' },
+})
+
+const emit = defineEmits(['back'])
+
+/**
+ * 点击返回
+ */
+function onBack(): void {
+	emit('back')
+	uni.navigateBack({
+		fail: () => {
+			goTab(TAB_HOME)
+		},
+	})
+}
+</script>
+
+<style>
+.x-navbar {
+	flex-direction: row;
+	align-items: center;
+	padding: 4px 0 12px;
+	min-height: 40px;
+}
+
+.x-navbar-back {
+	width: 36px;
+	height: 36px;
+	border-radius: 18px;
+	background-color: #ffffff;
+	align-items: center;
+	justify-content: center;
+	margin-right: 10px;
+}
+
+.x-navbar-back-icon {
+	font-size: 22px;
+	color: #5c574f;
+	line-height: 36px;
+	text-align: center;
+}
+
+.x-navbar-title {
+	flex: 1;
+	font-size: 15px;
+	font-weight: 600;
+	color: #1c1a17;
+}
+
+.x-navbar-right {
+	flex-direction: row;
+	align-items: center;
+}
+</style>

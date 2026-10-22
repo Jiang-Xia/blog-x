@@ -16,6 +16,7 @@
 	})
 
 	// #ifdef APP-ANDROID || APP-HARMONY
+	// Android / Harmony：双击返回退出
 	onLastPageBackPress(() => {
 		console.log('App LastPageBackPress')
 		if (firstBackTime == 0) {
@@ -40,12 +41,6 @@
 </script>
 
 <style>
-	/*每个页面公共css */
-	.uni-row {
-		flex-direction: row;
-	}
-
-	.uni-column {
-		flex-direction: column;
-	}
+	/* 页面可用；组件须自行 @import styles/x-base.css（styleIsolation v2） */
+	@import './styles/x-base.css';
 </style>

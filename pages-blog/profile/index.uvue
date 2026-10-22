@@ -1,0 +1,95 @@
+<template>
+	<!-- 公开主页：资料 + RPG 公开信息 + 文章 -->
+	<view class="x-page">
+		<x-navbar title="主页"></x-navbar>
+		<view class="top">
+			<view class="big-avatar">
+				<text class="em">🦊</text>
+			</view>
+			<text class="name">江夏</text>
+			<text class="bio">Lv.12 像素匠 · 连续签到 {{ rpg.streakDays }} 天</text>
+		</view>
+		<view class="x-card">
+			<text class="sec">公开 RPG</text>
+			<text class="line">称号「{{ rpg.titleName }}」</text>
+			<text class="line">公会 {{ rpg.guildName }}</text>
+			<text class="line">{{ rpg.rankLabel }}</text>
+			<text class="line">宠物 {{ rpg.petLabel }}</text>
+		</view>
+		<view class="x-section-head">
+			<text class="x-section-title">TA 的文章</text>
+		</view>
+		<view class="x-card" @click="goDetail(firstArticle.id)">
+			<text class="art-t">{{ firstArticle.title }}</text>
+			<text class="x-meta">{{ firstArticle.categoryName }} · {{ firstArticle.timeLabel }}</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 公开主页：mock meProfile / publicRpg / articles
+ */
+import { articles, publicRpg } from '../../mock/data'
+
+const rpg = publicRpg
+const firstArticle = articles[0]
+
+function goDetail(id: string): void {
+	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
+}
+</script>
+
+<style>
+.top {
+	align-items: center;
+	padding: 8px 0 16px;
+}
+
+.big-avatar {
+	width: 72px;
+	height: 72px;
+	border-radius: 36px;
+	background-color: #ffe8d6;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 10px;
+}
+
+.em {
+	font-size: 30px;
+}
+
+.name {
+	font-size: 18px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 4px;
+}
+
+.bio {
+	font-size: 12px;
+	color: #5c574f;
+}
+
+.sec {
+	font-size: 13px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 8px;
+}
+
+.line {
+	font-size: 13px;
+	color: #5c574f;
+	margin-bottom: 4px;
+	line-height: 1.4;
+}
+
+.art-t {
+	font-size: 14px;
+	font-weight: 650;
+	color: #1c1a17;
+	margin-bottom: 4px;
+}
+</style>

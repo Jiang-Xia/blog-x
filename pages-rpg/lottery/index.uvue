@@ -1,0 +1,148 @@
+<template>
+	<!-- 幸运抽奖：3×3 格 + 中心抽一次 + 高亮轮转 -->
+	<view class="x-page">
+		<x-navbar title="幸运抽奖"></x-navbar>
+		<view class="lottery">
+			<view
+				v-for="(cell, i) in displayCells"
+				:key="'c' + i"
+				:class="cellClass(i)"
+				@click="onCellClick(i)"
+			>
+				<text class="cell-em">{{ cell.emoji }}</text>
+				<text class="cell-lb">{{ cell.label }}</text>
+			</view>
+		</view>
+		<view class="x-section-head">
+			<text class="x-section-title">最近获得</text>
+		</view>
+		<text class="recent">宠物蛋 · 钻石+10</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 幸运抽奖：mock lotteryCells；定时器高亮后 toast
+ */
+import { lotteryCells } from '../../mock/data'
+import { showXToast } from '../../utils/toast'
+
+/** 外围 8 格顺序（跳过中心 index 4） */
+const ringOrder = [0, 1, 2, 5, 8, 7, 6, 3]
+const hiIndex = ref(-1)
+const spinning = ref(false)
+
+type CellView = { emoji: string; label: string; isGo: boolean }
+
+/**
+ * 组装 3×3：中心为抽一次
+ */
+const displayCells = computed((): CellView[] => {
+	const list: CellView[] = []
+	let prizeIdx = 0
+	for (let i = 0; i < 9; i++) {
+		if (i === 4) {
+			list.push({ emoji: '🎰', label: '抽一次', isGo: true })
+		} else {
+			const p = lotteryCells[prizeIdx]
+			prizeIdx++
+			list.push({ emoji: p.emoji, label: p.label, isGo: false })
+		}
+	}
+	return list
+})
+
+/**
+ * 格子 class
+ */
+function cellClass(i: number): string {
+	const base = displayCells.value[i].isGo ? 'cell go' : 'cell'
+	if (hiIndex.value === i) return base + ' hi'
+	return base
+}
+
+/**
+ * 点击中心开抽
+ */
+function onCellClick(i: number): void {
+	if (i !== 4) return
+	spinLottery()
+}
+
+/**
+ * 轮转高亮后出结果
+ */
+function spinLottery(): void {
+	if (spinning.value) return
+	spinning.value = true
+	let step = 0
+	const total = 16 + Math.floor(Math.random() * 8)
+	const timer = setInterval(() => {
+		const ringPos = step % ringOrder.length
+		hiIndex.value = ringOrder[ringPos]
+		step++
+		if (step >= total) {
+			clearInterval(timer)
+			const winRing = ringOrder[(step - 1) % ringOrder.length]
+			const prizePos = ringOrder.indexOf(winRing)
+			const prize = lotteryCells[prizePos]
+			showXToast(prize.emoji, '恭喜获得', prize.label)
+			spinning.value = false
+			setTimeout(() => {
+				hiIndex.value = -1
+			}, 800)
+		}
+	}, 80)
+}
+</script>
+
+<style>
+.lottery {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	margin-bottom: 16px;
+}
+
+.cell {
+	width: 31%;
+	height: 100px;
+	border-radius: 14px;
+	background-color: #ebe6df;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 8px;
+	padding: 8px;
+}
+
+.go {
+	background-color: #3db89a;
+}
+
+.hi {
+	border-width: 2px;
+	border-style: solid;
+	border-color: #f0a07a;
+	background-color: #fff7f0;
+}
+
+.cell-em {
+	font-size: 20px;
+	margin-bottom: 2px;
+}
+
+.cell-lb {
+	font-size: 10px;
+	color: #5c574f;
+	font-weight: 500;
+}
+
+.go .cell-lb {
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.recent {
+	font-size: 13px;
+	color: #5c574f;
+}
+</style>

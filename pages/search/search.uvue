@@ -1,0 +1,111 @@
+<template>
+	<!-- 搜索：示意关键词 + 结果列表 -->
+	<view class="x-page">
+		<x-navbar title="搜索"></x-navbar>
+		<view class="query-row">
+			<text class="query">{{ query }}</text>
+			<text class="clear" @click="onClear">清除</text>
+		</view>
+		<view
+			v-for="item in results"
+			:key="item.id"
+			class="x-card article"
+			@click="goDetail(item.id)"
+		>
+			<view class="article-body">
+				<text class="article-title">{{ item.title }}</text>
+				<text class="x-meta">{{ item.categoryName }} · {{ item.timeLabel }}</text>
+			</view>
+			<view class="cover">
+				<text class="cover-em">{{ item.coverEmoji }}</text>
+			</view>
+		</view>
+		<view class="chip-row">
+			<text class="x-chip x-chip-plain">NestJS</text>
+			<text class="x-chip x-chip-plain">V3</text>
+			<text class="x-chip x-chip-plain">退款</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 搜索页：原型固定示意「微信支付」
+ * 数据来源：mock searchResults
+ */
+import { searchResults } from '../../mock/data'
+import { showXToast } from '../../utils/toast'
+
+const query = ref('微信支付')
+const results = searchResults
+
+function onClear(): void {
+	query.value = ''
+	showXToast('⌫', '已清除', '')
+}
+
+function goDetail(id: string): void {
+	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
+}
+</script>
+
+<style>
+.query-row {
+	flex-direction: row;
+	align-items: center;
+	background-color: #ffffff;
+	border-radius: 999px;
+	padding: 11px 14px;
+	margin-bottom: 12px;
+}
+
+.query {
+	flex: 1;
+	font-size: 14px;
+	color: #1c1a17;
+	font-weight: 600;
+}
+
+.clear {
+	font-size: 12px;
+	color: #3db89a;
+}
+
+.article {
+	flex-direction: row;
+	align-items: center;
+}
+
+.article-body {
+	flex: 1;
+	margin-right: 12px;
+}
+
+.article-title {
+	font-size: 14px;
+	font-weight: 650;
+	color: #1c1a17;
+	margin-bottom: 4px;
+	lines: 2;
+	text-overflow: ellipsis;
+}
+
+.cover {
+	width: 64px;
+	height: 64px;
+	border-radius: 14px;
+	background-color: #ffe8d6;
+	align-items: center;
+	justify-content: center;
+}
+
+.cover-em {
+	font-size: 22px;
+}
+
+.chip-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+	margin-top: 8px;
+}
+</style>

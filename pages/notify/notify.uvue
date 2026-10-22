@@ -1,0 +1,90 @@
+<template>
+	<!-- 消息中心：分段仅 UI + 全部已读 -->
+	<view class="x-page">
+		<x-navbar title="消息中心">
+			<template v-slot:right>
+				<text class="read-all" @click="onReadAll">全部已读</text>
+			</template>
+		</x-navbar>
+
+		<view class="x-seg">
+			<view
+				v-for="(s, i) in segs"
+				:key="s"
+				:class="segIndex === i ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
+				@click="segIndex = i"
+			>
+				<text :class="segIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
+			</view>
+		</view>
+
+		<view v-for="item in items" :key="item.id" class="msg">
+			<view class="msg-row">
+				<text class="msg-em">{{ item.emoji }}</text>
+				<view class="msg-body">
+					<text class="msg-title">{{ item.title }}</text>
+					<text class="msg-desc">{{ item.desc }}</text>
+				</view>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 消息中心：分段切换仅高亮，内容不筛选（同原型）
+ */
+import { notifyItems } from '../../mock/data'
+import { clearNotifyBadge } from '../../composables/useMockStore'
+import { showXToast } from '../../utils/toast'
+
+const segs = ['全部', '评论', '赞藏', '系统']
+const segIndex = ref(0)
+const items = notifyItems
+
+function onReadAll(): void {
+	clearNotifyBadge()
+	showXToast('✓', '全部已读', '角标已清')
+}
+</script>
+
+<style>
+.read-all {
+	font-size: 12px;
+	color: #3db89a;
+	font-weight: 500;
+}
+
+.msg {
+	background-color: #ffffff;
+	border-radius: 18px;
+	padding: 12px 13px;
+	margin-bottom: 10px;
+}
+
+.msg-row {
+	flex-direction: row;
+}
+
+.msg-em {
+	font-size: 22px;
+	margin-right: 10px;
+}
+
+.msg-body {
+	flex: 1;
+}
+
+.msg-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1c1a17;
+	margin-bottom: 4px;
+}
+
+.msg-desc {
+	font-size: 12px;
+	color: #5c574f;
+	line-height: 1.4;
+}
+</style>

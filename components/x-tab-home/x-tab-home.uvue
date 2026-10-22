@@ -1,0 +1,295 @@
+<template>
+	<!-- 首页 Tab 面板：搜索、今日进度、快捷入口、最新文章（mock） -->
+	<scroll-view class="x-page-tab" scroll-y="true">
+		<view class="status-pad"></view>
+		<view class="search-bar" @click="goSearch">
+			<text class="search-ico">⌕</text>
+			<text class="search-ph">搜索文章、标签、作者</text>
+			<view class="bell" @click.stop="goNotify">
+				<text class="bell-text">{{ notifyBadge }}</text>
+			</view>
+		</view>
+
+		<view class="x-card today">
+			<view class="today-left">
+				<text class="today-label">今日进度</text>
+				<text class="today-title">{{ homeTodayTitle }}</text>
+				<view class="chip-row">
+					<text class="x-chip">{{ homeStreakLabel }}</text>
+					<text class="x-chip x-chip-peach">经验 +12</text>
+					<text class="x-chip x-chip-lav">未读 3</text>
+				</view>
+			</view>
+			<view class="ring">
+				<text class="ring-pct">70%</text>
+				<text class="ring-sub">目标</text>
+			</view>
+		</view>
+
+		<view class="chip-row chip-gap">
+			<view class="x-chip x-chip-dark" @click="goAi">
+				<text class="chip-t-dark">✦ AI 助手</text>
+			</view>
+			<view class="x-chip x-chip-plain" @click="goRpg">
+				<text class="chip-t">今日任务 2/3</text>
+			</view>
+			<view class="x-chip x-chip-plain" @click="onWrite">
+				<text class="chip-t">写文章</text>
+			</view>
+		</view>
+
+		<scroll-view class="cat-scroll" scroll-x="true">
+			<view class="chip-row nowrap">
+				<text
+					v-for="(c, i) in categories"
+					:key="c"
+					:class="i === 0 ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
+				>{{ c }}</text>
+			</view>
+		</scroll-view>
+
+		<view class="x-section-head">
+			<text class="x-section-title">最新文章</text>
+			<text class="x-link" @click="goDiscover">全部</text>
+		</view>
+
+		<view
+			v-for="item in list"
+			:key="item.id"
+			class="x-card article"
+			@click="goDetail(item.id)"
+		>
+			<view class="article-body">
+				<view class="meta-row">
+					<text class="x-meta">{{ item.categoryName }}</text>
+					<text class="x-meta"> · </text>
+					<text class="x-meta">{{ item.timeLabel }}</text>
+				</view>
+				<text class="article-title">{{ item.title }}</text>
+				<text class="article-stat">👍 {{ item.likeCount }} · 💬 {{ item.commentCount }}</text>
+			</view>
+			<view class="cover" :style="{ backgroundColor: item.coverC1 }">
+				<text class="cover-em">{{ item.coverEmoji }}</text>
+			</view>
+		</view>
+	</scroll-view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 首页 Tab 面板：对齐小卡原型 home
+ * 数据来源：mock/data + useMockStore（角标/今日文案）
+ */
+import { homeArticles, homeCategories } from '../../mock/data'
+import { useMockStore } from '../../composables/useMockStore'
+import { showXToast } from '../../utils/toast'
+import { goTab, TAB_DISCOVER, TAB_RPG } from '../../utils/tabNav'
+
+const list = homeArticles
+const categories = homeCategories
+const store = useMockStore()
+const notifyBadge = store.notifyBadge
+const homeTodayTitle = store.homeTodayTitle
+const homeStreakLabel = store.homeStreakLabel
+
+/** 进搜索 */
+function goSearch(): void {
+	uni.navigateTo({ url: '/pages/search/search' })
+}
+
+/** 进消息中心 */
+function goNotify(): void {
+	uni.navigateTo({ url: '/pages/notify/notify' })
+}
+
+/** 进 AI 助手（博客分包） */
+function goAi(): void {
+	uni.navigateTo({ url: '/pages-blog/ai/index' })
+}
+
+/** 切到冒险 Tab */
+function goRpg(): void {
+	goTab(TAB_RPG)
+}
+
+/** 写文章示意 */
+function onWrite(): void {
+	showXToast('✍️', '写文章', '示意：跳转创作页')
+}
+
+/** 切到发现 */
+function goDiscover(): void {
+	goTab(TAB_DISCOVER)
+}
+
+/** 进文章详情 */
+function goDetail(id: string): void {
+	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
+}
+</script>
+
+<style>
+@import '../../styles/x-base.css';
+
+.status-pad {
+	height: 48px;
+}
+
+.search-bar {
+	flex-direction: row;
+	align-items: center;
+	background-color: #ffffff;
+	border-radius: 999px;
+	padding: 11px 14px;
+	margin-bottom: 12px;
+}
+
+.search-ico {
+	font-size: 14px;
+	color: #9a948a;
+	margin-right: 8px;
+}
+
+.search-ph {
+	flex: 1;
+	font-size: 13px;
+	color: #9a948a;
+}
+
+.bell {
+	min-width: 18px;
+	height: 18px;
+	border-radius: 9px;
+	background-color: #e8897a;
+	padding: 0 4px;
+	align-items: center;
+	justify-content: center;
+}
+
+.bell-text {
+	font-size: 9px;
+	font-weight: 600;
+	color: #ffffff;
+}
+
+.today {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	background-color: #f3faf7;
+}
+
+.today-left {
+	flex: 1;
+	margin-right: 12px;
+}
+
+.today-label {
+	font-size: 12px;
+	color: #5c574f;
+	margin-bottom: 4px;
+}
+
+.today-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 8px;
+}
+
+.chip-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.chip-gap {
+	margin-bottom: 12px;
+}
+
+.nowrap {
+	flex-wrap: nowrap;
+}
+
+.cat-scroll {
+	margin-bottom: 12px;
+	height: 36px;
+}
+
+.chip-t {
+	font-size: 11px;
+	color: #5c574f;
+	font-weight: 500;
+}
+
+.chip-t-dark {
+	font-size: 11px;
+	color: #ffffff;
+	font-weight: 500;
+}
+
+.ring {
+	width: 72px;
+	height: 72px;
+	border-radius: 36px;
+	background-color: rgba(61, 184, 154, 0.15);
+	align-items: center;
+	justify-content: center;
+	border-width: 6px;
+	border-style: solid;
+	border-color: #3db89a;
+}
+
+.ring-pct {
+	font-size: 14px;
+	font-weight: 700;
+	color: #1c1a17;
+}
+
+.ring-sub {
+	font-size: 9px;
+	color: #9a948a;
+}
+
+.article {
+	flex-direction: row;
+	align-items: center;
+}
+
+.article-body {
+	flex: 1;
+	margin-right: 12px;
+}
+
+.meta-row {
+	flex-direction: row;
+	margin-bottom: 4px;
+}
+
+.article-title {
+	font-size: 14px;
+	font-weight: 650;
+	color: #1c1a17;
+	line-height: 1.35;
+	margin-bottom: 4px;
+	lines: 2;
+	text-overflow: ellipsis;
+}
+
+.article-stat {
+	font-size: 11px;
+	color: #5c574f;
+}
+
+.cover {
+	width: 78px;
+	height: 78px;
+	border-radius: 16px;
+	align-items: center;
+	justify-content: center;
+}
+
+.cover-em {
+	font-size: 26px;
+}
+</style>

@@ -1,0 +1,86 @@
+<template>
+	<!-- 留言板：列表 + 发布示意 -->
+	<view class="x-page">
+		<x-navbar title="留言板">
+			<template v-slot:right>
+				<text class="pub" @click="onPublish">发布</text>
+			</template>
+		</x-navbar>
+		<text class="count">共 128 条留言</text>
+		<view v-for="item in items" :key="item.id" class="x-card">
+			<view class="row">
+				<text class="author">{{ item.author }}</text>
+				<text class="floor">#{{ item.floor }}</text>
+			</view>
+			<text class="content">{{ item.content }}</text>
+			<view v-if="item.reply != null" class="reply-nest">
+				<text class="reply-t">{{ item.reply }}</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 留言板：mock guestbookItems；发布仅 toast
+ */
+import { guestbookItems } from '../../mock/data'
+import { showXToast } from '../../utils/toast'
+
+const items = guestbookItems
+
+function onPublish(): void {
+	showXToast('💬', '已发布', '示意留言已提交')
+}
+</script>
+
+<style>
+.pub {
+	font-size: 12px;
+	color: #3db89a;
+	font-weight: 600;
+}
+
+.count {
+	font-size: 12px;
+	color: #9a948a;
+	margin-bottom: 10px;
+}
+
+.row {
+	flex-direction: row;
+	align-items: center;
+	margin-bottom: 6px;
+}
+
+.author {
+	flex: 1;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1c1a17;
+}
+
+.floor {
+	font-size: 10px;
+	color: #9a948a;
+}
+
+.content {
+	font-size: 13px;
+	color: #5c574f;
+	line-height: 1.45;
+}
+
+.reply-nest {
+	margin-top: 8px;
+	margin-left: 8px;
+	padding: 8px 10px;
+	background-color: #ebe6df;
+	border-radius: 10px;
+}
+
+.reply-t {
+	font-size: 12px;
+	color: #5c574f;
+}
+</style>

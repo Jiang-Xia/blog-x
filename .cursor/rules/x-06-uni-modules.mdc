@@ -11,7 +11,7 @@ alwaysApply: false
 | 模块 | 用途 |
 |------|------|
 | `uni-ui-x` | DCloud 官方 uni-app x 组件库（蒸汽模式最佳实践；样式全走 class，属性只控功能） |
-| `uni-tab-bar` | 自定义 tabBar（`uni-tab / uni-tab-bar / uni-tab-content / uni-tab-item / uni-tab-midbutton`） |
+| `uni-tab-bar` | 自定义 tabBar；本项目主壳用 **tab-bar-blur**（`pages/index/index` + `x-tab-*` 面板） |
 | `uni-nav-bar-x` / `uni-collapse-x` / `uni-combox-x` / `uni-rate-x` / `uni-badge-view` 等 | 导航/折叠/下拉/评分/徽标等独立组件 |
 | `uni-refresh-box` / `uni-index-bar` / `uni-drag-cell` / `uni-fab-button` / `uni-number-box-x` / `uni-link-x` / `uni-time-format` | 刷新/索引/拖拽/悬浮按钮/数字步进/链接/时间格式化 |
 | `uts-openSchema` | UTS 插件：打开外部链接/应用 |

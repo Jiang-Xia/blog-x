@@ -1,0 +1,107 @@
+<template>
+	<!-- 文章归档：按月统计 + 示例文章入口 -->
+	<view class="x-page">
+		<x-navbar title="归档"></x-navbar>
+		<text class="year">2026</text>
+		<view v-for="m in months" :key="m.monthLabel" class="x-card">
+			<view class="month-row">
+				<view class="dot"></view>
+				<view class="bar-wrap">
+					<view class="label-row">
+						<text class="m-label">{{ m.monthLabel }}</text>
+						<text class="m-count">{{ m.count }} 篇</text>
+					</view>
+					<view class="bar light">
+						<view class="bar-i" :style="{ width: (m.count * 10) + '%' }"></view>
+					</view>
+				</view>
+			</view>
+			<view
+				v-if="m.articleId != null && m.articleTitle != null"
+				class="art-link"
+				@click="goDetail(m.articleId!)"
+			>
+				<text class="art-t">{{ m.articleTitle }}</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 归档页：mock archiveMonths
+ */
+import { archiveMonths } from '../../mock/data'
+
+const months = archiveMonths
+
+function goDetail(id: string): void {
+	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
+}
+</script>
+
+<style>
+.year {
+	font-size: 18px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 12px;
+}
+
+.month-row {
+	flex-direction: row;
+	align-items: center;
+}
+
+.dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 4px;
+	background-color: #3db89a;
+	margin-right: 10px;
+}
+
+.bar-wrap {
+	flex: 1;
+}
+
+.label-row {
+	flex-direction: row;
+	justify-content: space-between;
+	margin-bottom: 6px;
+}
+
+.m-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1c1a17;
+}
+
+.m-count {
+	font-size: 13px;
+	color: #9a948a;
+}
+
+.bar {
+	height: 8px;
+	background-color: #ebe6df;
+	border-radius: 999px;
+	overflow: hidden;
+}
+
+.bar-i {
+	height: 8px;
+	background-color: #3db89a;
+	border-radius: 999px;
+}
+
+.art-link {
+	margin-top: 10px;
+	padding-left: 18px;
+}
+
+.art-t {
+	font-size: 13px;
+	color: #2a8f76;
+}
+</style>

@@ -1,0 +1,91 @@
+<template>
+	<!-- 登录：品牌 + 微信一键登录示意 -->
+	<view class="x-page">
+		<x-navbar title="登录"></x-navbar>
+		<view class="brand">
+			<text class="brand-em">🦊</text>
+			<text class="brand-name">江夏的博客</text>
+		</view>
+		<view class="wx-btn" @click="onLogin">
+			<text class="wx-text">微信一键登录</text>
+		</view>
+		<view class="unlock">
+			<text class="x-chip">评论回复</text>
+			<text class="x-chip x-chip-peach">签到抽奖</text>
+			<text class="x-chip x-chip-lav">收藏同步</text>
+		</view>
+		<text class="proto">登录即表示同意用户协议与隐私政策（示意）</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 登录页：原型示意，不接真实微信 OAuth
+ */
+import { showXToast } from '../../utils/toast'
+import { setToken } from '../../utils/storage'
+import { goTab, TAB_ME } from '../../utils/tabNav'
+
+/**
+ * 示意登录成功
+ */
+function onLogin(): void {
+	setToken('mock_token_' + Date.now())
+	showXToast('✅', '登录成功', '欢迎回来')
+	setTimeout(() => {
+		uni.navigateBack({
+			fail: () => {
+				goTab(TAB_ME)
+			},
+		})
+	}, 500)
+}
+</script>
+
+<style>
+.brand {
+	align-items: center;
+	padding: 48px 0 32px;
+}
+
+.brand-em {
+	font-size: 48px;
+	margin-bottom: 12px;
+}
+
+.brand-name {
+	font-size: 20px;
+	font-weight: 700;
+	color: #1c1a17;
+}
+
+.wx-btn {
+	background-color: #07c160;
+	border-radius: 999px;
+	padding: 13px;
+	align-items: center;
+	align-self: center;
+	width: 260px;
+	margin-bottom: 20px;
+}
+
+.wx-text {
+	font-size: 14px;
+	font-weight: 600;
+	color: #ffffff;
+}
+
+.unlock {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: center;
+	margin-bottom: 24px;
+}
+
+.proto {
+	font-size: 11px;
+	color: #9a948a;
+	text-align: center;
+	line-height: 1.5;
+}
+</style>

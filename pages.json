@@ -1,15 +1,66 @@
 {
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^x-(.*)": "@/components/x-$1/x-$1.uvue"
+		}
+	},
 	"pages": [
-		// 主包：冷启动 + 后续 TabBar 页（首页保持第一项）
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "首页"
+				"navigationBarTitleText": "首页",
+				"navigationStyle": "custom",
+				"disableScroll": true
+			}
+		},
+		{
+			"path": "pages/discover/discover",
+			"style": {
+				"navigationBarTitleText": "发现",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/rpg/entry",
+			"style": {
+				"navigationBarTitleText": "冒险",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/me/me",
+			"style": {
+				"navigationBarTitleText": "我的",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/search/search",
+			"style": {
+				"navigationBarTitleText": "搜索"
+			}
+		},
+		{
+			"path": "pages/detail/detail",
+			"style": {
+				"navigationBarTitleText": "文章"
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/notify/notify",
+			"style": {
+				"navigationBarTitleText": "消息中心"
 			}
 		}
 	],
 	"subPackages": [
-		// 阅读 / 用户内容分包（对齐 blog-home-uniapp pages-blog；参考 shopkeeper-cli 分包体积拆分）
 		{
 			"root": "pages-blog",
 			"pages": [
@@ -18,22 +69,93 @@
 					"style": {
 						"navigationBarTitleText": "博客分包"
 					}
+				},
+				{
+					"path": "archives/index",
+					"style": {
+						"navigationBarTitleText": "归档"
+					}
+				},
+				{
+					"path": "guestbook/index",
+					"style": {
+						"navigationBarTitleText": "留言板"
+					}
+				},
+				{
+					"path": "links/index",
+					"style": {
+						"navigationBarTitleText": "友情链接"
+					}
+				},
+				{
+					"path": "favorites/index",
+					"style": {
+						"navigationBarTitleText": "我的收藏"
+					}
+				},
+				{
+					"path": "inbox/index",
+					"style": {
+						"navigationBarTitleText": "评论收件箱"
+					}
+				},
+				{
+					"path": "profile/index",
+					"style": {
+						"navigationBarTitleText": "公开主页"
+					}
+				},
+				{
+					"path": "audit/index",
+					"style": {
+						"navigationBarTitleText": "审核台"
+					}
+				},
+				{
+					"path": "ai/index",
+					"style": {
+						"navigationBarTitleText": "AI 助手"
+					}
 				}
 			]
 		},
-		// RPG 冒险分包（完整玩法页；Tab 入口后续放主包 pages/rpg/entry）
 		{
 			"root": "pages-rpg",
 			"pages": [
 				{
 					"path": "index/index",
 					"style": {
-						"navigationBarTitleText": "冒险中心"
+						"navigationBarTitleText": "冒险中心",
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "lottery/index",
+					"style": {
+						"navigationBarTitleText": "幸运抽奖"
+					}
+				},
+				{
+					"path": "rank/index",
+					"style": {
+						"navigationBarTitleText": "排行榜"
+					}
+				},
+				{
+					"path": "calendar/index",
+					"style": {
+						"navigationBarTitleText": "签到日历"
+					}
+				},
+				{
+					"path": "recharge/index",
+					"style": {
+						"navigationBarTitleText": "钻石充值"
 					}
 				}
 			]
 		},
-		// 实用工具分包（体积大、低频访问）
 		{
 			"root": "pages-tool",
 			"pages": [
@@ -47,19 +169,16 @@
 		}
 	],
 	"preloadRule": {
-		// 进入首页后预下载博客分包（wifi/all 可按需调整）
 		"pages/index/index": {
 			"network": "all",
-			"packages": [
-				"pages-blog"
-			]
+			"packages": ["pages-blog", "pages-rpg"]
 		}
 	},
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "blog-x",
-		"navigationBarBackgroundColor": "#F8F8F8",
-		"backgroundColor": "#F8F8F8"
+		"navigationBarBackgroundColor": "#f4f1ec",
+		"backgroundColor": "#f4f1ec"
 	},
 	"uniIdRouter": {}
 }

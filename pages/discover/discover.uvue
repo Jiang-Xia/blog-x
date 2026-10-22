@@ -1,0 +1,30 @@
+<template>
+	<!-- 兼容旧路径：重定向到主壳发现 Tab -->
+	<view class="x-page shell">
+		<text class="tip">进入发现…</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 旧 discover 路由兼容：自定义 tab-bar-blur 后发现在主壳 index tab=1
+ */
+import { goTab, TAB_DISCOVER } from '../../utils/tabNav'
+
+onShow(() => {
+	goTab(TAB_DISCOVER)
+})
+</script>
+
+<style>
+.shell {
+	align-items: center;
+	justify-content: center;
+	flex: 1;
+}
+
+.tip {
+	font-size: 13px;
+	color: #9a948a;
+}
+</style>

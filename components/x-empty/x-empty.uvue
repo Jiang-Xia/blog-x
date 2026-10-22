@@ -1,0 +1,63 @@
+<template>
+	<!-- 空状态：大表情 + 文案 + 可选操作按钮 -->
+	<view class="x-empty">
+		<text class="x-empty-em">{{ emoji }}</text>
+		<text class="x-empty-text">{{ text }}</text>
+		<view v-if="actionText.length > 0" class="x-empty-btn" @click="onAction">
+			<text class="x-empty-btn-text">{{ actionText }}</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 空状态展示组件
+ */
+defineProps({
+	emoji: { type: String, default: '📭' },
+	text: { type: String, default: '暂无内容' },
+	actionText: { type: String, default: '' },
+})
+
+const emit = defineEmits(['action'])
+
+/**
+ * 点击操作按钮
+ */
+function onAction(): void {
+	emit('action')
+}
+</script>
+
+<style>
+.x-empty {
+	align-items: center;
+	padding: 48px 12px;
+}
+
+.x-empty-em {
+	font-size: 40px;
+	margin-bottom: 10px;
+	text-align: center;
+}
+
+.x-empty-text {
+	font-size: 13px;
+	color: #9a948a;
+	line-height: 1.55;
+	text-align: center;
+	margin-bottom: 16px;
+}
+
+.x-empty-btn {
+	background-color: #3db89a;
+	border-radius: 999px;
+	padding: 10px 20px;
+}
+
+.x-empty-btn-text {
+	font-size: 13px;
+	color: #ffffff;
+	font-weight: 600;
+}
+</style>

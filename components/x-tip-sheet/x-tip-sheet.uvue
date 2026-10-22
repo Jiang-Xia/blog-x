@@ -1,0 +1,161 @@
+<template>
+	<!-- 打赏底部 Sheet：SKU + 微信支付（示意） -->
+	<view v-if="open" class="x-sheet-mask" @click="onMask">
+		<view class="x-sheet" @click.stop="noop">
+			<view class="x-sheet-handle"></view>
+			<text class="x-sheet-title">请作者喝杯咖啡</text>
+			<text class="x-sheet-desc">支持创作 · RPG 钻石加油 / 砸蛋 / 送花（示意）</text>
+			<view class="x-pack">
+				<view
+					v-for="sku in skus"
+					:key="sku.id"
+					:class="sku.id === selectedId ? 'x-sku x-sku-on' : 'x-sku'"
+					@click="selectSku(sku.id)"
+				>
+					<text class="x-sku-strong">{{ sku.label }}</text>
+					<text class="x-sku-span">{{ sku.desc }}</text>
+				</view>
+			</view>
+			<view class="x-wx-btn" @click="onPay">
+				<text class="x-wx-btn-text">微信支付</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 打赏 Sheet：纯前端示意，支付成功仅 toast
+ * 数据：mock tipSkus
+ */
+import { tipSkus } from '../../mock/data'
+import { showXToast } from '../../utils/toast'
+
+const props = defineProps({
+	open: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['close', 'paid'])
+
+const skus = tipSkus
+const selectedId = ref('6.66')
+
+/**
+ * 阻止点击穿透到遮罩
+ */
+function noop(): void {}
+
+/**
+ * 选中 SKU
+ */
+function selectSku(id: string): void {
+	selectedId.value = id
+}
+
+/**
+ * 点击遮罩关闭
+ */
+function onMask(): void {
+	emit('close')
+}
+
+/**
+ * 示意支付成功
+ */
+function onPay(): void {
+	emit('paid')
+	emit('close')
+	showXToast('☕', '打赏成功', '微信支付示意')
+}
+</script>
+
+<style>
+.x-sheet-mask {
+	position: fixed;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	background-color: rgba(28, 26, 23, 0.32);
+	z-index: 100;
+	justify-content: flex-end;
+}
+
+.x-sheet {
+	background-color: #ffffff;
+	border-radius: 24px 24px 0 0;
+	padding: 12px 16px 28px;
+}
+
+.x-sheet-handle {
+	width: 36px;
+	height: 4px;
+	border-radius: 2px;
+	background-color: #ebe6df;
+	align-self: center;
+	margin-bottom: 12px;
+}
+
+.x-sheet-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 4px;
+}
+
+.x-sheet-desc {
+	font-size: 12px;
+	color: #5c574f;
+	margin-bottom: 12px;
+	line-height: 1.45;
+}
+
+.x-pack {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	margin-bottom: 14px;
+}
+
+.x-sku {
+	width: 48%;
+	border-radius: 16px;
+	padding: 12px;
+	background-color: #ffffff;
+	border-width: 1.5px;
+	border-style: solid;
+	border-color: #ebe6df;
+	margin-bottom: 8px;
+}
+
+.x-sku-on {
+	border-color: #3db89a;
+	background-color: rgba(61, 184, 154, 0.08);
+}
+
+.x-sku-strong {
+	font-size: 16px;
+	color: #1c1a17;
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.x-sku-span {
+	font-size: 11px;
+	color: #9a948a;
+}
+
+.x-wx-btn {
+	background-color: #07c160;
+	border-radius: 999px;
+	padding: 13px;
+	align-items: center;
+	justify-content: center;
+}
+
+.x-wx-btn-text {
+	font-size: 14px;
+	font-weight: 600;
+	color: #ffffff;
+}
+</style>

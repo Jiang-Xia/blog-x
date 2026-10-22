@@ -18,13 +18,14 @@ alwaysApply: false
    - 主包 → `pages` 数组 `{ path, style }`；首页保持第一项
    - 分包 → 对应 `subPackages` 项的 `pages`（`path` 为相对 root 的路径）
 3. 页面标题用 `style.navigationBarTitleText` 配置，不要写死在模板里
-4. 需要 tabBar 的页面：必须在**主包**，并写入 `tabBar.list`（图标放 `static/`）
+4. 四 Tab 在主壳 `pages/index/index`（`uni-tab` + tab-bar-blur）；**不要**再写 `pages.json` 的 `tabBar`
 5. 可选：在高频主包页配置 `preloadRule` 预下载相关分包
 
 ## 页面跳转与参数
 
 - 主包：`uni.navigateTo({ url: '/pages/detail/detail?id=xx' })`
 - 分包：`uni.navigateTo({ url: '/pages-blog/archives/index' })`（含 root）
+- 回 Tab：`goTab(TAB_HOME|DISCOVER|RPG|ME)`（`utils/tabNav`），勿用 `uni.switchTab`
 - `onLoad(options)` 接参并做类型处理
 - 简单状态传递可用 `uni.$emit / uni.$on`（注意页面卸载时 `uni.$off`，防内存泄漏）
 
@@ -37,7 +38,7 @@ alwaysApply: false
 | 布局 | 默认 flex；行布局显式声明 `flex-direction: row`（或复用 `App.uvue` 的 `.uni-row`） |
 | 颜色 | 页面独有色值可写死；主题变量走 `uni.scss`（`$uni-*`） |
 | 不支持 | `float` 布局、复杂伪元素/伪类；`position: fixed` 行为差异需真机验证 |
-| 样式隔离 | manifest `styleIsolationVersion: 2`；跨组件样式用 externalClass（见 `x-06-uni-modules.mdc`） |
+| 样式隔离 | manifest `styleIsolationVersion: 2`；组件用 `x-*` 基类须 `@import styles/x-base.css`；跨组件用 externalClass |
 
 ## 组件样式优先级
 

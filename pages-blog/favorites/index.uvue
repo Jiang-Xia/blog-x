@@ -1,0 +1,21 @@
+<template>
+	<!-- 我的收藏：空态 + 去首页 -->
+	<view class="x-page">
+		<x-navbar title="我的收藏"></x-navbar>
+		<x-empty emoji="⭐" text="还没有收藏，去首页逛逛吧" action-text="去首页" @action="goHome"></x-empty>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 收藏页：原型空态
+ */
+import { goTab, TAB_HOME } from '../../utils/tabNav'
+
+function goHome(): void {
+	goTab(TAB_HOME)
+}
+</script>
+
+<style>
+</style>

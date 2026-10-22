@@ -1,32 +1,30 @@
-<!--
-  职责：RPG 冒险中心分包占位（pages-rpg）；Tab 壳页后续放主包 pages/rpg/entry。
-  数据来源：暂无；玩法接口对齐 blog-server / blog-home-uniapp。
--->
 <template>
-	<view class="page">
-		<text class="title">{{ title }}</text>
-		<text class="hint">微信小程序分包 root：pages-rpg</text>
+	<!-- 分包入口兼容：切回主壳冒险 Tab -->
+	<view class="x-page shell">
+		<text class="tip">返回冒险…</text>
 	</view>
 </template>
 
 <script setup lang="ts">
-	/** 分包占位标题 */
-	const title = ref('冒险中心占位')
+/**
+ * 分包 index：直达时切回主壳冒险 Tab（UI 在 x-tab-rpg）
+ */
+import { goTab, TAB_RPG } from '../../utils/tabNav'
+
+onShow(() => {
+	goTab(TAB_RPG)
+})
 </script>
 
 <style>
-	.page {
-		padding: 48rpx;
-	}
+.shell {
+	align-items: center;
+	justify-content: center;
+	flex: 1;
+}
 
-	.title {
-		font-size: 36rpx;
-		color: #333333;
-	}
-
-	.hint {
-		margin-top: 24rpx;
-		font-size: 26rpx;
-		color: #8f8f94;
-	}
+.tip {
+	font-size: 13px;
+	color: #9a948a;
+}
 </style>

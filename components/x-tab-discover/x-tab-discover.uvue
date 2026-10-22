@@ -1,0 +1,174 @@
+<template>
+	<!-- 发现 Tab 面板：搜索、分类、入口瓦片、热门 -->
+	<scroll-view class="x-page-tab" scroll-y="true">
+		<view class="status-pad"></view>
+		<text class="x-page-title">发现</text>
+
+		<view class="search-bar" @click="goSearch">
+			<text class="search-ico">⌕</text>
+			<text class="search-ph">搜索文章、标签、作者</text>
+		</view>
+
+		<view class="chip-row chip-gap">
+			<text
+				v-for="(c, i) in categories"
+				:key="c"
+				:class="i === 0 ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
+			>{{ c }}</text>
+		</view>
+
+		<view class="x-grid-2">
+			<view class="x-grid-2-item">
+				<view class="x-tile" @click="goArchive">
+					<text class="x-tile-ico">📚</text>
+					<text class="x-tile-title">归档</text>
+					<text class="x-tile-desc">按月浏览</text>
+				</view>
+			</view>
+			<view class="x-grid-2-item">
+				<view class="x-tile" @click="onTags">
+					<text class="x-tile-ico">🏷️</text>
+					<text class="x-tile-title">标签墙</text>
+					<text class="x-tile-desc">24 个标签</text>
+				</view>
+			</view>
+			<view class="x-grid-2-item">
+				<view class="x-tile" @click="goGuestbook">
+					<text class="x-tile-ico">💬</text>
+					<text class="x-tile-title">留言板</text>
+					<text class="x-tile-desc">访客留言</text>
+				</view>
+			</view>
+			<view class="x-grid-2-item">
+				<view class="x-tile" @click="goLinks">
+					<text class="x-tile-ico">🔗</text>
+					<text class="x-tile-title">友链</text>
+					<text class="x-tile-desc">友情链接</text>
+				</view>
+			</view>
+		</view>
+
+		<view class="x-section-head">
+			<text class="x-section-title">热门</text>
+		</view>
+		<view class="x-card article" @click="goDetail(hot.id)">
+			<view class="article-body">
+				<text class="article-title">{{ hot.title }}</text>
+				<text class="article-stat">{{ hot.hotLabel }} · 💭</text>
+			</view>
+			<view class="cover">
+				<text class="cover-em">{{ hot.coverEmoji }}</text>
+			</view>
+		</view>
+	</scroll-view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 发现 Tab 面板：对齐原型 discover
+ * 数据来源：mock/data
+ */
+import { discoverCategories, hotArticle } from '../../mock/data'
+import { showXToast } from '../../utils/toast'
+
+const categories = discoverCategories
+const hot = hotArticle
+
+function goSearch(): void {
+	uni.navigateTo({ url: '/pages/search/search' })
+}
+
+function goArchive(): void {
+	uni.navigateTo({ url: '/pages-blog/archives/index' })
+}
+
+function onTags(): void {
+	showXToast('🏷️', '标签墙', '24 个标签 · 示意')
+}
+
+function goGuestbook(): void {
+	uni.navigateTo({ url: '/pages-blog/guestbook/index' })
+}
+
+function goLinks(): void {
+	uni.navigateTo({ url: '/pages-blog/links/index' })
+}
+
+function goDetail(id: string): void {
+	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
+}
+</script>
+
+<style>
+@import '../../styles/x-base.css';
+
+.status-pad {
+	height: 48px;
+}
+
+.search-bar {
+	flex-direction: row;
+	align-items: center;
+	background-color: #ffffff;
+	border-radius: 999px;
+	padding: 11px 14px;
+	margin-bottom: 12px;
+}
+
+.search-ico {
+	font-size: 14px;
+	color: #9a948a;
+	margin-right: 8px;
+}
+
+.search-ph {
+	flex: 1;
+	font-size: 13px;
+	color: #9a948a;
+}
+
+.chip-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.chip-gap {
+	margin-bottom: 12px;
+}
+
+.article {
+	flex-direction: row;
+	align-items: center;
+}
+
+.article-body {
+	flex: 1;
+	margin-right: 12px;
+}
+
+.article-title {
+	font-size: 14px;
+	font-weight: 650;
+	color: #1c1a17;
+	line-height: 1.35;
+	margin-bottom: 4px;
+}
+
+.article-stat {
+	font-size: 11px;
+	color: #5c574f;
+}
+
+.cover {
+	width: 78px;
+	height: 78px;
+	border-radius: 16px;
+	background-color: #c8efe4;
+	align-items: center;
+	justify-content: center;
+}
+
+.cover-em {
+	font-size: 26px;
+}
+</style>

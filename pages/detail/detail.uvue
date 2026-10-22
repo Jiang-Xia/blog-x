@@ -1,0 +1,359 @@
+<template>
+	<!-- 文章详情：正文占位、AI、相关、评论、底栏赞藏赏 -->
+	<view class="page-wrap">
+		<scroll-view class="x-page detail-scroll" scroll-y="true">
+			<x-navbar title="文章">
+				<template v-slot:right>
+					<text class="nav-more">⋯  ↗</text>
+				</template>
+			</x-navbar>
+
+			<view class="author-row">
+				<view class="x-avatar av">
+					<text>{{ article.authorEmoji }}</text>
+				</view>
+				<view class="author-meta">
+					<text class="author-name">{{ article.authorName }}</text>
+					<text class="x-meta">{{ article.readLabel }}</text>
+				</view>
+			</view>
+
+			<text class="detail-title">{{ article.title }}</text>
+			<text class="x-meta meta-line">{{ article.categoryName }} · {{ article.timeLabel }}</text>
+
+			<view class="prose">
+				<view class="l"></view>
+				<view class="l"></view>
+				<view class="l s"></view>
+				<view class="code"></view>
+				<view class="l"></view>
+				<view class="l s"></view>
+			</view>
+
+			<view class="x-card ai-card" @click="goAi">
+				<text class="ai-label">✦ AI 摘要</text>
+				<text class="ai-body">{{ article.aiSummary }}</text>
+			</view>
+
+			<view class="x-section-head">
+				<text class="x-section-title">相关阅读</text>
+			</view>
+			<scroll-view class="related" scroll-x="true">
+				<view class="related-inner">
+					<view
+						v-for="m in related"
+						:key="m.id"
+						class="mini"
+						@click="goDetail(m.id)"
+					>
+						<text class="mini-em">{{ m.emoji }}</text>
+						<text class="mini-t">{{ m.title }}</text>
+					</view>
+				</view>
+			</scroll-view>
+
+			<view class="x-section-head">
+				<text class="x-section-title">评论</text>
+			</view>
+			<view v-for="(c, idx) in comments" :key="idx" class="comment">
+				<view class="cav">
+					<text>{{ c.emoji }}</text>
+				</view>
+				<view class="bubble">
+					<text class="c-name">{{ c.name }} {{ c.tag }}</text>
+					<text class="c-text">{{ c.text }}</text>
+				</view>
+			</view>
+			<view class="bottom-pad"></view>
+		</scroll-view>
+
+		<view class="action-bar">
+			<view class="cmt-input">
+				<text class="cmt-ph">说点什么…</text>
+			</view>
+			<view :class="liked ? 'act on' : 'act'" @click="onLike">
+				<view class="ic"></view>
+				<text class="act-t">赞</text>
+			</view>
+			<view :class="faved ? 'act fav-on' : 'act'" @click="onFav">
+				<view class="ic"></view>
+				<text class="act-t">藏</text>
+			</view>
+			<view class="act" @click="tipOpen = true">
+				<view class="ic tip"></view>
+				<text class="act-t">赏</text>
+			</view>
+		</view>
+
+		<x-tip-sheet :open="tipOpen" @close="tipOpen = false"></x-tip-sheet>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 文章详情：mock articles；赞/藏写 useMockStore；赏打开 tip-sheet
+ */
+import { articles, detailComments, relatedMinis } from '../../mock/data'
+import type { ArticleDetail } from '../../types/article'
+import {
+	isMockFaved,
+	isMockLiked,
+	toggleMockFav,
+	toggleMockLike,
+} from '../../composables/useMockStore'
+import { showXToast } from '../../utils/toast'
+
+const article = ref(articles[0] as ArticleDetail)
+const related = relatedMinis
+const comments = detailComments
+const tipOpen = ref(false)
+const liked = ref(false)
+const faved = ref(false)
+const articleId = ref('0')
+
+onLoad((options) => {
+	const id = options != null && options['id'] != null ? ('' + options['id']) : '0'
+	articleId.value = id
+	for (let i = 0; i < articles.length; i++) {
+		if (articles[i].id === id) {
+			article.value = articles[i]
+			break
+		}
+	}
+	liked.value = isMockLiked(id)
+	faved.value = isMockFaved(id)
+})
+
+function goAi(): void {
+	uni.navigateTo({ url: '/pages-blog/ai/index' })
+}
+
+function goDetail(id: string): void {
+	uni.redirectTo({ url: '/pages/detail/detail?id=' + id })
+}
+
+function onLike(): void {
+	liked.value = toggleMockLike(articleId.value)
+	showXToast(liked.value ? '❤️' : '🤍', liked.value ? '已点赞' : '取消点赞', '')
+}
+
+function onFav(): void {
+	faved.value = toggleMockFav(articleId.value)
+	showXToast(faved.value ? '⭐' : '☆', faved.value ? '已收藏' : '取消收藏', '')
+}
+</script>
+
+<style>
+.page-wrap {
+	flex: 1;
+	background-color: #f4f1ec;
+}
+
+.detail-scroll {
+	flex: 1;
+	padding-bottom: 80px;
+}
+
+.nav-more {
+	font-size: 12px;
+	color: #5c574f;
+}
+
+.author-row {
+	flex-direction: row;
+	align-items: center;
+	margin-bottom: 12px;
+}
+
+.av {
+	width: 36px;
+	height: 36px;
+	margin-right: 10px;
+}
+
+.author-name {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1c1a17;
+}
+
+.detail-title {
+	font-size: 20px;
+	font-weight: 700;
+	color: #1c1a17;
+	line-height: 1.35;
+	margin-bottom: 8px;
+}
+
+.meta-line {
+	margin-bottom: 14px;
+}
+
+.prose {
+	margin-bottom: 12px;
+}
+
+.l {
+	height: 8px;
+	border-radius: 3px;
+	background-color: #ebe6df;
+	margin-bottom: 8px;
+}
+
+.s {
+	width: 62%;
+}
+
+.code {
+	height: 48px;
+	border-radius: 12px;
+	background-color: #2c2924;
+	margin: 10px 0;
+}
+
+.ai-card {
+	background-color: rgba(61, 184, 154, 0.08);
+}
+
+.ai-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #2a8f76;
+	margin-bottom: 6px;
+}
+
+.ai-body {
+	font-size: 13px;
+	color: #5c574f;
+	line-height: 1.5;
+}
+
+.related {
+	height: 90px;
+	margin-bottom: 12px;
+}
+
+.related-inner {
+	flex-direction: row;
+}
+
+.mini {
+	width: 120px;
+	border-radius: 14px;
+	padding: 10px;
+	background-color: #ffffff;
+	margin-right: 8px;
+}
+
+.mini-em {
+	font-size: 20px;
+	margin-bottom: 4px;
+}
+
+.mini-t {
+	font-size: 12px;
+	font-weight: 650;
+	color: #1c1a17;
+	lines: 2;
+	text-overflow: ellipsis;
+}
+
+.comment {
+	flex-direction: row;
+	margin-bottom: 12px;
+}
+
+.cav {
+	width: 32px;
+	height: 32px;
+	border-radius: 16px;
+	background-color: #f0e6d8;
+	align-items: center;
+	justify-content: center;
+	margin-right: 10px;
+}
+
+.bubble {
+	flex: 1;
+	background-color: #ffffff;
+	border-radius: 16px;
+	padding: 10px 12px;
+}
+
+.c-name {
+	font-size: 12px;
+	font-weight: 600;
+	color: #1c1a17;
+	margin-bottom: 4px;
+}
+
+.c-text {
+	font-size: 13px;
+	color: #5c574f;
+	line-height: 1.45;
+}
+
+.bottom-pad {
+	height: 24px;
+}
+
+.action-bar {
+	position: fixed;
+	left: 14px;
+	right: 14px;
+	bottom: 14px;
+	height: 52px;
+	background-color: rgba(255, 255, 255, 0.95);
+	border-radius: 18px;
+	flex-direction: row;
+	align-items: center;
+	padding: 0 12px;
+	z-index: 30;
+}
+
+.cmt-input {
+	flex: 1;
+	height: 34px;
+	border-radius: 16px;
+	background-color: #ebe6df;
+	justify-content: center;
+	padding: 0 12px;
+	margin-right: 8px;
+}
+
+.cmt-ph {
+	font-size: 12px;
+	color: #9a948a;
+}
+
+.act {
+	align-items: center;
+	margin-left: 6px;
+	min-width: 36px;
+}
+
+.ic {
+	width: 20px;
+	height: 20px;
+	border-radius: 6px;
+	background-color: #ebe6df;
+	margin-bottom: 2px;
+}
+
+.on .ic {
+	background-color: rgba(232, 137, 122, 0.22);
+}
+
+.fav-on .ic {
+	background-color: rgba(246, 217, 168, 0.65);
+}
+
+.tip {
+	background-color: rgba(61, 184, 154, 0.25);
+}
+
+.act-t {
+	font-size: 10px;
+	color: #9a948a;
+}
+</style>

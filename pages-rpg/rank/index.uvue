@@ -1,0 +1,81 @@
+<template>
+	<!-- 排行榜：分段仅 UI -->
+	<view class="x-page">
+		<x-navbar title="排行榜"></x-navbar>
+		<view class="x-seg">
+			<view
+				v-for="(s, i) in segs"
+				:key="s"
+				:class="segIndex === i ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
+				@click="segIndex = i"
+			>
+				<text :class="segIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
+			</view>
+		</view>
+		<view
+			v-for="row in rows"
+			:key="row.rank"
+			:class="row.isMe ? 'x-card row me' : 'x-card row'"
+		>
+			<text class="rank">#{{ row.rank }}</text>
+			<text class="em">{{ row.emoji }}</text>
+			<view class="body">
+				<text class="name">{{ row.name }}{{ row.isMe ? '（我）' : '' }}</text>
+				<text class="x-meta">Lv.{{ row.level }}</text>
+			</view>
+			<text class="score">{{ row.score }}</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 排行榜：mock rankRows；分段不筛选数据
+ */
+import { rankRows } from '../../mock/data'
+
+const segs = ['本周经验', '钻石', '连续签到']
+const segIndex = ref(0)
+const rows = rankRows
+</script>
+
+<style>
+.row {
+	flex-direction: row;
+	align-items: center;
+}
+
+.me {
+	border-width: 1.5px;
+	border-style: solid;
+	border-color: #3db89a;
+}
+
+.rank {
+	font-size: 14px;
+	font-weight: 700;
+	color: #9a948a;
+	width: 40px;
+}
+
+.em {
+	font-size: 22px;
+	margin-right: 10px;
+}
+
+.body {
+	flex: 1;
+}
+
+.name {
+	font-size: 14px;
+	font-weight: 650;
+	color: #1c1a17;
+}
+
+.score {
+	font-size: 14px;
+	font-weight: 700;
+	color: #2a8f76;
+}
+</style>

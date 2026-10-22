@@ -24,7 +24,7 @@ alwaysApply: true
 2. **函数体超过 5 行**：函数头 JSDoc；核心分支前 1 行注释
 3. **复杂逻辑**：多条件、异步并发、缓存/去重、跨组件数据流
 4. **条件编译块**：说明端差异原因（见 `x-03-conditional-platform.mdc`）
-5. **pages.json 新增页面 / tabBar 项**：行注释说明页面用途
+5. **pages.json 新增页面**：行注释说明页面用途；主壳 Tab 变更注明 goTab / tab-bar-blur
 
 ## 展示类数据（全项目通则）
 

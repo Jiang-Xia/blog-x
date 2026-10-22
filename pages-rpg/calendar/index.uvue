@@ -1,0 +1,164 @@
+<template>
+	<!-- 签到日历：十月网格 -->
+	<view class="x-page">
+		<x-navbar title="签到日历"></x-navbar>
+		<view class="x-card summary">
+			<text class="sum-t">已签 21/31 · 连续 33 天 · 本周全勤</text>
+			<view class="ring">
+				<text class="ring-pct">68%</text>
+			</view>
+		</view>
+		<text class="month">2026 年 10 月</text>
+		<view class="cal">
+			<text v-for="h in weekHeads" :key="h" class="hd">{{ h }}</text>
+			<view
+				v-for="(d, i) in days"
+				:key="'d' + i"
+				:class="dayClass(d)"
+			>
+				<text :class="dayTextClass(d)">{{ d.label }}</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 签到日历：mock calendarHits；固定 2026-10 示意
+ */
+import { calendarHits } from '../../mock/data'
+
+const weekHeads = ['日', '一', '二', '三', '四', '五', '六']
+
+type DayCell = { label: string; muted: boolean; hit: boolean; on: boolean }
+
+/**
+ * 构建十月日历（1 号周四 → 前导 mute）
+ */
+const days = computed((): DayCell[] => {
+	const list: DayCell[] = []
+	// 前导：9 月 28–30
+	;[28, 29, 30].forEach((n) => {
+		list.push({ label: '' + n, muted: true, hit: false, on: false })
+	})
+	for (let d = 1; d <= 31; d++) {
+		const hit = calendarHits.indexOf(d) >= 0
+		list.push({
+			label: '' + d,
+			muted: false,
+			hit: hit && d !== 21,
+			on: d === 21,
+		})
+	}
+	return list
+})
+
+function dayClass(d: DayCell): string {
+	if (d.muted) return 'd muted'
+	if (d.on) return 'd on'
+	if (d.hit) return 'd hit'
+	return 'd'
+}
+
+function dayTextClass(d: DayCell): string {
+	if (d.on) return 'd-t on-t'
+	if (d.hit) return 'd-t hit-t'
+	if (d.muted) return 'd-t muted-t'
+	return 'd-t'
+}
+</script>
+
+<style>
+.summary {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.sum-t {
+	flex: 1;
+	font-size: 13px;
+	color: #5c574f;
+	line-height: 1.4;
+	margin-right: 12px;
+}
+
+.ring {
+	width: 56px;
+	height: 56px;
+	border-radius: 28px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: #3db89a;
+	background-color: rgba(61, 184, 154, 0.12);
+	align-items: center;
+	justify-content: center;
+}
+
+.ring-pct {
+	font-size: 12px;
+	font-weight: 700;
+	color: #1c1a17;
+}
+
+.month {
+	font-size: 15px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 10px;
+}
+
+.cal {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.hd {
+	width: 14.28%;
+	text-align: center;
+	font-size: 10px;
+	color: #9a948a;
+	padding: 4px 0;
+}
+
+.d {
+	width: 14.28%;
+	height: 40px;
+	border-radius: 10px;
+	align-items: center;
+	justify-content: center;
+	background-color: #ebe6df;
+	margin-bottom: 4px;
+}
+
+.muted {
+	opacity: 0.35;
+}
+
+.on {
+	background-color: #3db89a;
+}
+
+.hit {
+	background-color: rgba(61, 184, 154, 0.12);
+}
+
+.d-t {
+	font-size: 11px;
+	color: #5c574f;
+}
+
+.on-t {
+	color: #ffffff;
+	font-weight: 700;
+}
+
+.hit-t {
+	color: #2a8f76;
+	font-weight: 600;
+}
+
+.muted-t {
+	color: #9a948a;
+}
+</style>

@@ -1,0 +1,64 @@
+<template>
+	<!-- 评论收件箱 -->
+	<view class="x-page">
+		<x-navbar title="评论收件箱"></x-navbar>
+		<text class="badge-line">未读 {{ badge }}</text>
+		<view v-for="item in items" :key="item.id" class="x-card">
+			<text class="art">《{{ item.articleTitle }}》</text>
+			<text class="author">{{ item.author }}</text>
+			<text class="content">{{ item.content }}</text>
+			<view class="x-btn x-btn-ghost reply" @click="onReply">
+				<text class="x-btn-ghost-text">回复</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 评论收件箱：mock inboxItems
+ */
+import { inboxItems } from '../../mock/data'
+import { useMockStore } from '../../composables/useMockStore'
+import { showXToast } from '../../utils/toast'
+
+const items = inboxItems
+const badge = useMockStore().inboxBadge
+
+function onReply(): void {
+	showXToast('↩️', '回复', '示意回复框')
+}
+</script>
+
+<style>
+.badge-line {
+	font-size: 12px;
+	color: #e8897a;
+	font-weight: 600;
+	margin-bottom: 10px;
+}
+
+.art {
+	font-size: 12px;
+	color: #9a948a;
+	margin-bottom: 4px;
+}
+
+.author {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1c1a17;
+	margin-bottom: 4px;
+}
+
+.content {
+	font-size: 13px;
+	color: #5c574f;
+	margin-bottom: 10px;
+	line-height: 1.45;
+}
+
+.reply {
+	align-self: flex-start;
+}
+</style>

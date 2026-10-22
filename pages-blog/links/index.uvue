@@ -1,0 +1,56 @@
+<template>
+	<!-- 友情链接：列表 + 申请示意 -->
+	<view class="x-page">
+		<x-navbar title="友情链接">
+			<template v-slot:right>
+				<text class="apply" @click="onApply">申请</text>
+			</template>
+		</x-navbar>
+		<view v-for="item in links" :key="item.id" class="x-card">
+			<text class="name">{{ item.name }}</text>
+			<text class="url">{{ item.url }}</text>
+		</view>
+		<text class="hint">点击卡片可在真机用 web-view / 复制链接（示意）</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 友链页：mock friendLinks
+ */
+import { friendLinks } from '../../mock/data'
+import { showXToast } from '../../utils/toast'
+
+const links = friendLinks
+
+function onApply(): void {
+	showXToast('🔗', '申请友链', '示意已提交审核')
+}
+</script>
+
+<style>
+.apply {
+	font-size: 12px;
+	color: #3db89a;
+	font-weight: 600;
+}
+
+.name {
+	font-size: 14px;
+	font-weight: 650;
+	color: #1c1a17;
+	margin-bottom: 4px;
+}
+
+.url {
+	font-size: 12px;
+	color: #2a8f76;
+}
+
+.hint {
+	font-size: 11px;
+	color: #9a948a;
+	margin-top: 8px;
+	line-height: 1.5;
+}
+</style>

@@ -21,16 +21,16 @@ uni-app x（uvue）· Vue 3 `<script setup>` + TypeScript · 蒸汽模式（mani
 |------|------|
 | `pages/` | **主包**路由（冷启动 + TabBar）；页面私有组件放 `pages/<模块>/components/` |
 | `pages-blog/` | **分包**：阅读 / 用户内容（归档、分类、友链、用户中心等） |
-| `pages-rpg/` | **分包**：RPG 冒险完整页（Tab 壳页放主包 `pages/rpg/entry`） |
+| `pages-rpg/` | **分包**：RPG 玩法页（冒险中心 UI 在主壳 `x-tab-rpg`） |
 | `pages-tool/` | **分包**：实用工具（体积大、低频） |
 | `App.uvue` | 应用生命周期（`onLaunch` / `onAppShow` / `onAppHide` / Android 返回键） |
 | `main.ts` | 入口：`createSSRApp(App)`，勿改为其他模式 |
-| `pages.json` | 页面注册、`subPackages`、`preloadRule`、globalStyle、tabBar；新增页面必须在此登记 |
+| `pages.json` | 页面注册、`subPackages`、`preloadRule`、globalStyle；新增页面必须在此登记（四 Tab 用自定义 uni-tab，无原生 tabBar） |
 | `manifest.json` | 应用信息（appid、版本、`vapor`、`styleIsolationVersion`、`mp-weixin`） |
 | `platformConfig.json` | 编译目标平台（`targets`） |
 | `uni.scss` | 全局 SCSS 变量（`$uni-*`），跨端主题令牌 |
-| `uni_modules/` | uni-ui x 等组件插件（见 `x-06-uni-modules.mdc`） |
-| `static/` | 静态资源（logo、tabBar 图标等） |
+| `uni_modules/` | uni-ui x 等组件插件（见 `x-06-uni-modules.mdc`）；含 `uni-tab-bar`（tab-bar-blur） |
+| `static/` | 静态资源（logo 等） |
 | `unpackage/` | 编译产物，禁止手改、禁止提交（见 `x-09-testing-and-artifacts.mdc`） |
 | `components/`（待建） | 跨页面复用组件 |
 | `composables/`（待建） | `useXxx` 组合式逻辑 |
@@ -40,7 +40,7 @@ uni-app x（uvue）· Vue 3 `<script setup>` + TypeScript · 蒸汽模式（mani
 
 ## 分包原则（MP-WEIXIN）
 
-- 主包只放启动页、TabBar、高频入口；完整业务进 `pages-blog` / `pages-rpg` / `pages-tool`。
+- 主包只放启动主壳（自定义 tab-bar-blur）、高频入口；完整业务进 `pages-blog` / `pages-rpg` / `pages-tool`。
 - 命名与拆分对齐 `blog-home-uniapp`；配置形态对齐常见 uni-app 分包（`subPackages` + `preloadRule`）。
 - 跳转路径：`/pages-blog/...`、`/pages-rpg/...`、`/pages-tool/...`（root + 相对 path）。
 

@@ -1,0 +1,128 @@
+<template>
+	<!-- 钻石充值：SKU + 支付增加 mock 钻石 -->
+	<view class="x-page">
+		<x-navbar title="钻石充值"></x-navbar>
+		<view class="x-card bal-card">
+			<text class="bal-label">当前钻石</text>
+			<text class="bal-n">💎 {{ diamonds }}</text>
+		</view>
+		<view class="pack">
+			<view
+				v-for="sku in skus"
+				:key="sku.id"
+				:class="sku.id === selectedId ? 'sku on' : 'sku'"
+				@click="selectSku(sku.id)"
+			>
+				<text class="sku-strong">{{ sku.diamonds }} 钻石</text>
+				<text class="sku-span">¥{{ sku.priceYuan }}{{ sku.bonusLabel != null ? ' · ' + sku.bonusLabel : '' }}</text>
+			</view>
+		</view>
+		<view class="x-btn pay" @click="onPay">
+			<text class="x-btn-text">支付 ¥{{ payPrice }}</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 钻石充值：mock rechargeSkus；支付写 useMockStore
+ */
+import { rechargeSkus } from '../../mock/data'
+import { addMockDiamonds, useMockStore } from '../../composables/useMockStore'
+import { showXToast } from '../../utils/toast'
+
+const skus = rechargeSkus
+const selectedId = ref('300')
+const diamonds = useMockStore().diamonds
+
+/**
+ * 按 id 查找充值档
+ */
+function findSku(id: string) {
+	for (let i = 0; i < skus.length; i++) {
+		if (skus[i].id === id) return skus[i]
+	}
+	return null
+}
+
+const payPrice = computed((): number => {
+	const s = findSku(selectedId.value)
+	return s != null ? s.priceYuan : 0
+})
+
+function selectSku(id: string): void {
+	selectedId.value = id
+}
+
+/**
+ * 示意支付成功并加钻
+ */
+function onPay(): void {
+	const s = findSku(selectedId.value)
+	if (s == null) return
+	let add = s.diamonds
+	if (s.bonusLabel != null && s.bonusLabel.indexOf('+') === 0) {
+		add = add + parseInt(s.bonusLabel.substring(1))
+	}
+	addMockDiamonds(add)
+	showXToast('💎', '充值成功', '+' + add + ' 钻石')
+}
+</script>
+
+<style>
+.bal-card {
+	align-items: center;
+	margin-bottom: 14px;
+}
+
+.bal-label {
+	font-size: 12px;
+	color: #9a948a;
+	margin-bottom: 6px;
+}
+
+.bal-n {
+	font-size: 22px;
+	font-weight: 700;
+	color: #1c1a17;
+}
+
+.pack {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	margin-bottom: 20px;
+}
+
+.sku {
+	width: 48%;
+	border-radius: 16px;
+	padding: 12px;
+	background-color: #ffffff;
+	border-width: 1.5px;
+	border-style: solid;
+	border-color: transparent;
+	margin-bottom: 8px;
+}
+
+.on {
+	border-color: #3db89a;
+	background-color: rgba(61, 184, 154, 0.08);
+}
+
+.sku-strong {
+	font-size: 16px;
+	font-weight: 600;
+	color: #1c1a17;
+	margin-bottom: 2px;
+}
+
+.sku-span {
+	font-size: 11px;
+	color: #9a948a;
+}
+
+.pay {
+	padding: 12px;
+}
+</style>

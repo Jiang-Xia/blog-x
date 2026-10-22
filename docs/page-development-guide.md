@@ -37,9 +37,23 @@
 ```
 
    - 首页必须保持主包 `pages` 第一项；标题走 `navigationBarTitleText`
-   - 可选：`preloadRule` 在进入主包页后预下载分包（示例见现有首页 → `pages-blog`）
+   - 可选：`preloadRule` 在进入主包页后预下载分包（示例：首页 → `pages-blog`；冒险 entry → `pages-rpg`）
 3. **写页面**：`<script setup lang="ts">` + uni-app x 内置组件（见 §2）。
 4. **验证**：HBuilderX 运行 Android 基座；发行微信小程序后用微信开发者工具核对分包（见 `x-09`，Agent 勿自动启动）。
+
+### 现网 Tab / 分包实例（小卡原型）
+
+| 用途 | path |
+|------|------|
+| 首页 Tab | `pages/index/index` |
+| 发现 Tab | `pages/discover/discover` |
+| 冒险 Tab（中心 UI） | `pages/rpg/entry` |
+| 我的 Tab | `pages/me/me` |
+| 文章详情 | `pages/detail/detail` |
+| 归档 | `pages-blog/archives/index` |
+| 幸运抽奖 | `pages-rpg/lottery/index` |
+
+本阶段数据来自 `mock/data.ts`；联调后改为 `api/*.ts`（见 `x-07`）。验收见 `docs/qa-checklist.md`。
 
 ## 2. uvue 模板与内置组件
 
@@ -78,7 +92,7 @@ onUnload(() => {}); // 页面卸载（清理 uni.$on 监听、定时器）
 
 - 主包跳转：`uni.navigateTo({ url: '/pages/detail/detail?id=1' })`；返回 `uni.navigateBack()`。
 - 分包跳转：`uni.navigateTo({ url: '/pages-blog/archives/index' })`（path **必须含** root）。
-- tabBar 页跳转用 `uni.switchTab`（仅主包页可进 tabBar）。
+- 主壳四 Tab 在 `/pages/index/index`（`uni-tab` + tab-bar-blur）；切 Tab 用 `utils/tabNav.goTab(TAB_*)`，**不要**用 `uni.switchTab`（无原生 tabBar）。
 - 轻量跨页事件：`uni.$emit / uni.$on / uni.$off`（onUnload 必须 $off）。
 
 ## 4. 样式体系
@@ -95,7 +109,8 @@ App 端为原生渲染，CSS 是**子集**：
 
 组件间样式隔离由 manifest `styleIsolationVersion: 2` 管理：
 
-- 页面样式默认不影响子组件内部
+- 页面样式默认不影响子组件内部；`App.uvue` 基类也**不会**进组件
+- 组件若使用 `x-card` / `x-chip` / `x-page-tab` 等，须在自身 `<style>` 中 `@import '../../styles/x-base.css';`（或相对路径）
 - 自定义组件子节点样式 → 通过 **externalClass** 开放（uni-ui x 全系组件遵循此约定）
 
 ## 5. 数据请求（预留）

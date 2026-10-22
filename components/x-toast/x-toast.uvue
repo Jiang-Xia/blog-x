@@ -1,0 +1,57 @@
+<template>
+	<!-- 原型风格居中 Toast：emoji + 标题 + 描述 -->
+	<view v-if="visible" class="x-toast">
+		<text class="x-toast-emoji">{{ emoji }}</text>
+		<text class="x-toast-title">{{ title }}</text>
+		<text v-if="desc.length > 0" class="x-toast-desc">{{ desc }}</text>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 小卡风格 Toast 展示组件（纯展示）
+ * 父组件控制 visible / 文案；也可配合 utils/toast.showXToast
+ */
+const props = defineProps({
+	visible: { type: Boolean, default: false },
+	emoji: { type: String, default: '☀️' },
+	title: { type: String, default: '' },
+	desc: { type: String, default: '' },
+})
+</script>
+
+<style>
+.x-toast {
+	position: fixed;
+	left: 50%;
+	top: 42%;
+	transform: translate(-50%, -50%);
+	background-color: rgba(28, 26, 23, 0.9);
+	border-radius: 16px;
+	padding: 18px 20px;
+	z-index: 999;
+	align-items: center;
+	min-width: 150px;
+}
+
+.x-toast-emoji {
+	font-size: 28px;
+	margin-bottom: 6px;
+	text-align: center;
+}
+
+.x-toast-title {
+	font-size: 14px;
+	color: #ffffff;
+	font-weight: 600;
+	text-align: center;
+	margin-bottom: 4px;
+}
+
+.x-toast-desc {
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.85);
+	text-align: center;
+	line-height: 1.45;
+}
+</style>
