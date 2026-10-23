@@ -16,6 +16,7 @@
             "urlCheck" : false
         },
         "usingComponents" : true,
+        "libVersion" : "3.7.9",
         "permission" : {
             "scope.userLocation" : {
                 "desc" : "获取您的位置，用于当前位置天气查询；"

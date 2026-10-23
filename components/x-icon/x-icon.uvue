@@ -9,7 +9,8 @@
 <script setup lang="ts">
 /**
  * Tabler 字体图标组件（easycom：x-icon）
- * App/Web：styles/x-base.css @font-face 本地字体；微信小程序：App.onLaunch → load-tabler-fonts
+ * App/Web：styles/x-base.css @font-face 本地字体
+ * 微信小程序：App.onLaunch → loadTablerFonts（loadFontFace + 子集 ttf Data URL）
  */
 import type { IconGlyph } from './icons'
 import { ICON_OUTLINE, ICON_FILLED } from './icons'

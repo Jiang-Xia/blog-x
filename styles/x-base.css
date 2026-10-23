@@ -5,7 +5,8 @@
 
 /*
  * Tabler Icons 字体（x-icon 依赖）
- * 微信小程序：WXSS 不支持本地字体，见 utils/load-tabler-fonts.ts（loadFontFace + HTTPS）
+ * 微信小程序：不在此声明（WXSS @font-face 本地/base64 均不可靠）
+ *   → App.onLaunch → utils/load-tabler-fonts.ts（loadFontFace + 子集 ttf Data URL）
  * App / Web：本地 /static/fonts
  */
 /* #ifndef MP-WEIXIN */
@@ -18,12 +19,6 @@
 	font-family: 'tabler-icons-filled';
 	src: url('/static/fonts/tabler-icons-filled.ttf');
 }
-/* #endif */
-
-/* 小程序：base64 内联子集字体（wxss 不支持本地字体路径，全量 CDN 又大又依赖外网）
-   由 scripts/subset-icons.py 生成，新增图标后重跑即可 */
-/* #ifdef MP-WEIXIN */
-@import './tabler-mp.css';
 /* #endif */
 
 .uni-row {

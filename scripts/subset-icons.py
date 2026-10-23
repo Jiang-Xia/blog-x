@@ -12,8 +12,11 @@ Tabler 字体子集化：按代码实际引用裁剪字体 + 映射表，解决�
   3. 生成：
      - components/x-icon/icons.ts        仅含用到的映射（线上各端引用）
      - static/fonts/tabler-icons-subset.ttf / -filled-subset.ttf（备用/CDN 上传）
-     - styles/tabler-mp.css              小程序端 base64 内联 woff2（微信 wxss 不支持本地字体路径）
+     - utils/tabler-mp-fonts.ts          小程序 loadFontFace 用的 base64 ttf（勿用 wxss @font-face）
   4. icons-full.ts 与全量 ttf 保持不动（开发/预览页用）
+
+说明：微信小程序 WXSS 内联 base64/woff2 不可靠；须 App.onLaunch → uni.loadFontFace
+（Data URL ttf，基础库 ≥ 3.7.9）。CDN 全量仅作备选。
 
 图标找不到了？优先怀疑：动态拼的 name 没进白名单。加一行重跑即可。
 """
@@ -32,6 +35,8 @@ FULL_TTF = os.path.join(ROOT, "static", "fonts", "tabler-icons.ttf")
 FULL_TTF_FILLED = os.path.join(ROOT, "static", "fonts", "tabler-icons-filled.ttf")
 OUT_TTF = os.path.join(ROOT, "static", "fonts", "tabler-icons-subset.ttf")
 OUT_TTF_FILLED = os.path.join(ROOT, "static", "fonts", "tabler-icons-filled-subset.ttf")
+OUT_MP_FONTS_TS = os.path.join(ROOT, "utils", "tabler-mp-fonts.ts")
+# 旧方案遗留：wxss @font-face base64 woff2，微信端经常不生效，生成空壳避免误用
 OUT_MP_CSS = os.path.join(ROOT, "styles", "tabler-mp.css")
 WHITELIST = os.path.join(ROOT, "scripts", "icon-whitelist.txt")
 
@@ -118,13 +123,26 @@ def subset_font(src_path, out_path, codepoints, flavor=None):
     subset.save_font(font, out_path, opts)
 
 
-def mp_css_entry(family, ttf_path, codepoints):
-    """subset -> woff2 -> base64 内联（小程序 wxss 不支持本地字体路径）"""
-    tmp = ttf_path + ".tmp.woff2"
-    subset_font(ttf_path, tmp, codepoints, flavor="woff2")
-    b64 = base64.b64encode(open(tmp, "rb").read()).decode()
-    os.remove(tmp)
-    return "@font-face {\n\tfont-family: '%s';\n\tsrc: url(data:font/woff2;base64,%s) format('woff2');\n}\n" % (family, b64)
+def file_to_base64(path):
+    return base64.b64encode(open(path, "rb").read()).decode()
+
+
+def render_mp_fonts_ts(outline_b64, filled_b64):
+    """生成 loadFontFace 用的 base64 ttf 常量（微信推荐 ttf，Data URL 需基础库 ≥ 3.7.9）"""
+    lines = [
+        "/**",
+        " * 微信小程序 Tabler 子集字体 base64（ttf）—— 由 scripts/subset-icons.py 生成，请勿手改。",
+        " * 经 utils/load-tabler-fonts.ts → uni.loadFontFace(Data URL) 加载；勿再写入 wxss @font-face。",
+        " */",
+        "",
+        "/** 线性子集 tabler-icons-subset.ttf */",
+        "export const TABLER_ICONS_BASE64 = '%s'" % outline_b64,
+        "",
+        "/** 面性子集 tabler-icons-filled-subset.ttf；无面性时为空串 */",
+        "export const TABLER_ICONS_FILLED_BASE64 = '%s'" % filled_b64,
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def render_ts(outline, filled, count_note):
@@ -175,26 +193,29 @@ def main():
     io.open(OUT_TS, "w", encoding="utf-8", newline="\n").write(
         render_ts(outline_sub, filled_sub, "outline %d / filled %d" % (len(outline_sub), len(filled_sub))))
 
-    # 2. 子集 ttf（app/web 可选切换用；也是 CDN 上传素材）
-    codepoints = set()
-    for uni in list(outline_sub.values()) + list(filled_sub.values()):
-        codepoints.update(escapes_to_codepoints(uni))
-    codepoints = sorted(codepoints)
-    subset_font(FULL_TTF, OUT_TTF, codepoints)
+    # 2. 子集 ttf（outline / filled 各自码点，避免串字形）
+    outline_cps = sorted(set(cp for uni in outline_sub.values() for cp in escapes_to_codepoints(uni)))
+    filled_cps = sorted(set(cp for uni in filled_sub.values() for cp in escapes_to_codepoints(uni)))
+    subset_font(FULL_TTF, OUT_TTF, outline_cps)
+    filled_b64 = ""
     if filled_sub:
-        subset_font(FULL_TTF_FILLED, OUT_TTF_FILLED, codepoints)
+        subset_font(FULL_TTF_FILLED, OUT_TTF_FILLED, filled_cps)
+        filled_b64 = file_to_base64(OUT_TTF_FILLED)
 
-    # 3. 小程序 base64 woff2
-    entries = [mp_css_entry("tabler-icons", FULL_TTF, codepoints)]
-    if filled_sub:
-        entries.append(mp_css_entry("tabler-icons-filled", FULL_TTF_FILLED, codepoints))
+    # 3. 小程序 loadFontFace Data URL（ttf base64）；废弃 wxss @font-face 方案
+    outline_b64 = file_to_base64(OUT_TTF)
+    io.open(OUT_MP_FONTS_TS, "w", encoding="utf-8", newline="\n").write(
+        render_mp_fonts_ts(outline_b64, filled_b64))
     io.open(OUT_MP_CSS, "w", encoding="utf-8", newline="\n").write(
-        "/* 由 scripts/subset-icons.py 生成（小程序 base64 内联字体），勿手改 */\n\n" + "\n".join(entries))
+        "/* 已废弃：微信 WXSS @font-face + base64/woff2 不可靠。\n"
+        " * 小程序字体改由 utils/tabler-mp-fonts.ts + load-tabler-fonts.ts（loadFontFace）加载。\n"
+        " * 本文件仅作占位，x-base.css 不再 @import。\n"
+        " */\n")
 
-    for p in (OUT_TTF, OUT_TTF_FILLED, OUT_MP_CSS, OUT_TS):
+    for p in (OUT_TTF, OUT_TTF_FILLED, OUT_MP_FONTS_TS, OUT_TS):
         if os.path.exists(p):
             print("%8.1f KB  %s" % (os.path.getsize(p) / 1024, os.path.relpath(p, ROOT)))
-    print("done: outline %d / filled %d -> icons.ts + tabler-mp.css" % (len(outline_sub), len(filled_sub)))
+    print("done: outline %d / filled %d -> icons.ts + tabler-mp-fonts.ts" % (len(outline_sub), len(filled_sub)))
 
 
 if __name__ == "__main__":

@@ -31,13 +31,13 @@ Tabler Icons 字体图标方案，跨端（Android / iOS / 鸿蒙 / Web）渲染
 | --- | --- |
 | `static/fonts/tabler-icons.ttf` | 线性字体全量（5247 图标；App/Web 本地） |
 | `static/fonts/tabler-icons-filled.ttf` | 面性字体全量（1057 图标；App/Web 本地） |
-| `static/fonts/*-subset.ttf` | 子集字体（脚本生成，小程序 CDN 备用素材） |
+| `static/fonts/*-subset.ttf` | 子集字体（脚本生成；小程序 base64 来源 / CDN 备用） |
 | `components/x-icon/x-icon.uvue` | 图标组件 |
 | `components/x-icon/icons.ts` | 子集映射，线上各端引用（脚本生成，勿手改） |
 | `components/x-icon/icons-full.ts` | 全量映射（预览页/开发用，脚本生成） |
-| `styles/x-base.css` | `@font-face`：App/Web 本地 ttf；MP 条件编译引入 tabler-mp.css |
-| `styles/tabler-mp.css` | 小程序 base64 内联子集字体（脚本生成，勿手改） |
-| `utils/load-tabler-fonts.ts` | MP 备选：loadFontFace 拉 CDN 全量（默认关闭） |
+| `styles/x-base.css` | `@font-face`：仅 App/Web 本地 ttf（MP 不声明） |
+| `utils/tabler-mp-fonts.ts` | 小程序子集 ttf 的 base64（脚本生成，勿手改） |
+| `utils/load-tabler-fonts.ts` | MP：`loadFontFace` 加载子集 Data URL（默认）或 CDN 全量 |
 | `utils/icon-name.ts` | 历史 emoji / 任意字符串 → Tabler 名（联调兜底） |
 | `scripts/gen-tabler-icons.py` | 全量映射生成脚本（升级字体库时用） |
 | `scripts/subset-icons.py` | 子集化脚本（**新增/改动图标引用后必须重跑**） |
@@ -47,13 +47,15 @@ Tabler Icons 字体图标方案，跨端（Android / iOS / 鸿蒙 / Web）渲染
 
 ## 微信小程序（字体子集化）
 
-小程序 **不支持** WXSS 引用包内 `/static/fonts/*.ttf`，且全量字体 1.8MB 无法接受。
+小程序 **不支持** WXSS 引用包内 `/static/fonts/*.ttf`，且全量字体 1.8MB 无法接受。  
+WXSS `@font-face` + base64/woff2 在微信端也经常不生效（Skyline 不支持 woff2）。
 
-**当前方案：base64 内联子集**（零网络依赖、零域名配置、无 CDN 版本差）：
+**当前方案：`uni.loadFontFace` + 子集 ttf Data URL**（零网络、零域名白名单）：
 
-- `scripts/subset-icons.py` 扫描代码里实际引用的图标名 → fonttools 裁剪出子集 woff2（约 16KB）→ base64 写入 `styles/tabler-mp.css`
-- `x-base.css` 通过 `#ifdef MP-WEIXIN` 条件编译引入
-- 实测：48 个图标，字体 1.83MB → 14KB（ttf）/ 16KB（base64 css）
+- `scripts/subset-icons.py` 扫描引用 → 裁剪子集 ttf → base64 写入 `utils/tabler-mp-fonts.ts`
+- `App.onLaunch` → `loadTablerFonts()` → `uni.loadFontFace({ global: true, source: url("data:font/ttf;...") })`
+- 需基础库 **≥ 3.7.9**（`manifest.json` 已设 `mp-weixin.libVersion`）；开发者工具调试基础库请同步调高
+- 实测：约 48 个图标，全量 1.83MB → 子集约 14KB + 7KB ttf
 
 **工作流：页面里新增 `<x-icon name="xxx" />` 后，重跑一次：**
 
@@ -64,8 +66,9 @@ C:/Users/96379/.workbuddy/binaries/python/envs/default/Scripts/python.exe script
 - 脚本自动扫描 `name="x"` / `:name="'x'"` / `name: 'x'` / `icon: 'x'` 四种写法
 - **动态拼接的图标名**（如接口下发再映射的）必须加进 `scripts/icon-whitelist.txt`，否则真机会渲染为空白
 - 拼写错误会打印 WARN，别忽略
+- 控制台应出现 `[tabler-font] loaded tabler-icons`；若 `load fail` 先查基础库版本
 
-**备选方案**（`utils/load-tabler-fonts.ts` 中 `USE_CDN_FALLBACK = true`）：`uni.loadFontFace` 拉 HTTPS 全量字体——需配 downloadFile 合法域名 + CORS，且 BootCDN 为 3.44.0 与映射表有版本差；仅当 base64 方案在某些机型异常时再启用。
+**备选方案**（`utils/load-tabler-fonts.ts` 中 `USE_CDN_FALLBACK = true`）：`uni.loadFontFace` 拉 HTTPS 全量字体——需 CORS，且 BootCDN 为 3.44.0 与映射表有版本差；仅当 Data URL 在极旧基础库不可用时再启用。
 
 ## 升级图标库
 

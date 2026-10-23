@@ -1,7 +1,7 @@
 <script setup lang="ts">
 	/**
 	 * 应用生命周期：冷启动有缓存 token 时走 Pinia 自动登录
-	 * 微信小程序：onLaunch 加载 Tabler 字体（WXSS 不支持本地 @font-face）
+	 * 微信小程序：onLaunch → loadTablerFonts（loadFontFace + 子集 ttf Data URL）
 	 */
 	import { useUserStore } from './store/user'
 	import { onAuthCleared } from './utils/auth-events'
