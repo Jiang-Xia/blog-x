@@ -1,5 +1,5 @@
 <template>
-	<!-- 冒险中心面板：Hero、每日任务、玩法入口、充值（mock） -->
+	<!-- 冒险中心面板：Hero、签到、任务领奖、玩法入口、充值 -->
 	<scroll-view class="x-page-tab" scroll-y="true">
 		<view class="status-pad"></view>
 		<view class="head-row">
@@ -36,15 +36,22 @@
 			</view>
 		</view>
 
-		<view class="x-card quest">
-			<view class="q-icon peach">
-				<text>📖</text>
+		<!-- 签到任务已有独立卡片，列表排除 kind=checkin -->
+		<view v-for="q in displayQuests" :key="q.id" class="x-card quest">
+			<view :class="q.done ? 'q-icon done' : 'q-icon peach'">
+				<text>{{ q.done ? '✅' : q.icon }}</text>
 			</view>
 			<view class="q-body">
-				<text class="q-title">阅读 1 篇文章</text>
-				<text class="q-desc">进度 0/1</text>
+				<text class="q-title">{{ q.title }}</text>
+				<text class="q-desc">{{ q.desc }}</text>
 			</view>
-			<view class="x-btn x-btn-ghost" @click="goHome">
+			<view v-if="q.done" class="x-btn disabled">
+				<text class="x-btn-text">已领</text>
+			</view>
+			<view v-else-if="q.claimable" class="x-btn" @click="onClaim(q.id)">
+				<text class="x-btn-text">领取</text>
+			</view>
+			<view v-else class="x-btn x-btn-ghost" @click="goHome">
 				<text class="x-btn-ghost-text">去完成</text>
 			</view>
 		</view>
@@ -97,6 +104,7 @@
 import { rpgHeroSeed, rpgQuestsSeed } from '../../mock/data'
 import type { RpgHero, RpgQuest } from '../../types/rpg'
 import {
+	claimQuest,
 	fetchMyQuests,
 	fetchRpgHero,
 	fetchSignInfo,
@@ -114,6 +122,17 @@ const store = useMockStore()
 const diamonds = store.diamonds
 const streakDays = store.streakDays
 const checkedInToday = store.checkedInToday
+
+/** 展示用任务（排除签到，避免与上方签到卡重复） */
+const displayQuests = computed((): RpgQuest[] => {
+	const list: RpgQuest[] = []
+	for (let i = 0; i < quests.value.length; i++) {
+		if (quests.value[i].kind != 'checkin') {
+			list.push(quests.value[i])
+		}
+	}
+	return list
+})
 
 /**
  * 同步 RPG 状态到本地 store 与 hero
@@ -153,6 +172,28 @@ async function onCheckin(): Promise<void> {
 		await loadRpg()
 		store.homeTodayTitle.value = '已签到'
 		store.homeStreakLabel.value = '连续 ' + store.streakDays.value + ' 天'
+	} catch (_) {}
+}
+
+/**
+ * 领取任务奖励：POST /rpg/quest/claim
+ */
+async function onClaim(questCode: string): Promise<void> {
+	if (USE_MOCK) {
+		for (let i = 0; i < quests.value.length; i++) {
+			if (quests.value[i].id == questCode) {
+				quests.value[i].done = true
+				quests.value[i].claimable = false
+				break
+			}
+		}
+		showXToast('🎁', '奖励已领取', 'mock')
+		return
+	}
+	try {
+		await claimQuest(questCode)
+		showXToast('🎁', '奖励已领取', '')
+		await loadRpg()
 	} catch (_) {}
 }
 

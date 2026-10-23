@@ -117,6 +117,12 @@
 					"style": {
 						"navigationBarTitleText": "AI 助手"
 					}
+				},
+				{
+					"path": "tags/index",
+					"style": {
+						"navigationBarTitleText": "标签墙"
+					}
 				}
 			]
 		},

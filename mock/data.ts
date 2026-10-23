@@ -157,20 +157,22 @@ export const rpgHeroSeed: RpgHero = {
 
 export const rpgQuestsSeed: RpgQuest[] = [
 	{
-		id: 'checkin',
+		id: 'daily_sign',
 		title: '每日签到',
 		desc: '签到领取经验与钻石',
 		icon: '☀️',
 		kind: 'checkin',
 		done: false,
+		claimable: false,
 	},
 	{
-		id: 'read',
+		id: 'daily_read',
 		title: '阅读 1 篇文章',
 		desc: '进度 0/1',
 		icon: '📖',
 		kind: 'read',
 		done: false,
+		claimable: false,
 		progressLabel: '0/1',
 	},
 ]
@@ -193,11 +195,44 @@ export const rechargeSkus: RechargeSku[] = [
 	{ id: '1280', diamonds: 1280, priceYuan: 128 },
 ]
 
-export const tipSkus = [
-	{ id: '6.66', label: '¥6.66', desc: '加油' },
-	{ id: '16.8', label: '¥16.8', desc: '送花' },
-	{ id: '36.6', label: '¥36.6', desc: '砸蛋礼' },
-	{ id: 'custom', label: '自定义', desc: '心意' },
+/** 文章钻石打赏档位（amount 对齐 POST /rpg/article/tip） */
+export const tipDiamondSkus = [
+	{ id: '1', amount: 1, label: '💎 1', desc: '鼓励一下' },
+	{ id: '5', amount: 5, label: '💎 5', desc: '加油' },
+	{ id: '10', amount: 10, label: '💎 10', desc: '送花' },
+	{ id: '50', amount: 50, label: '💎 50', desc: '砸蛋礼' },
+]
+
+/** 站点赞赏档位（元，对齐 /site/tip/create） */
+export const tipSiteSkus = [
+	{ id: '6.66', amountYuan: 6.66, label: '¥6.66', desc: '咖啡' },
+	{ id: '16.66', amountYuan: 16.66, label: '¥16.66', desc: '奶茶' },
+	{ id: '26.66', amountYuan: 26.66, label: '¥26.66', desc: '午餐' },
+	{ id: '66.66', amountYuan: 66.66, label: '¥66.66', desc: '大餐' },
+]
+
+/** @deprecated 兼容旧引用，等同 tipDiamondSkus 展示字段 */
+export const tipSkus = tipDiamondSkus.map((s) => ({
+	id: s.id,
+	label: s.label,
+	desc: s.desc,
+}))
+
+export const inboxItems: InboxItem[] = [
+	{
+		id: 'i1',
+		articleTitle: 'uni-app x 上手',
+		author: '路过的读者',
+		content: '写得很清楚！求更新～',
+		replyUid: '2',
+	},
+	{
+		id: 'i2',
+		articleTitle: '微信支付 V3',
+		author: '咖啡因',
+		content: '回调幂等那段太关键了',
+		replyUid: '3',
+	},
 ]
 
 export const rankRows: RankRow[] = [
@@ -249,21 +284,6 @@ export const guestbookItems: GuestbookItem[] = [
 export const friendLinks: FriendLink[] = [
 	{ id: 'l1', name: '某某的笔记', url: 'note.example.com' },
 	{ id: 'l2', name: '小张的博客', url: 'blog.zhang.dev' },
-]
-
-export const inboxItems: InboxItem[] = [
-	{
-		id: 'i1',
-		articleTitle: 'uni-app x 上手',
-		author: '路过的读者',
-		content: '写得很清楚！求更新～',
-	},
-	{
-		id: 'i2',
-		articleTitle: '微信支付 V3',
-		author: '咖啡因',
-		content: '回调幂等那段太关键了',
-	},
 ]
 
 export const auditItems: AuditItem[] = [

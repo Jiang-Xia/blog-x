@@ -53,7 +53,7 @@
 | 归档 | `pages-blog/archives/index` |
 | 幸运抽奖 | `pages-rpg/lottery/index` |
 
-本阶段数据来自 `mock/data.ts`；联调后改为 `api/*.ts`（见 `x-07`）。验收见 `docs/qa-checklist.md`。
+页面优先走 `api/modules/*`；失败或 `USE_MOCK` 时回落 `mock/data.ts`（见 `x-07`）。验收见 `docs/qa-checklist.md`。
 
 ## 2. uvue 模板与内置组件
 

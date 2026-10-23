@@ -1,5 +1,5 @@
 <template>
-	<!-- AI 助手：配额、示例对话、快捷 chips、发送示意 -->
+	<!-- AI 助手：配额 + RAG 流式问答 -->
 	<view class="x-page chat-page">
 		<x-navbar title="AI 助手">
 			<template v-slot:right>
@@ -7,34 +7,43 @@
 			</template>
 		</x-navbar>
 
-		<scroll-view class="chat-scroll" scroll-y="true">
-			<view class="bubble user">
-				<text class="bubble-t-w">微信支付 V3 怎么接入？</text>
-			</view>
-			<view class="bubble bot">
-				<text class="bubble-t">推荐两篇：《NestJS 接入微信支付 V3》《支付回调幂等》。</text>
-				<text class="cite">📎 站内引用</text>
+		<scroll-view class="chat-scroll" scroll-y="true" :scroll-into-view="scrollInto">
+			<view v-for="(m, i) in messages" :key="'m' + i" :id="'msg' + i">
+				<view v-if="m.role == 'user'" class="bubble user">
+					<text class="bubble-t-w">{{ m.content }}</text>
+				</view>
+				<view v-else class="bubble bot">
+					<text class="bubble-t">{{ m.content.length > 0 ? m.content : (streaming ? '…' : '') }}</text>
+					<text v-if="m.cite.length > 0" class="cite">📎 {{ m.cite }}</text>
+				</view>
 			</view>
 		</scroll-view>
 
 		<view class="chip-row">
-			<view class="x-chip x-chip-plain" @click="onChip('总结全站')">
+			<view class="x-chip x-chip-plain" @click="onChip('总结全站有哪些主题？')">
 				<text class="chip-t">总结全站</text>
 			</view>
-			<view class="x-chip x-chip-plain" @click="onChip('找教程')">
+			<view class="x-chip x-chip-plain" @click="onChip('有没有 NestJS 教程？')">
 				<text class="chip-t">找教程</text>
 			</view>
-			<view class="x-chip x-chip-plain" @click="onChip('RPG 攻略')">
+			<view class="x-chip x-chip-plain" @click="onChip('RPG 怎么签到？')">
 				<text class="chip-t">RPG 攻略</text>
 			</view>
 		</view>
 
 		<view class="input-bar">
-			<view class="input-box">
-				<text class="ph">问问博客里的任何事…</text>
-			</view>
-			<view class="send" @click="onSend">
-				<text class="send-t">↑</text>
+			<input
+				class="input-box"
+				type="text"
+				v-model="draft"
+				placeholder="问问博客里的任何事…"
+				placeholder-class="ph"
+				confirm-type="send"
+				:disabled="streaming"
+				@confirm="onSend"
+			/>
+			<view class="send" :class="streaming ? 'send-disabled' : ''" @click="onSend">
+				<text class="send-t">{{ streaming ? '…' : '↑' }}</text>
 			</view>
 		</view>
 	</view>
@@ -42,15 +51,36 @@
 
 <script setup lang="ts">
 /**
- * AI 助手：联调展示 RAG 配额；流式对话 uni-app x 暂不接，chips 仍示意
+ * AI 助手：联调 /rag/quota|status + POST /rag/query-stream（SSE text-delta）
+ * 需登录；流式失败时 toast；USE_MOCK 时本地假回复
  */
 import { fetchRagQuota, fetchRagStatus } from '../../api/modules/notification'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
+import { useUserStore } from '../../store/user'
+import { parseUiTextDelta, startSseStream } from '../../utils/sse-stream'
 import { showXToast } from '../../utils/toast'
 
-const quotaLabel = ref('—/—')
+type ChatMsg = { role: string; content: string; cite: string }
 
-onMounted(async () => {
+const quotaLabel = ref('—/—')
+const draft = ref('')
+const messages = ref([
+	{
+		role: 'assistant',
+		content: '你好，我是站内 AI 助手，可以基于博客内容回答问题。',
+		cite: '',
+	},
+] as ChatMsg[])
+const streaming = ref(false)
+const scrollInto = ref('')
+const userStore = useUserStore()
+let abortStream: (() => void) | null = null
+
+/**
+ * 刷新配额文案
+ */
+async function loadQuota(): Promise<void> {
 	const quota = await apiOrMock(() => fetchRagQuota(), null)
 	const status = await apiOrMock(() => fetchRagStatus(), null)
 	let used = 0
@@ -71,14 +101,123 @@ onMounted(async () => {
 	} else {
 		quotaLabel.value = used + '/' + total
 	}
-})
-
-function onChip(name: string): void {
-	showXToast('✦', name, '示意已发送（流式待接）')
 }
 
+onMounted(() => {
+	loadQuota()
+})
+
+onUnload(() => {
+	if (abortStream != null) abortStream()
+})
+
+/**
+ * 滚到最新消息
+ */
+function scrollToBottom(): void {
+	const idx = messages.value.length - 1
+	if (idx >= 0) {
+		scrollInto.value = 'msg' + idx
+	}
+}
+
+/**
+ * 快捷 chip：填入并发送
+ */
+function onChip(text: string): void {
+	draft.value = text
+	onSend()
+}
+
+/**
+ * 发送问题并消费 SSE
+ */
 function onSend(): void {
-	showXToast('↑', '已发送', '流式问答待端能力就绪')
+	const q = draft.value.trim()
+	if (q.length == 0 || streaming.value) return
+
+	if (!USE_MOCK && !userStore.loggedIn) {
+		showXToast('🔐', '请先登录', 'AI 问答需登录')
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+
+	messages.value.push({ role: 'user', content: q, cite: '' })
+	draft.value = ''
+	messages.value.push({ role: 'assistant', content: '', cite: '' })
+	const assistantIndex = messages.value.length - 1
+	scrollToBottom()
+
+	if (USE_MOCK) {
+		streaming.value = true
+		setTimeout(() => {
+			messages.value[assistantIndex].content =
+				'（mock）已收到「' + q + '」。联调时将走 /rag/query-stream。'
+			messages.value[assistantIndex].cite = '站内引用'
+			streaming.value = false
+			scrollToBottom()
+			loadQuota()
+		}, 600)
+		return
+	}
+
+	streaming.value = true
+	if (abortStream != null) abortStream()
+
+	// 组装 AI SDK UI messages（含历史，最后一条为当前 user）
+	const uiMessages: any[] = []
+	for (let i = 0; i < messages.value.length; i++) {
+		const m = messages.value[i]
+		if (i == assistantIndex) continue
+		uiMessages.push({
+			role: m.role,
+			parts: [{ type: 'text', text: m.content }],
+		})
+	}
+
+	abortStream = startSseStream({
+		path: '/rag/query-stream',
+		body: { messages: uiMessages },
+		onMessage: (data) => {
+			const delta = parseUiTextDelta(data)
+			if (delta.length > 0) {
+				messages.value[assistantIndex].content =
+					messages.value[assistantIndex].content + delta
+				scrollToBottom()
+			}
+			try {
+				const chunk = JSON.parse(data)
+				if (chunk != null && chunk.type == 'data-citations' && chunk.data != null) {
+					const cites = chunk.data.citations
+					if (Array.isArray(cites) && cites.length > 0) {
+						const titles: string[] = []
+						for (let j = 0; j < cites.length && j < 3; j++) {
+							if (cites[j].title != null) titles.push('' + cites[j].title)
+						}
+						if (titles.length > 0) {
+							messages.value[assistantIndex].cite = titles.join(' · ')
+						}
+					}
+				}
+			} catch (_) {}
+		},
+		onError: (msg) => {
+			streaming.value = false
+			if (messages.value[assistantIndex].content.length == 0) {
+				messages.value[assistantIndex].content = '回答失败：' + msg
+			}
+			showXToast('❌', 'AI 失败', msg)
+			loadQuota()
+		},
+		onDone: () => {
+			streaming.value = false
+			if (messages.value[assistantIndex].content.length == 0) {
+				messages.value[assistantIndex].content = '（无回复内容）'
+			}
+			loadQuota()
+			scrollToBottom()
+		},
+	})
 }
 </script>
 
@@ -98,15 +237,14 @@ function onSend(): void {
 
 .chat-scroll {
 	flex: 1;
-	min-height: 280px;
-	margin-bottom: 12px;
+	padding: 0 4px 8px;
 }
 
 .bubble {
-	max-width: 84%;
-	padding: 10px 12px;
 	border-radius: 16px;
+	padding: 10px 12px;
 	margin-bottom: 10px;
+	max-width: 92%;
 }
 
 .user {
@@ -122,54 +260,50 @@ function onSend(): void {
 .bubble-t-w {
 	font-size: 13px;
 	color: #ffffff;
-	line-height: 1.55;
+	line-height: 1.45;
 }
 
 .bubble-t {
 	font-size: 13px;
 	color: #1c1a17;
-	line-height: 1.55;
+	line-height: 1.45;
 }
 
 .cite {
-	font-size: 10px;
+	font-size: 11px;
 	color: #2a8f76;
-	background-color: rgba(61, 184, 154, 0.12);
-	border-radius: 999px;
-	padding: 3px 8px;
 	margin-top: 6px;
-	align-self: flex-start;
 }
 
 .chip-row {
 	flex-direction: row;
 	flex-wrap: wrap;
-	margin-bottom: 10px;
+	padding: 4px 0 8px;
 }
 
 .chip-t {
-	font-size: 11px;
+	font-size: 12px;
 	color: #5c574f;
 }
 
 .input-bar {
 	flex-direction: row;
 	align-items: center;
-	padding-bottom: 12px;
+	padding-bottom: 10px;
 }
 
 .input-box {
 	flex: 1;
 	height: 40px;
-	border-radius: 20px;
+	border-radius: 16px;
 	background-color: #ffffff;
-	justify-content: center;
 	padding: 0 14px;
+	font-size: 13px;
+	color: #1c1a17;
 	margin-right: 8px;
 }
 
 .ph {
-	font-size: 13px;
 	color: #9a948a;
 }
 
@@ -182,9 +316,13 @@ function onSend(): void {
 	justify-content: center;
 }
 
+.send-disabled {
+	opacity: 0.5;
+}
+
 .send-t {
 	font-size: 16px;
-	color: #ffffff;
 	font-weight: 700;
+	color: #ffffff;
 }
 </style>

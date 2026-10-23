@@ -72,13 +72,13 @@ await apis.getAllTag()
 | home / discover / rpg / me | `/pages/index/index`（`uni-tab` + tab-bar-blur，`?tab=0~3`） | 主包主壳 |
 | discover / rpg / me（旧路径） | `/pages/discover|rpg/entry|me/...` 重定向到主壳对应 Tab | 兼容 |
 | search / detail / login / notify | `/pages/search|detail|login|notify/...` | 主包 |
-| archive / guestbook / links / favorites / inbox / profile / audit / ai | `/pages-blog/<模块>/index` | 博客分包 |
+| archive / guestbook / links / favorites / inbox / profile / audit / ai / tags | `/pages-blog/<模块>/index` | 博客分包 |
 | lottery / rank / calendar / recharge | `/pages-rpg/<模块>/index` | RPG 分包 |
-| tipSheet | 详情页内 `x-tip-sheet` | 组件 |
+| tipSheet | 详情页内 `x-tip-sheet`（钻石 tip + 站点赞赏） | 组件 |
 
 底栏：`uni_modules/uni-tab-bar` 的 **tab-bar-blur**。切 Tab 用 `utils/tabNav.goTab`，**不要**用 `uni.switchTab`。
 
-示意 Toast（无独立页）：写文章、标签墙、背包装扮。审核台仍 mock（无 C 端对等 API）。
+已联调写操作：详情评论、收件箱回复、任务领奖、标签墙、钻石/站点打赏、AI 流式（`/rag/query-stream`）。示意 Toast（无独立页）：写文章、背包装扮。审核台仍 mock（无 C 端对等 API）。
 
 ## 分包约定
 

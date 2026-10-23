@@ -136,13 +136,21 @@ export function tipArticle(articleId: number, amount: number): Promise<any> {
 }
 
 /**
- * 站点赞赏下单（支付宝）
+ * 站点赞赏下单（支付宝，bizType=site_tip，不发钻）
  */
 export function createSiteTip(payload: {
 	amountYuan: number
 	displayName?: string
+	message?: string
 }): Promise<any> {
 	return post('/site/tip/create', payload)
+}
+
+/**
+ * 站点赞赏支付状态轮询
+ */
+export function getSiteTipStatus(outTradeNo: string): Promise<any> {
+	return get('/site/tip/status', { out_trade_no: outTradeNo }, { silent: true })
 }
 
 /**

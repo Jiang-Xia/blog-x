@@ -26,10 +26,14 @@ export type FriendLink = {
 }
 
 export type InboxItem = {
+	/** 评论 id，回复时作 parentId */
 	id: string
 	articleTitle: string
 	author: string
 	content: string
+	/** 评论者 uid，回复时作 replyUid */
+	replyUid: string
+	articleId?: string
 }
 
 export type AuditItem = {

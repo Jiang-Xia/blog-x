@@ -26,10 +26,10 @@
 				</view>
 			</view>
 			<view class="x-grid-2-item">
-				<view class="x-tile" @click="onTags">
+				<view class="x-tile" @click="goTags">
 					<text class="x-tile-ico">🏷️</text>
 					<text class="x-tile-title">标签墙</text>
-					<text class="x-tile-desc">24 个标签</text>
+					<text class="x-tile-desc">全部标签</text>
 				</view>
 			</view>
 			<view class="x-grid-2-item">
@@ -72,7 +72,6 @@ import { discoverCategories, hotArticle } from '../../mock/data'
 import type { ArticleSummary } from '../../types/article'
 import { fetchArticleList, fetchCategoryNames } from '../../api/modules/article'
 import { apiOrMock } from '../../composables/useApiOrMock'
-import { showXToast } from '../../utils/toast'
 
 const categories = ref(discoverCategories as string[])
 const hot = ref(hotArticle as ArticleSummary)
@@ -107,8 +106,9 @@ function goArchive(): void {
 	uni.navigateTo({ url: '/pages-blog/archives/index' })
 }
 
-function onTags(): void {
-	showXToast('🏷️', '标签墙', '24 个标签 · 示意')
+/** 进标签墙（联调 GET /tag） */
+function goTags(): void {
+	uni.navigateTo({ url: '/pages-blog/tags/index' })
 }
 
 function goGuestbook(): void {

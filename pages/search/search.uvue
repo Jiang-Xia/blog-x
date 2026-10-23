@@ -52,7 +52,10 @@ async function doSearch(): Promise<void> {
 	}, searchResults)
 }
 
-onMounted(() => {
+onLoad((options) => {
+	if (options != null && options['q'] != null && ('' + options['q']).length > 0) {
+		query.value = decodeURIComponent('' + options['q'])
+	}
 	doSearch()
 })
 

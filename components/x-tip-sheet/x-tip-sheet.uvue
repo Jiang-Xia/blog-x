@@ -1,13 +1,27 @@
 <template>
-	<!-- 打赏底部 Sheet：SKU + 微信支付（示意） -->
+	<!-- 打赏 Sheet：钻石 tipArticle / 站点赞赏 createSiteTip -->
 	<view v-if="open" class="x-sheet-mask" @click="onMask">
 		<view class="x-sheet" @click.stop="noop">
 			<view class="x-sheet-handle"></view>
 			<text class="x-sheet-title">请作者喝杯咖啡</text>
-			<text class="x-sheet-desc">支持创作 · RPG 钻石加油 / 砸蛋 / 送花（示意）</text>
+			<view class="mode-row">
+				<view
+					:class="mode == 'diamond' ? 'mode-chip mode-on' : 'mode-chip'"
+					@click="setModeDiamond"
+				>
+					<text :class="mode == 'diamond' ? 'mode-t mode-t-on' : 'mode-t'">钻石打赏</text>
+				</view>
+				<view
+					:class="mode == 'site' ? 'mode-chip mode-on' : 'mode-chip'"
+					@click="setModeSite"
+				>
+					<text :class="mode == 'site' ? 'mode-t mode-t-on' : 'mode-t'">站点赞赏</text>
+				</view>
+			</view>
+			<text class="x-sheet-desc">{{ modeDesc }}</text>
 			<view class="x-pack">
 				<view
-					v-for="sku in skus"
+					v-for="sku in currentSkus"
 					:key="sku.id"
 					:class="sku.id === selectedId ? 'x-sku x-sku-on' : 'x-sku'"
 					@click="selectSku(sku.id)"
@@ -16,8 +30,8 @@
 					<text class="x-sku-span">{{ sku.desc }}</text>
 				</view>
 			</view>
-			<view class="x-wx-btn" @click="onPay">
-				<text class="x-wx-btn-text">微信支付</text>
+			<view class="x-wx-btn" :class="paying ? 'btn-disabled' : ''" @click="onPay">
+				<text class="x-wx-btn-text">{{ payBtnText }}</text>
 			</view>
 		</view>
 	</view>
@@ -25,10 +39,12 @@
 
 <script setup lang="ts">
 /**
- * 打赏 Sheet：纯前端示意，支付成功仅 toast
- * 数据：mock tipSkus
+ * 打赏 Sheet：钻石 → paid(amount)；站点赞赏 → createSiteTip + 轮询 status
+ * 数据：mock tipDiamondSkus / tipSiteSkus；联调 tipArticle / site/tip/*
  */
-import { tipSkus } from '../../mock/data'
+import { tipDiamondSkus, tipSiteSkus } from '../../mock/data'
+import { USE_MOCK } from '../../api/config'
+import { createSiteTip, getSiteTipStatus } from '../../api/modules/interact'
 import { showXToast } from '../../utils/toast'
 
 const props = defineProps({
@@ -37,13 +53,56 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'paid'])
 
-const skus = tipSkus
-const selectedId = ref('6.66')
+const mode = ref('diamond')
+const selectedId = ref('5')
+const paying = ref(false)
+
+type SkuRow = { id: string; label: string; desc: string; amount?: number; amountYuan?: number }
+
+const currentSkus = computed((): SkuRow[] => {
+	if (mode.value == 'site') {
+		const list: SkuRow[] = []
+		for (let i = 0; i < tipSiteSkus.length; i++) {
+			const s = tipSiteSkus[i]
+			list.push({ id: s.id, label: s.label, desc: s.desc, amountYuan: s.amountYuan })
+		}
+		return list
+	}
+	const list: SkuRow[] = []
+	for (let i = 0; i < tipDiamondSkus.length; i++) {
+		const s = tipDiamondSkus[i]
+		list.push({ id: s.id, label: s.label, desc: s.desc, amount: s.amount })
+	}
+	return list
+})
+
+const modeDesc = computed((): string => {
+	return mode.value == 'site'
+		? '支付宝赞赏站点（不发钻）；下单后打开支付链接'
+		: '消耗 RPG 钻石打赏作者（≥1）'
+})
+
+const payBtnText = computed((): string => {
+	if (paying.value) return '处理中…'
+	return mode.value == 'site' ? '支付宝赞赏' : '钻石打赏'
+})
 
 /**
  * 阻止点击穿透到遮罩
  */
 function noop(): void {}
+
+/** 切到钻石打赏 */
+function setModeDiamond(): void {
+	mode.value = 'diamond'
+	selectedId.value = '5'
+}
+
+/** 切到站点赞赏 */
+function setModeSite(): void {
+	mode.value = 'site'
+	selectedId.value = '6.66'
+}
 
 /**
  * 选中 SKU
@@ -56,16 +115,120 @@ function selectSku(id: string): void {
  * 点击遮罩关闭
  */
 function onMask(): void {
+	if (paying.value) return
 	emit('close')
 }
 
 /**
- * 支付成功：抛出 paid 由详情页调 tipArticle；文案仍示意
+ * 查找当前选中 SKU
  */
-function onPay(): void {
-	emit('paid')
-	emit('close')
-	showXToast('☕', '打赏成功', '已提交')
+function findSelected(): SkuRow | null {
+	const list = currentSkus.value
+	for (let i = 0; i < list.length; i++) {
+		if (list[i].id === selectedId.value) return list[i]
+	}
+	return null
+}
+
+/**
+ * 轮询站点赞赏到账
+ */
+function pollSiteTip(outTradeNo: string, left: number): void {
+	if (left <= 0) {
+		paying.value = false
+		showXToast('⏳', '支付处理中', '稍后可在关于页流水查看')
+		emit('close')
+		return
+	}
+	getSiteTipStatus(outTradeNo)
+		.then((res) => {
+			const status = res != null && res.status != null ? '' + res.status : ''
+			if (status == 'PAID' || status == 'paid') {
+				paying.value = false
+				showXToast('☕', '赞赏成功', '感谢支持')
+				emit('close')
+				return
+			}
+			if (status.length > 0 && status != 'PENDING' && status != 'pending') {
+				paying.value = false
+				showXToast('❌', '支付未完成', status)
+				return
+			}
+			setTimeout(() => {
+				pollSiteTip(outTradeNo, left - 1)
+			}, 2500)
+		})
+		.catch(() => {
+			setTimeout(() => {
+				pollSiteTip(outTradeNo, left - 1)
+			}, 2500)
+		})
+}
+
+/**
+ * 提交：钻石抛 paid；站点赞赏建单
+ */
+async function onPay(): Promise<void> {
+	const sku = findSelected()
+	if (sku == null || paying.value) return
+
+	if (mode.value == 'diamond') {
+		const amount = sku.amount != null ? sku.amount : 1
+		if (USE_MOCK) {
+			emit('paid', amount)
+			emit('close')
+			showXToast('💎', '打赏成功', '+' + amount + '（mock）')
+			return
+		}
+		emit('paid', amount)
+		emit('close')
+		return
+	}
+
+	// 站点赞赏
+	if (USE_MOCK) {
+		showXToast('☕', '赞赏成功', 'mock 站点赞赏')
+		emit('close')
+		return
+	}
+	const yuan = sku.amountYuan != null ? sku.amountYuan : 6.66
+	paying.value = true
+	try {
+		const res = await createSiteTip({
+			amountYuan: yuan,
+			displayName: '匿名用户',
+			message: '请作者喝杯咖啡！',
+		})
+		const outTradeNo =
+			res != null && res.outTradeNo != null
+				? '' + res.outTradeNo
+				: res != null && res.out_trade_no != null
+					? '' + res.out_trade_no
+					: ''
+		const link =
+			res != null && res.universalLink != null
+				? '' + res.universalLink
+				: res != null && res.scheme != null
+					? '' + res.scheme
+					: ''
+		if (outTradeNo.length == 0) {
+			paying.value = false
+			showXToast('❌', '下单失败', '')
+			return
+		}
+		if (link.length > 0) {
+			// uni-app x 各端统一复制链接，避免 plus/window 条件编译差异
+			uni.setClipboardData({
+				data: link,
+				success: () => {
+					showXToast('📋', '支付链接已复制', '请在浏览器打开完成支付')
+				},
+			})
+		}
+		pollSiteTip(outTradeNo, 24)
+	} catch (_) {
+		paying.value = false
+	}
 }
 </script>
 
@@ -100,7 +263,34 @@ function onPay(): void {
 	font-size: 16px;
 	font-weight: 700;
 	color: #1c1a17;
-	margin-bottom: 4px;
+	margin-bottom: 8px;
+}
+
+.mode-row {
+	flex-direction: row;
+	margin-bottom: 8px;
+}
+
+.mode-chip {
+	padding: 6px 12px;
+	border-radius: 999px;
+	background-color: #ebe6df;
+	margin-right: 8px;
+}
+
+.mode-on {
+	background-color: rgba(61, 184, 154, 0.18);
+}
+
+.mode-t {
+	font-size: 12px;
+	color: #5c574f;
+	font-weight: 500;
+}
+
+.mode-t-on {
+	color: #2a8f76;
+	font-weight: 650;
 }
 
 .x-sheet-desc {
@@ -146,11 +336,15 @@ function onPay(): void {
 }
 
 .x-wx-btn {
-	background-color: #07c160;
+	background-color: #3db89a;
 	border-radius: 999px;
 	padding: 13px;
 	align-items: center;
 	justify-content: center;
+}
+
+.btn-disabled {
+	opacity: 0.55;
 }
 
 .x-wx-btn-text {

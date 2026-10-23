@@ -94,15 +94,45 @@ export async function fetchCategoryNames(): Promise<string[]> {
 }
 
 /**
- * 标签名列表
+ * 标签名列表（GET /tag；字段优先 label，兼容 name/value）
  */
 export async function fetchTagNames(): Promise<string[]> {
-	const res = await get('/tag', { isDelete: true }, { silent: true })
-	const arr = Array.isArray(res) ? res : res != null && res.list != null ? res.list : []
+	const tags = await fetchTags()
 	const names: string[] = []
-	for (let i = 0; i < arr.length; i++) {
-		const n = arr[i].name != null ? '' + arr[i].name : ''
-		if (n.length > 0) names.push(n)
+	for (let i = 0; i < tags.length; i++) {
+		names.push(tags[i].label)
 	}
 	return names
+}
+
+/** 标签墙单项（展示用 label，勿本地 map 颜色） */
+export type TagWallItem = {
+	id: string
+	label: string
+}
+
+/**
+ * 标签墙列表
+ */
+export async function fetchTags(): Promise<TagWallItem[]> {
+	const res = await get('/tag', { isDelete: true }, { silent: true })
+	const arr = Array.isArray(res) ? res : res != null && res.list != null ? res.list : []
+	const list: TagWallItem[] = []
+	for (let i = 0; i < arr.length; i++) {
+		const t = arr[i]
+		const label =
+			t.label != null
+				? '' + t.label
+				: t.name != null
+					? '' + t.name
+					: t.value != null
+						? '' + t.value
+						: ''
+		if (label.length == 0) continue
+		list.push({
+			id: t.id != null ? '' + t.id : '' + i,
+			label,
+		})
+	}
+	return list
 }

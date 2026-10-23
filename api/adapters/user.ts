@@ -108,17 +108,39 @@ export function mapFriendLinks(raw: any): FriendLink[] {
 
 /**
  * 评论收件箱 → InboxItem[]
+ * 数据来源：GET /comment/on-my-articles（含 userInfo.id 供回复）
  */
 export function mapInboxItems(raw: any): InboxItem[] {
 	const list: InboxItem[] = []
 	const arr = raw == null ? [] : Array.isArray(raw) ? raw : raw.list != null ? raw.list : []
 	for (let i = 0; i < arr.length; i++) {
 		const c = arr[i]
+		const ui = c.userInfo != null ? c.userInfo : null
+		const replyUid =
+			ui != null && ui.id != null
+				? '' + ui.id
+				: c.uid != null
+					? '' + c.uid
+					: '0'
 		list.push({
 			id: c.id != null ? '' + c.id : '' + i,
-			articleTitle: c.articleTitle != null ? '' + c.articleTitle : c.title != null ? '' + c.title : '文章',
-			author: c.nickname != null ? '' + c.nickname : c.userName != null ? '' + c.userName : '用户',
+			articleTitle:
+				c.articleTitle != null
+					? '' + c.articleTitle
+					: c.title != null
+						? '' + c.title
+						: '文章',
+			author:
+				ui != null && ui.nickname != null
+					? '' + ui.nickname
+					: c.nickname != null
+						? '' + c.nickname
+						: c.userName != null
+							? '' + c.userName
+							: '用户',
 			content: c.content != null ? '' + c.content : '',
+			replyUid,
+			articleId: c.articleId != null ? '' + c.articleId : undefined,
 		})
 	}
 	return list

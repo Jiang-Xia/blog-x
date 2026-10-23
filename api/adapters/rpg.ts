@@ -41,6 +41,7 @@ export function mapRpgHero(status: any, weather: any = null): RpgHero {
 
 /**
  * 任务列表 → RpgQuest[]
+ * claimable = completed && !claimed，供冒险中心「领取」按钮
  */
 export function mapRpgQuests(raw: any): RpgQuest[] {
 	const list: RpgQuest[] = []
@@ -48,20 +49,37 @@ export function mapRpgQuests(raw: any): RpgQuest[] {
 	for (let i = 0; i < arr.length; i++) {
 		const q = arr[i]
 		const code = q.questCode != null ? '' + q.questCode : q.code != null ? '' + q.code : '' + i
-		const done = q.claimed === true || q.done === true || q.status === 'claimed'
+		const claimed = q.claimed === true || q.status === 'claimed'
+		const completed = q.completed === true || q.done === true || claimed
 		const progress =
 			q.progressLabel != null
 				? '' + q.progressLabel
-				: q.current != null && q.target != null
-					? q.current + '/' + q.target
-					: undefined
+				: q.progress != null && q.target != null
+					? q.progress + '/' + q.target
+					: q.current != null && q.target != null
+						? q.current + '/' + q.target
+						: undefined
+		const kind =
+			code.indexOf('sign') >= 0 || code.indexOf('checkin') >= 0
+				? 'checkin'
+				: code.indexOf('read') >= 0 || code.indexOf('view') >= 0
+					? 'read'
+					: 'other'
 		list.push({
 			id: code,
 			title: q.title != null ? '' + q.title : q.name != null ? '' + q.name : code,
-			desc: q.desc != null ? '' + q.desc : q.description != null ? '' + q.description : '',
+			desc:
+				progress != null
+					? '进度 ' + progress
+					: q.desc != null
+						? '' + q.desc
+						: q.description != null
+							? '' + q.description
+							: '',
 			icon: q.icon != null ? '' + q.icon : '📌',
-			kind: code.indexOf('sign') >= 0 || code.indexOf('checkin') >= 0 ? 'checkin' : 'read',
-			done,
+			kind,
+			done: claimed,
+			claimable: completed && !claimed,
 			progressLabel: progress,
 		})
 	}

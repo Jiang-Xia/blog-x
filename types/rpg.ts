@@ -17,13 +17,17 @@ export type RpgHero = {
 
 /** 每日任务 */
 export type RpgQuest = {
+	/** questCode，领取时原样提交 */
 	id: string
 	title: string
 	desc: string
 	icon: string
-	/** checkin | read */
+	/** checkin | read | other */
 	kind: string
+	/** 已领取（claimed） */
 	done: boolean
+	/** 已完成未领取，可点领取 */
+	claimable: boolean
 	progressLabel?: string
 }
 

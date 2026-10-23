@@ -31,7 +31,10 @@
 
 - [ ] 首页文章列表来自 `POST /article/list`（非仅 mock 三篇）
 - [ ] 详情 `GET /article/info`；赞/藏打到 `/like` `/collect`
-- [ ] 搜索带 `title` 参数有结果或空列表
+- [ ] 详情发表评论 `POST /comment/create`；未登录引导登录
+- [ ] 收件箱回复 `POST /reply/create`（parentId=评论 id，replyUid=评论者）
+- [ ] 搜索带 `title` 参数有结果或空列表；标签墙点击带 `q` 进搜索
+- [ ] 标签墙 `GET /tag` 有列表或空态
 - [ ] 归档 / 友链 / 留言列表为服务端数据
 - [ ] 微信小程序：登录页 `POST /user/auth/wechat/miniprogram` 成功后有 token
 - [ ] 账号登录：`GET /user/authCode` + `POST /user/login`（密码 RSA）；Pinia `loggedIn` 为 true
@@ -39,9 +42,10 @@
 - [ ] `OPEN_ENCRYPT=true`：控制台可见 `/encrypt` 路径；GET 带 `X-Gateway-*`；响应可正常解包
 - [ ] `OPEN_REQUEST_LOG=true`：有 `[gateway-crypto] encrypt out` / `decrypt in`（密文截断）；无明文 body / 无 `请求开始 req`
 - [ ] 401 后 refresh 成功可重放；refresh 失败跳登录
-- [ ] 冒险签到 `POST /rpg/sign`；抽奖 `POST /rpg/lottery/draw`；排行 `GET /rpg/leaderboard`
+- [ ] 冒险签到 `POST /rpg/sign`；任务领取 `POST /rpg/quest/claim`；抽奖 / 排行正常
+- [ ] 详情打赏：钻石档位 → `POST /rpg/article/tip`；站点赞赏 → `POST /site/tip/create` + status 轮询
 - [ ] 充值下单返回 `outTradeNo`（真支付到账需支付宝环境）
-- [ ] 通知 / 收件箱有列表或空态；AI 页配额文案来自 `/rag/quota`
+- [ ] 通知 / 收件箱有列表或空态；AI 配额来自 `/rag/quota`；发送走 `/rag/query-stream` 有流式或整包回复
 - [ ] `USE_MOCK=true` 时仍可离线演示原型交互
 
 ## 对照原型功能清单
@@ -60,17 +64,19 @@
 | guestbook | `/pages-blog/guestbook/index` | |
 | links | `/pages-blog/links/index` | |
 | favorites | `/pages-blog/favorites/index` | |
-| inbox | `/pages-blog/inbox/index` | |
+| inbox | `/pages-blog/inbox/index` | 列表 + 回复联调 |
 | profile | `/pages-blog/profile/index` | |
 | audit | `/pages-blog/audit/index` | mock 保留 |
-| ai | `/pages-blog/ai/index` | 配额联调；对话流式后置 |
+| ai | `/pages-blog/ai/index` | 配额 + query-stream |
+| tags | `/pages-blog/tags/index` | GET /tag |
 | lottery | `/pages-rpg/lottery/index` | |
 | rank | `/pages-rpg/rank/index` | |
 | calendar | `/pages-rpg/calendar/index` | |
 | recharge | `/pages-rpg/recharge/index` | |
-| 写文章 / 标签墙 / 背包 | Toast 示意 | |
+| tipSheet | 详情内 `x-tip-sheet` | 钻石 tip + 站点赞赏 |
+| 写文章 / 背包 | Toast 示意 | |
 
 ## 本阶段不做
 
-- 审核台真实 C 端 API、写文章 / 标签墙 / 背包独立页
-- 微信支付真单、AI 流式问答（端能力就绪后再接）
+- 审核台真实 C 端 API、写文章 / 背包装扮独立页
+- 微信支付真单（站点赞赏走支付宝链接复制 + 轮询）

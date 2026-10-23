@@ -1,5 +1,5 @@
 <template>
-	<!-- 文章详情：正文占位、AI、相关、评论、底栏赞藏赏 -->
+	<!-- 文章详情：正文占位、AI、相关、评论发表、底栏赞藏赏 -->
 	<view class="page-wrap">
 		<scroll-view class="x-page detail-scroll" scroll-y="true">
 			<x-navbar title="文章">
@@ -55,6 +55,20 @@
 			<view class="x-section-head">
 				<text class="x-section-title">评论</text>
 			</view>
+			<view class="cmt-compose">
+				<input
+					class="cmt-field"
+					type="text"
+					v-model="commentDraft"
+					placeholder="说点什么…"
+					placeholder-class="cmt-ph"
+					confirm-type="send"
+					@confirm="onSubmitComment"
+				/>
+				<view class="cmt-send" @click="onSubmitComment">
+					<text class="cmt-send-t">发送</text>
+				</view>
+			</view>
 			<view v-for="(c, idx) in comments" :key="idx" class="comment">
 				<view class="cav">
 					<text>{{ c.emoji }}</text>
@@ -68,8 +82,8 @@
 		</scroll-view>
 
 		<view class="action-bar">
-			<view class="cmt-input">
-				<text class="cmt-ph">说点什么…</text>
+			<view class="cmt-input" @click="focusCompose">
+				<text class="cmt-ph">{{ commentDraft.length > 0 ? commentDraft : '说点什么…' }}</text>
 			</view>
 			<view :class="liked ? 'act on' : 'act'" @click="onLike">
 				<view class="ic"></view>
@@ -91,8 +105,8 @@
 
 <script setup lang="ts">
 /**
- * 文章详情：联调 info/views/related/comment + 赞藏
- * 失败回落 mock；赏打开 tip-sheet（钻石 tip 见组件 paid）
+ * 文章详情：联调 info/views/related/comment + 赞藏 + 发表评论 + 钻石打赏
+ * 失败回落 mock；赏打开 tip-sheet（paid 带 amount）
  */
 import { articles, detailComments, relatedMinis } from '../../mock/data'
 import type { ArticleDetail } from '../../types/article'
@@ -102,6 +116,7 @@ import {
 	reportArticleViews,
 } from '../../api/modules/article'
 import {
+	addComment,
 	checkCollected,
 	checkLiked,
 	fetchComments,
@@ -117,15 +132,51 @@ import {
 	toggleMockFav,
 	toggleMockLike,
 } from '../../composables/useMockStore'
+import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
+
+type CommentRow = { emoji: string; name: string; tag: string; text: string }
 
 const article = ref(articles[0] as ArticleDetail)
 const related = ref(relatedMinis as Array<{ id: string; emoji: string; title: string }>)
-const comments = ref(detailComments as Array<{ emoji: string; name: string; tag: string; text: string }>)
+const comments = ref(detailComments as CommentRow[])
 const tipOpen = ref(false)
 const liked = ref(false)
 const faved = ref(false)
 const articleId = ref('0')
+const commentDraft = ref('')
+const submitting = ref(false)
+const userStore = useUserStore()
+
+/**
+ * 将服务端评论列表映射为展示行
+ */
+function mapCommentRows(res: any): CommentRow[] {
+	const arr = res != null && res.list != null ? res.list : []
+	const out: CommentRow[] = []
+	for (let i = 0; i < arr.length; i++) {
+		const c = arr[i]
+		out.push({
+			emoji: '💬',
+			name: c.userInfo != null && c.userInfo.nickname != null ? '' + c.userInfo.nickname : '用户',
+			tag: '',
+			text: c.content != null ? '' + c.content : '',
+		})
+	}
+	return out
+}
+
+/**
+ * 重新拉取评论列表
+ */
+async function reloadComments(id: string): Promise<void> {
+	const cmt = await apiOrMock(async () => {
+		const res = await fetchComments(id)
+		const rows = mapCommentRows(res)
+		return rows.length > 0 ? rows : detailComments
+	}, detailComments)
+	comments.value = cmt
+}
 
 /**
  * 加载详情、相关、评论与赞藏状态
@@ -156,22 +207,7 @@ async function loadDetail(id: string): Promise<void> {
 	}, relatedMinis)
 	related.value = rel
 
-	const cmt = await apiOrMock(async () => {
-		const res = await fetchComments(id)
-		const arr = res != null && res.list != null ? res.list : []
-		const out: Array<{ emoji: string; name: string; tag: string; text: string }> = []
-		for (let i = 0; i < arr.length; i++) {
-			const c = arr[i]
-			out.push({
-				emoji: '💬',
-				name: c.userInfo != null && c.userInfo.nickname != null ? '' + c.userInfo.nickname : '用户',
-				tag: '',
-				text: c.content != null ? '' + c.content : '',
-			})
-		}
-		return out.length > 0 ? out : detailComments
-	}, detailComments)
-	comments.value = cmt
+	await reloadComments(id)
 
 	if (USE_MOCK) {
 		liked.value = isMockLiked(id)
@@ -183,7 +219,7 @@ async function loadDetail(id: string): Promise<void> {
 }
 
 onLoad((options) => {
-	const id = options != null && options['id'] != null ? ('' + options['id']) : '0'
+	const id = options != null && options['id'] != null ? '' + options['id'] : '0'
 	articleId.value = id
 	loadDetail(id)
 })
@@ -194,6 +230,47 @@ function goAi(): void {
 
 function goDetail(id: string): void {
 	uni.redirectTo({ url: '/pages/detail/detail?id=' + id })
+}
+
+/** 底栏点输入区时提示滚动到评论框 */
+function focusCompose(): void {
+	showXToast('💬', '评论', '请在上方评论框输入')
+}
+
+/**
+ * 发表评论：POST /comment/create
+ */
+async function onSubmitComment(): Promise<void> {
+	const text = commentDraft.value.trim()
+	if (text.length == 0 || submitting.value) return
+	if (!USE_MOCK && !userStore.loggedIn) {
+		showXToast('🔐', '请先登录', '')
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	if (USE_MOCK) {
+		comments.value = [
+			{ emoji: '🦊', name: '我', tag: '', text: text },
+		].concat(comments.value)
+		commentDraft.value = ''
+		showXToast('💬', '已评论', 'mock')
+		return
+	}
+	submitting.value = true
+	try {
+		const res = await addComment(articleId.value, text)
+		commentDraft.value = ''
+		const status = res != null && res.status != null ? '' + res.status : ''
+		if (status == 'pending') {
+			showXToast('⏳', '已提交', '待审核后展示')
+		} else {
+			showXToast('💬', '评论成功', '')
+		}
+		await reloadComments(articleId.value)
+	} catch (_) {
+	} finally {
+		submitting.value = false
+	}
 }
 
 /**
@@ -229,14 +306,16 @@ async function onFav(): Promise<void> {
 }
 
 /**
- * tip-sheet 支付成功：联调钻石打赏
+ * tip-sheet 钻石打赏：联调 POST /rpg/article/tip
  */
-async function onTipPaid(): Promise<void> {
+async function onTipPaid(amount: number): Promise<void> {
 	if (USE_MOCK) return
 	const idNum = parseInt(articleId.value, 10)
 	if (isNaN(idNum)) return
+	const tipAmount = amount > 0 ? amount : 1
 	try {
-		await tipArticle(idNum, 1)
+		await tipArticle(idNum, tipAmount)
+		showXToast('💎', '打赏成功', tipAmount + ' 钻石')
 	} catch (_) {}
 }
 </script>
@@ -354,6 +433,35 @@ async function onTipPaid(): Promise<void> {
 	color: #1c1a17;
 	lines: 2;
 	text-overflow: ellipsis;
+}
+
+.cmt-compose {
+	flex-direction: row;
+	align-items: center;
+	margin-bottom: 12px;
+}
+
+.cmt-field {
+	flex: 1;
+	height: 40px;
+	border-radius: 14px;
+	background-color: #ffffff;
+	padding: 0 12px;
+	font-size: 13px;
+	color: #1c1a17;
+	margin-right: 8px;
+}
+
+.cmt-send {
+	padding: 10px 14px;
+	border-radius: 14px;
+	background-color: #3db89a;
+}
+
+.cmt-send-t {
+	font-size: 13px;
+	font-weight: 600;
+	color: #ffffff;
 }
 
 .comment {
