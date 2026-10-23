@@ -1,8 +1,11 @@
 <template>
-	<!-- 我的收藏：有数据列卡片，无数据空态 -->
+	<!-- 我的收藏：联调 GET /collect/list，展示真实文章卡片 -->
 	<view class="x-page">
 		<x-navbar title="我的收藏"></x-navbar>
-		<view v-if="list.length == 0">
+		<view v-if="loading" class="state">
+			<text class="x-meta">加载中…</text>
+		</view>
+		<view v-else-if="list.length == 0">
 			<x-empty emoji="⭐" text="还没有收藏，去首页逛逛吧" action-text="去首页" @action="goHome"></x-empty>
 		</view>
 		<view
@@ -11,25 +14,40 @@
 			class="x-card article"
 			@click="goDetail(item.id)"
 		>
-			<text class="article-title">{{ item.title }}</text>
-			<text class="x-meta">{{ item.categoryName }} · {{ item.timeLabel }}</text>
+			<view class="article-body">
+				<text class="article-title">{{ item.title }}</text>
+				<text class="x-meta">{{ item.categoryName }} · {{ item.timeLabel }}</text>
+			</view>
+			<view class="cover" :style="{ backgroundColor: item.coverC1 }">
+				<text class="cover-em">{{ item.coverEmoji }}</text>
+			</view>
 		</view>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 收藏页：联调 GET /collect/list
+ * 收藏页：联调 GET /collect/list（需登录；article.category.label）
  */
 import type { ArticleSummary } from '../../types/article'
 import { fetchCollectList } from '../../api/modules/interact'
 import { apiOrMock } from '../../composables/useApiOrMock'
 import { goTab, TAB_HOME } from '../../utils/tabNav'
+import { showXToast } from '../../utils/toast'
 
 const list = ref([] as ArticleSummary[])
+const loading = ref(true)
 
 onMounted(async () => {
-	list.value = await apiOrMock(() => fetchCollectList(1, 50), [])
+	loading.value = true
+	try {
+		list.value = await apiOrMock(() => fetchCollectList(1, 50), [])
+	} catch (_) {
+		list.value = []
+		showXToast('⚠️', '加载失败', '请确认已登录')
+	} finally {
+		loading.value = false
+	}
 })
 
 function goHome(): void {
@@ -42,10 +60,39 @@ function goDetail(id: string): void {
 </script>
 
 <style>
+.state {
+	align-items: center;
+	padding: 24px 0;
+}
+
+.article {
+	flex-direction: row;
+	align-items: center;
+}
+
+.article-body {
+	flex: 1;
+	margin-right: 12px;
+}
+
 .article-title {
 	font-size: 14px;
 	font-weight: 650;
 	color: #1c1a17;
 	margin-bottom: 4px;
+	lines: 2;
+	text-overflow: ellipsis;
+}
+
+.cover {
+	width: 64px;
+	height: 64px;
+	border-radius: 14px;
+	align-items: center;
+	justify-content: center;
+}
+
+.cover-em {
+	font-size: 22px;
 }
 </style>

@@ -23,7 +23,13 @@
 	width: 100%;
 	height: 100%;
 	background-color: #f4f1ec;
-	/* 底部留白：悬浮毛玻璃 tab-bar-blur */
+	/* 无左右 padding，滚动条贴边；内边距放 x-page-tab-inner */
+	padding: 0;
+}
+
+.x-page-tab-inner {
+	width: 100%;
+	/* 内容左右 16；底部留白给悬浮 tab-bar-blur */
 	padding: 0 16px 140px;
 }
 

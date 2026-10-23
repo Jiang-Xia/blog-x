@@ -9,6 +9,7 @@ import type {
 	InboxItem,
 	NotifyItem,
 } from '../../types/notify'
+import { resolveStaticUrl } from '../../utils/static-url'
 
 /**
  * /user/info → UserProfile
@@ -141,11 +142,13 @@ export function mapGuestbookItems(raw: any): GuestbookItem[] {
 				break
 			}
 		}
+		const avatarRaw = m.avatar != null ? '' + m.avatar : ''
 		list.push({
 			id: m.id != null ? '' + m.id : '' + i,
 			floor,
 			author: m.name != null ? '' + m.name : '访客',
 			content: m.comment != null ? '' + m.comment : '',
+			avatarUrl: avatarRaw.length > 0 ? resolveStaticUrl(avatarRaw) : '',
 			reply,
 		})
 	}

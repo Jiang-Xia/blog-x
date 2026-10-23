@@ -9,6 +9,10 @@ export const TokenKey = 'blog_x_token'
 export const RefreshTokenKey = 'blog_x_refresh_token'
 /** 用户资料 JSON 缓存（非敏感；token 仍走 TokenKey） */
 export const UserProfileKey = 'blog_x_user_profile'
+/** 搜索历史关键词（字符串数组 JSON） */
+export const SearchHistoryKey = 'blog_x_search_history'
+/** 搜索历史最多条数 */
+const SEARCH_HISTORY_MAX = 12
 
 /**
  * 读取 access token
@@ -99,4 +103,49 @@ export function setCachedProfile(profile: UserProfile): void {
  */
 export function clearCachedProfile(): void {
 	uni.removeStorageSync(UserProfileKey)
+}
+
+/**
+ * 读取搜索历史（最近在前）
+ */
+export function getSearchHistory(): string[] {
+	const v = uni.getStorageSync(SearchHistoryKey)
+	let arr: any = v
+	if (typeof v === 'string') {
+		try {
+			arr = JSON.parse(v)
+		} catch (_) {
+			return []
+		}
+	}
+	if (!Array.isArray(arr)) return []
+	const out: string[] = []
+	for (let i = 0; i < arr.length; i++) {
+		const s = ('' + arr[i]).trim()
+		if (s.length > 0) out.push(s)
+	}
+	return out
+}
+
+/**
+ * 写入一条搜索关键词（去重置顶，截断上限）
+ */
+export function pushSearchHistory(keyword: string): string[] {
+	const k = keyword.trim()
+	if (k.length == 0) return getSearchHistory()
+	const prev = getSearchHistory()
+	const next: string[] = [k]
+	for (let i = 0; i < prev.length; i++) {
+		if (prev[i] != k) next.push(prev[i])
+	}
+	const clipped = next.length > SEARCH_HISTORY_MAX ? next.slice(0, SEARCH_HISTORY_MAX) : next
+	uni.setStorageSync(SearchHistoryKey, clipped)
+	return clipped
+}
+
+/**
+ * 清空搜索历史
+ */
+export function clearSearchHistory(): void {
+	uni.removeStorageSync(SearchHistoryKey)
 }

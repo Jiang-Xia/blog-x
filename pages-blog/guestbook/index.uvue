@@ -1,5 +1,5 @@
 <template>
-	<!-- 留言板：列表 + 发布示意 -->
+	<!-- 留言板：真实头像 + 列表 + 发布示意 -->
 	<view class="x-page">
 		<x-navbar title="留言板">
 			<template v-slot:right>
@@ -9,6 +9,15 @@
 		<text class="count">{{ totalLabel }}</text>
 		<view v-for="item in items" :key="item.id" class="x-card">
 			<view class="row">
+				<view class="av">
+					<image
+						v-if="item.avatarUrl != null && item.avatarUrl.length > 0"
+						class="av-img"
+						:src="item.avatarUrl"
+						mode="aspectFill"
+					></image>
+					<text v-else class="av-fall">{{ authorInitial(item.author) }}</text>
+				</view>
 				<text class="author">{{ item.author }}</text>
 				<text class="floor">#{{ item.floor }}</text>
 			</view>
@@ -22,7 +31,7 @@
 
 <script setup lang="ts">
 /**
- * 留言板：联调 GET/POST /msgboard
+ * 留言板：联调 GET/POST /msgboard；头像用接口 avatar 字段
  */
 import { guestbookItems } from '../../mock/data'
 import type { GuestbookItem } from '../../types/notify'
@@ -33,6 +42,14 @@ import { showXToast } from '../../utils/toast'
 
 const items = ref(guestbookItems as GuestbookItem[])
 const totalLabel = ref('共 ' + guestbookItems.length + ' 条留言')
+
+/**
+ * 昵称首字兜底（无头像时）
+ */
+function authorInitial(name: string): string {
+	if (name == null || name.length == 0) return '?'
+	return name.substring(0, 1)
+}
 
 /**
  * 加载留言列表
@@ -79,6 +96,28 @@ async function onPublish(): Promise<void> {
 	flex-direction: row;
 	align-items: center;
 	margin-bottom: 6px;
+}
+
+.av {
+	width: 32px;
+	height: 32px;
+	border-radius: 16px;
+	background-color: #ffe8d6;
+	align-items: center;
+	justify-content: center;
+	margin-right: 8px;
+	overflow: hidden;
+}
+
+.av-img {
+	width: 32px;
+	height: 32px;
+}
+
+.av-fall {
+	font-size: 13px;
+	font-weight: 600;
+	color: #c06a45;
 }
 
 .author {

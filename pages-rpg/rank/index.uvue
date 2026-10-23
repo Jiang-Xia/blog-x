@@ -1,5 +1,5 @@
 <template>
-	<!-- 排行榜：分段仅 UI -->
+	<!-- 排行榜：真实头像 + 分段切换 type -->
 	<view class="x-page">
 		<x-navbar title="排行榜"></x-navbar>
 		<view class="x-seg">
@@ -18,7 +18,15 @@
 			:class="row.isMe ? 'x-card row me' : 'x-card row'"
 		>
 			<text class="rank">#{{ row.rank }}</text>
-			<text class="em">{{ row.emoji }}</text>
+			<view class="av">
+				<image
+					v-if="row.avatarUrl != null && row.avatarUrl.length > 0"
+					class="av-img"
+					:src="row.avatarUrl"
+					mode="aspectFill"
+				></image>
+				<text v-else class="em">{{ row.emoji }}</text>
+			</view>
 			<view class="body">
 				<text class="name">{{ row.name }}{{ row.isMe ? '（我）' : '' }}</text>
 				<text class="x-meta">Lv.{{ row.level }}</text>
@@ -30,7 +38,7 @@
 
 <script setup lang="ts">
 /**
- * 排行榜：联调 GET /rpg/leaderboard；分段切换 type
+ * 排行榜：联调 GET /rpg/leaderboard；头像用接口 avatar 字段
  */
 import { rankRows } from '../../mock/data'
 import type { RankRow } from '../../types/rpg'
@@ -78,9 +86,24 @@ watch(segIndex, () => {
 	width: 40px;
 }
 
-.em {
-	font-size: 22px;
+.av {
+	width: 36px;
+	height: 36px;
+	border-radius: 18px;
+	background-color: #ebe6df;
+	align-items: center;
+	justify-content: center;
 	margin-right: 10px;
+	overflow: hidden;
+}
+
+.av-img {
+	width: 36px;
+	height: 36px;
+}
+
+.em {
+	font-size: 18px;
 }
 
 .body {

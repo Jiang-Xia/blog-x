@@ -3,7 +3,7 @@
  * 数据来源：blog-server /article/*；展示字段优先用后端 enrich，勿本地 dict 回显状态码
  */
 import type { ArticleDetail, ArticleSummary } from '../../types/article'
-import type { ArchiveMonth } from '../../types/notify'
+import type { ArchiveArticle, ArchiveMonth, ArchiveYear } from '../../types/notify'
 
 const COVER_PALETTE = [
 	{ c1: '#c8efe4', c2: '#b8e0f0', emoji: '📗' },
@@ -45,11 +45,13 @@ export function mapArticleSummary(raw: any): ArticleSummary {
 	const id = raw != null && raw.id != null ? '' + raw.id : ''
 	const cover = coverOf(id)
 	const cat =
-		raw != null && raw.category != null && raw.category.name != null
-			? '' + raw.category.name
-			: raw != null && raw.categoryName != null
-				? '' + raw.categoryName
-				: '未分类'
+		raw != null && raw.category != null && raw.category.label != null
+			? '' + raw.category.label
+			: raw != null && raw.category != null && raw.category.name != null
+				? '' + raw.category.name
+				: raw != null && raw.categoryName != null
+					? '' + raw.categoryName
+					: '未分类'
 	const likes = raw != null && raw.likes != null ? Number(raw.likes) : 0
 	const comments = raw != null && raw.commentCount != null ? Number(raw.commentCount) : 0
 	const pinned = raw != null && (raw.topping === true || raw.topping === 1)
@@ -99,15 +101,73 @@ export function mapArticleDetail(raw: any): ArticleDetail {
 }
 
 /**
- * 归档接口 → ArchiveMonth[]
- * 兼容常见形态：[{ month, count, articles? }] 或按年分组
+ * 英文月名 → 中文展示
  */
-export function mapArchives(raw: any): ArchiveMonth[] {
-	const list: ArchiveMonth[] = []
-	if (raw == null) return list
+function monthLabelOf(en: string): string {
+	const map: Record<string, string> = {
+		January: '1 月',
+		February: '2 月',
+		March: '3 月',
+		April: '4 月',
+		May: '5 月',
+		June: '6 月',
+		July: '7 月',
+		August: '8 月',
+		September: '9 月',
+		October: '10 月',
+		November: '11 月',
+		December: '12 月',
+	}
+	return map[en] != null ? map[en] : en
+}
+
+/**
+ * 单月文章列表 → ArchiveArticle[]
+ */
+function mapArchiveArticles(arts: any): ArchiveArticle[] {
+	const list: ArchiveArticle[] = []
+	if (arts == null || !Array.isArray(arts)) return list
+	for (let i = 0; i < arts.length; i++) {
+		const a = arts[i]
+		list.push({
+			id: a.id != null ? '' + a.id : '' + i,
+			title: a.title != null ? '' + a.title : '',
+			timeLabel: a.createTime != null ? formatTimeLabel(a.createTime) : undefined,
+		})
+	}
+	return list
+}
+
+/**
+ * 归档接口 → ArchiveYear[]（Nest：[{ year, data: { January: Article[] } }]）
+ * 同时兼容扁平 [{ month, count, articles }]
+ */
+export function mapArchives(raw: any): ArchiveYear[] {
+	const years: ArchiveYear[] = []
+	if (raw == null) return years
 	const arr = Array.isArray(raw) ? raw : raw.list != null ? raw.list : []
 	for (let i = 0; i < arr.length; i++) {
 		const item = arr[i]
+		// 真实结构：year + data(object)
+		if (item != null && item.year != null && item.data != null && typeof item.data === 'object') {
+			const months: ArchiveMonth[] = []
+			const data = item.data
+			const keys = Object.keys(data)
+			for (let k = 0; k < keys.length; k++) {
+				const en = keys[k]
+				const arts = mapArchiveArticles(data[en])
+				months.push({
+					monthLabel: monthLabelOf(en),
+					count: arts.length,
+					articleId: arts.length > 0 ? arts[0].id : undefined,
+					articleTitle: arts.length > 0 ? arts[0].title : undefined,
+					articles: arts,
+				})
+			}
+			years.push({ year: '' + item.year, months })
+			continue
+		}
+		// 扁平兼容
 		const monthLabel =
 			item.month != null
 				? '' + item.month
@@ -116,15 +176,40 @@ export function mapArchives(raw: any): ArchiveMonth[] {
 					: item.date != null
 						? '' + item.date
 						: ''
-		const count = item.count != null ? Number(item.count) : item.total != null ? Number(item.total) : 0
-		let articleId: string | undefined
-		let articleTitle: string | undefined
-		const arts = item.articles != null ? item.articles : item.list
-		if (arts != null && arts.length > 0) {
-			articleId = arts[0].id != null ? '' + arts[0].id : undefined
-			articleTitle = arts[0].title != null ? '' + arts[0].title : undefined
+		const artsRaw = item.articles != null ? item.articles : item.list
+		const arts = mapArchiveArticles(artsRaw)
+		const count =
+			item.count != null
+				? Number(item.count)
+				: item.total != null
+					? Number(item.total)
+					: arts.length
+		years.push({
+			year: item.year != null ? '' + item.year : '',
+			months: [
+				{
+					monthLabel,
+					count,
+					articleId: arts.length > 0 ? arts[0].id : undefined,
+					articleTitle: arts.length > 0 ? arts[0].title : undefined,
+					articles: arts,
+				},
+			],
+		})
+	}
+	return years
+}
+
+/**
+ * 展平为月列表（旧页面兼容；优先用 mapArchives 年结构）
+ */
+export function flattenArchiveMonths(years: ArchiveYear[]): ArchiveMonth[] {
+	const list: ArchiveMonth[] = []
+	for (let i = 0; i < years.length; i++) {
+		const ms = years[i].months
+		for (let j = 0; j < ms.length; j++) {
+			list.push(ms[j])
 		}
-		list.push({ monthLabel, count, articleId, articleTitle })
 	}
 	return list
 }

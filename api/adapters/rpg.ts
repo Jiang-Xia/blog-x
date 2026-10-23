@@ -3,6 +3,7 @@
  * 数据来源：blog-server /rpg/*
  */
 import type { LotteryCell, RankRow, RpgHero, RpgQuest } from '../../types/rpg'
+import { resolveStaticUrl } from '../../utils/static-url'
 
 /**
  * status + 可选 weather → RpgHero
@@ -113,10 +114,12 @@ export function mapRankRows(raw: any, myUid: number = 0): RankRow[] {
 	for (let i = 0; i < arr.length; i++) {
 		const r = arr[i]
 		const uid = r.uid != null ? Number(r.uid) : 0
+		const avatarRaw = r.avatar != null ? '' + r.avatar : ''
 		list.push({
 			rank: r.rank != null ? Number(r.rank) : i + 1,
 			name: r.nickname != null ? '' + r.nickname : r.name != null ? '' + r.name : '用户',
 			emoji: '🦊',
+			avatarUrl: avatarRaw.length > 0 ? resolveStaticUrl(avatarRaw) : '',
 			level: r.level != null ? Number(r.level) : 1,
 			score: r.score != null ? Number(r.score) : r.exp != null ? Number(r.exp) : 0,
 			isMe: myUid > 0 && uid === myUid,

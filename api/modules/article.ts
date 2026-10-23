@@ -5,7 +5,7 @@
 import { get, post } from '../request'
 import { mapArchives, mapArticleDetail, mapArticleSummary } from '../adapters/article'
 import type { ArticleDetail, ArticleSummary } from '../../types/article'
-import type { ArchiveMonth } from '../../types/notify'
+import type { ArchiveYear } from '../../types/notify'
 
 /**
  * 文章分页列表
@@ -99,9 +99,9 @@ export async function createArticle(body: CreateArticleBody): Promise<string> {
 }
 
 /**
- * 归档
+ * 归档（按年 → 月 → 文章，对齐 Nest getArchives）
  */
-export async function fetchArchives(): Promise<ArchiveMonth[]> {
+export async function fetchArchives(): Promise<ArchiveYear[]> {
 	const res = await get('/article/archives')
 	return mapArchives(res)
 }

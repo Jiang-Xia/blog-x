@@ -16,6 +16,8 @@ export type GuestbookItem = {
 	floor: number
 	author: string
 	content: string
+	/** 真实头像完整 URL（无则空，UI 用首字兜底） */
+	avatarUrl?: string
 	reply?: string
 }
 
@@ -44,9 +46,25 @@ export type AuditItem = {
 	highlight?: string
 }
 
+/** 归档单篇文章（接口真实字段） */
+export type ArchiveArticle = {
+	id: string
+	title: string
+	timeLabel?: string
+}
+
+/** 归档月块（兼容旧 mock + 真实 year/data 展平） */
 export type ArchiveMonth = {
 	monthLabel: string
 	count: number
 	articleId?: string
 	articleTitle?: string
+	/** 该月全部文章（真实归档） */
+	articles?: ArchiveArticle[]
+}
+
+/** 归档年块（对齐 GET /article/archives） */
+export type ArchiveYear = {
+	year: string
+	months: ArchiveMonth[]
 }

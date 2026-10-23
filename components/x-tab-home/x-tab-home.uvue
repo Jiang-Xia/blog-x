@@ -1,74 +1,80 @@
 <template>
-	<!-- 首页 Tab 面板：搜索、今日进度、快捷入口、最新文章（mock） -->
+	<!-- 首页 Tab：scroll-view 全宽贴边；内边距在 x-page-tab-inner -->
 	<scroll-view class="x-page-tab" scroll-y="true">
-		<view class="status-pad"></view>
-		<view class="search-bar" @click="goSearch">
-			<text class="search-ico">⌕</text>
-			<text class="search-ph">搜索文章、标签、作者</text>
-			<view class="bell" @click.stop="goNotify">
-				<text class="bell-text">{{ notifyBadge }}</text>
-			</view>
-		</view>
-
-		<view class="x-card today">
-			<view class="today-left">
-				<text class="today-label">今日进度</text>
-				<text class="today-title">{{ homeTodayTitle }}</text>
-				<view class="chip-row">
-					<text class="x-chip">{{ homeStreakLabel }}</text>
-					<text class="x-chip x-chip-lav">{{ unreadChip }}</text>
+		<view class="x-page-tab-inner">
+			<view class="status-pad"></view>
+			<view class="search-bar" @click="goSearch">
+				<text class="search-ico">⌕</text>
+				<text class="search-ph">搜索文章、标签、作者</text>
+				<view class="bell" @click.stop="goNotify">
+					<text class="bell-text">{{ notifyBadge }}</text>
 				</view>
 			</view>
-			<view class="ring">
-				<text class="ring-pct">{{ ringPct }}%</text>
-				<text class="ring-sub">签到</text>
-			</view>
-		</view>
 
-		<view class="chip-row chip-gap">
-			<view class="x-chip x-chip-dark" @click="goAi">
-				<text class="chip-t-dark">✦ AI 助手</text>
-			</view>
-			<view class="x-chip x-chip-plain" @click="goRpg">
-				<text class="chip-t">{{ questChip }}</text>
-			</view>
-			<view class="x-chip x-chip-plain" @click="onWrite">
-				<text class="chip-t">写文章</text>
-			</view>
-		</view>
-
-		<scroll-view class="cat-scroll" scroll-x="true">
-			<view class="chip-row nowrap">
-				<text
-					v-for="(c, i) in categories"
-					:key="c"
-					:class="i === 0 ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
-				>{{ c }}</text>
-			</view>
-		</scroll-view>
-
-		<view class="x-section-head">
-			<text class="x-section-title">最新文章</text>
-			<text class="x-link" @click="goDiscover">全部</text>
-		</view>
-
-		<view
-			v-for="item in list"
-			:key="item.id"
-			class="x-card article"
-			@click="goDetail(item.id)"
-		>
-			<view class="article-body">
-				<view class="meta-row">
-					<text class="x-meta">{{ item.categoryName }}</text>
-					<text class="x-meta"> · </text>
-					<text class="x-meta">{{ item.timeLabel }}</text>
+			<view class="x-card today">
+				<view class="today-left">
+					<text class="today-label">今日进度</text>
+					<text class="today-title">{{ homeTodayTitle }}</text>
+					<view class="chip-row">
+						<text class="x-chip">{{ homeStreakLabel }}</text>
+						<text class="x-chip x-chip-lav">{{ unreadChip }}</text>
+					</view>
 				</view>
-				<text class="article-title">{{ item.title }}</text>
-				<text class="article-stat">👍 {{ item.likeCount }} · 💬 {{ item.commentCount }}</text>
+				<view class="ring">
+					<text class="ring-pct">{{ ringPct }}%</text>
+					<text class="ring-sub">签到</text>
+				</view>
 			</view>
-			<view class="cover" :style="{ backgroundColor: item.coverC1 }">
-				<text class="cover-em">{{ item.coverEmoji }}</text>
+
+			<view class="chip-row chip-gap">
+				<view class="x-chip x-chip-dark" @click="goAi">
+					<text class="chip-t-dark">✦ AI 助手</text>
+				</view>
+				<view class="x-chip x-chip-plain" @click="goRpg">
+					<text class="chip-t">{{ questChip }}</text>
+				</view>
+				<view class="x-chip x-chip-plain" @click="onWrite">
+					<text class="chip-t">写文章</text>
+				</view>
+			</view>
+
+			<!-- 分类横滑：点击按 category.id 筛选 -->
+			<scroll-view class="cat-scroll" scroll-x="true" show-scrollbar="false">
+				<view class="chip-row nowrap">
+					<view
+						v-for="(c, i) in categories"
+						:key="c.id"
+						:class="catIndex === i ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
+						@click="onSelectCat(i)"
+					>
+						<text :class="catIndex === i ? 'chip-t-dark' : 'chip-t'">{{ c.label }}</text>
+					</view>
+				</view>
+			</scroll-view>
+
+			<view class="x-section-head">
+				<text class="x-section-title">最新文章</text>
+				<text class="x-link" @click="goDiscover">全部</text>
+			</view>
+
+			<view
+				v-for="item in list"
+				:key="item.id"
+				class="x-card article"
+				@click="goDetail(item.id)"
+			>
+				<view class="article-body">
+					<view class="meta-row">
+						<text class="x-meta">{{ item.categoryName }}</text>
+						<text class="x-meta"> · </text>
+						<text class="x-meta">{{ item.timeLabel }}</text>
+					</view>
+					<text class="article-title">{{ item.title }}</text>
+					<text class="article-stat">👍 {{ item.likeCount }} · 💬 {{ item.commentCount }}</text>
+				</view>
+				<view class="cover" :style="{ backgroundColor: item.coverC1 }">
+					<text class="cover-em">{{ item.coverEmoji }}</text>
+				</view>
 			</view>
 		</view>
 	</scroll-view>
@@ -78,10 +84,11 @@
 /**
  * 首页 Tab 面板：对齐小卡原型 home
  * 数据来源：联调 article/list、category、未读、sign-info、my-quests；失败回落 mock
+ * 滚动：Tab 内容一层 scroll-y 整体滚；分类横滑单独 scroll-x
  */
 import { homeArticles, homeCategories, rpgQuestsSeed } from '../../mock/data'
 import type { ArticleSummary } from '../../types/article'
-import { fetchArticleList, fetchCategoryNames } from '../../api/modules/article'
+import { fetchArticleList, fetchCategories, type CategoryOption } from '../../api/modules/article'
 import { fetchUnreadCount } from '../../api/modules/notification'
 import { fetchMyQuests, fetchSignInfo } from '../../api/modules/rpg'
 import { apiOrMock } from '../../composables/useApiOrMock'
@@ -89,8 +96,14 @@ import { useMockStore } from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
 import { goTab, TAB_DISCOVER, TAB_RPG } from '../../utils/tabNav'
 
+/** 分类 chip：id 为空表示「全部」 */
+type CatChip = { id: string; label: string }
+
 const list = ref(homeArticles as ArticleSummary[])
-const categories = ref(homeCategories as string[])
+const categories = ref([
+	{ id: '', label: '全部' },
+] as CatChip[])
+const catIndex = ref(0)
 const store = useMockStore()
 const userStore = useUserStore()
 const notifyBadge = store.notifyBadge
@@ -102,16 +115,50 @@ const ringPct = ref(70)
 const questChip = ref('今日任务 —')
 
 /**
- * 拉取首页列表、分类、未读、签到与任务进度
+ * 将 mock 分类名转成 chip（无 id）
  */
-async function loadHome(): Promise<void> {
+function mockCats(): CatChip[] {
+	const out: CatChip[] = []
+	for (let i = 0; i < homeCategories.length; i++) {
+		out.push({ id: '', label: homeCategories[i] })
+	}
+	return out
+}
+
+/**
+ * 拉取文章列表（可选按分类 UUID 筛选）
+ */
+async function loadArticles(): Promise<void> {
+	const cat = categories.value[catIndex.value]
+	const catId = cat != null && cat.id.length > 0 ? cat.id : undefined
 	const articles = await apiOrMock(async () => {
-		const res = await fetchArticleList({ page: 1, pageSize: 10, client: true })
+		const res = await fetchArticleList({
+			page: 1,
+			pageSize: 10,
+			client: true,
+			category: catId,
+		})
 		return res.list
 	}, homeArticles)
 	list.value = articles
-	const cats = await apiOrMock(() => fetchCategoryNames(), homeCategories)
+}
+
+/**
+ * 拉取首页列表、分类、未读、签到与任务进度
+ */
+async function loadHome(): Promise<void> {
+	const cats = await apiOrMock(async () => {
+		const rows = await fetchCategories()
+		const chips: CatChip[] = [{ id: '', label: '全部' }]
+		for (let i = 0; i < rows.length; i++) {
+			const r = rows[i] as CategoryOption
+			chips.push({ id: r.id, label: r.label })
+		}
+		return chips
+	}, mockCats())
 	categories.value = cats
+	await loadArticles()
+
 	const unread = await apiOrMock(() => fetchUnreadCount(), store.notifyBadge.value)
 	store.notifyBadge.value = unread
 	unreadChip.value = '未读 ' + unread
@@ -149,6 +196,15 @@ async function loadHome(): Promise<void> {
 onMounted(() => {
 	loadHome()
 })
+
+/**
+ * 切换分类并重新拉列表
+ */
+function onSelectCat(i: number): void {
+	if (i < 0 || i >= categories.value.length) return
+	catIndex.value = i
+	loadArticles()
+}
 
 /** 进搜索 */
 function goSearch(): void {
@@ -271,11 +327,13 @@ function goDetail(id: string): void {
 
 .nowrap {
 	flex-wrap: nowrap;
+	flex-direction: row;
 }
 
 .cat-scroll {
 	margin-bottom: 12px;
-	height: 36px;
+	height: 40px;
+	width: 100%;
 }
 
 .chip-t {

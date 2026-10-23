@@ -86,7 +86,7 @@ const contentStyle = computed(() => {
 		left: active ? 'auto' : '0px',
 		top: active ? 'auto' : '0px',
 		right: active ? 'auto' : '0px',
-		bottom: active ? 'auto' : (tabContentHeightFull.value ? '0px' : 'auto')
+		bottom: active ? 'auto' : (tabContentHeightFull.value ? '0px' : 'auto'),
 	}
 })
 </script>

@@ -1,96 +1,98 @@
 <template>
-	<!-- 冒险中心面板：Hero、签到、任务领奖、玩法入口、充值 -->
+	<!-- 冒险中心：scroll-view 全宽贴边；内边距在 inner -->
 	<scroll-view class="x-page-tab" scroll-y="true">
-		<view class="status-pad"></view>
-		<view class="head-row">
-			<text class="x-page-title">冒险中心</text>
-			<text class="x-chip x-chip-peach">{{ hero.weatherBuff }}</text>
-		</view>
+		<view class="x-page-tab-inner">
+			<view class="status-pad"></view>
+			<view class="head-row">
+				<text class="x-page-title">冒险中心</text>
+				<text class="x-chip x-chip-peach">{{ hero.weatherBuff }}</text>
+			</view>
 
-		<view class="rpg-hero">
-			<text class="hero-label">旅行者 · {{ hero.travelerName }} · 连续签到 {{ streakDays }}</text>
-			<text class="hero-lv">Lv.{{ hero.level }} · 距下一级还差 {{ hero.expToNext }} 经验</text>
-			<view class="bar">
-				<view class="bar-i" :style="{ width: hero.expBarPercent + '%' }"></view>
-			</view>
-			<view class="bal-row">
-				<text class="bal">💎 {{ diamonds }}</text>
-				<text class="bal">🪙 {{ hero.coins }}</text>
-				<text class="bal">抽奖券 ×{{ hero.lotteryTickets }}</text>
-			</view>
-		</view>
-
-		<view class="x-card quest">
-			<view :class="checkedInToday ? 'q-icon done' : 'q-icon'">
-				<text>{{ checkedInToday ? '✅' : '☀️' }}</text>
-			</view>
-			<view class="q-body">
-				<text class="q-title">每日签到</text>
-				<text class="q-desc">{{ checkedInToday ? '今日已签到' : '签到领取经验与钻石' }}</text>
-			</view>
-			<view
-				:class="checkedInToday ? 'x-btn disabled' : 'x-btn'"
-				@click="onCheckin"
-			>
-				<text class="x-btn-text">{{ checkedInToday ? '已签' : '签到' }}</text>
-			</view>
-		</view>
-
-		<!-- 签到任务已有独立卡片，列表排除 kind=checkin -->
-		<view v-for="q in displayQuests" :key="q.id" class="x-card quest">
-			<view :class="q.done ? 'q-icon done' : 'q-icon peach'">
-				<text>{{ q.done ? '✅' : q.icon }}</text>
-			</view>
-			<view class="q-body">
-				<text class="q-title">{{ q.title }}</text>
-				<text class="q-desc">{{ q.desc }}</text>
-			</view>
-			<view v-if="q.done" class="x-btn disabled">
-				<text class="x-btn-text">已领</text>
-			</view>
-			<view v-else-if="q.claimable" class="x-btn" @click="onClaim(q.id)">
-				<text class="x-btn-text">领取</text>
-			</view>
-			<view v-else class="x-btn x-btn-ghost" @click="goHome">
-				<text class="x-btn-ghost-text">去完成</text>
-			</view>
-		</view>
-
-		<view class="x-grid-2">
-			<view class="x-grid-2-item">
-				<view class="x-tile" @click="goLottery">
-					<text class="x-tile-ico">🎰</text>
-					<text class="x-tile-title">幸运抽奖</text>
-					<text class="x-tile-desc">消耗抽奖券</text>
+			<view class="rpg-hero">
+				<text class="hero-label">旅行者 · {{ hero.travelerName }} · 连续签到 {{ streakDays }}</text>
+				<text class="hero-lv">Lv.{{ hero.level }} · 距下一级还差 {{ hero.expToNext }} 经验</text>
+				<view class="bar">
+					<view class="bar-i" :style="{ width: hero.expBarPercent + '%' }"></view>
+				</view>
+				<view class="bal-row">
+					<text class="bal">💎 {{ diamonds }}</text>
+					<text class="bal">🪙 {{ hero.coins }}</text>
+					<text class="bal">抽奖券 ×{{ hero.lotteryTickets }}</text>
 				</view>
 			</view>
-			<view class="x-grid-2-item">
-				<view class="x-tile" @click="goRank">
-					<text class="x-tile-ico">🏆</text>
-					<text class="x-tile-title">排行榜</text>
-					<text class="x-tile-desc">本周经验</text>
-				</view>
-			</view>
-			<view class="x-grid-2-item">
-				<view class="x-tile" @click="goCalendar">
-					<text class="x-tile-ico">📅</text>
-					<text class="x-tile-title">签到日历</text>
-					<text class="x-tile-desc">本月进度</text>
-				</view>
-			</view>
-			<view class="x-grid-2-item">
-				<view class="x-tile" @click="onBag">
-					<text class="x-tile-ico">🎒</text>
-					<text class="x-tile-title">背包装扮</text>
-					<text class="x-tile-desc">称号 / 头像框</text>
-				</view>
-			</view>
-		</view>
 
-		<view class="recharge-row">
-			<text class="recharge-tip">钻石不足？</text>
-			<view class="x-btn" @click="goRecharge">
-				<text class="x-btn-text">充值</text>
+			<view class="x-card quest">
+				<view :class="checkedInToday ? 'q-icon done' : 'q-icon'">
+					<text>{{ checkedInToday ? '✅' : '☀️' }}</text>
+				</view>
+				<view class="q-body">
+					<text class="q-title">每日签到</text>
+					<text class="q-desc">{{ checkedInToday ? '今日已签到' : '签到领取经验与钻石' }}</text>
+				</view>
+				<view
+					:class="checkedInToday ? 'x-btn disabled' : 'x-btn'"
+					@click="onCheckin"
+				>
+					<text class="x-btn-text">{{ checkedInToday ? '已签' : '签到' }}</text>
+				</view>
+			</view>
+
+			<!-- 签到任务已有独立卡片，列表排除 kind=checkin -->
+			<view v-for="q in displayQuests" :key="q.id" class="x-card quest">
+				<view :class="q.done ? 'q-icon done' : 'q-icon peach'">
+					<text>{{ q.done ? '✅' : q.icon }}</text>
+				</view>
+				<view class="q-body">
+					<text class="q-title">{{ q.title }}</text>
+					<text class="q-desc">{{ q.desc }}</text>
+				</view>
+				<view v-if="q.done" class="x-btn disabled">
+					<text class="x-btn-text">已领</text>
+				</view>
+				<view v-else-if="q.claimable" class="x-btn" @click="onClaim(q.id)">
+					<text class="x-btn-text">领取</text>
+				</view>
+				<view v-else class="x-btn x-btn-ghost" @click="goHome">
+					<text class="x-btn-ghost-text">去完成</text>
+				</view>
+			</view>
+
+			<view class="x-grid-2">
+				<view class="x-grid-2-item">
+					<view class="x-tile" @click="goLottery">
+						<text class="x-tile-ico">🎰</text>
+						<text class="x-tile-title">幸运抽奖</text>
+						<text class="x-tile-desc">消耗抽奖券</text>
+					</view>
+				</view>
+				<view class="x-grid-2-item">
+					<view class="x-tile" @click="goRank">
+						<text class="x-tile-ico">🏆</text>
+						<text class="x-tile-title">排行榜</text>
+						<text class="x-tile-desc">本周经验</text>
+					</view>
+				</view>
+				<view class="x-grid-2-item">
+					<view class="x-tile" @click="goCalendar">
+						<text class="x-tile-ico">📅</text>
+						<text class="x-tile-title">签到日历</text>
+						<text class="x-tile-desc">本月进度</text>
+					</view>
+				</view>
+				<view class="x-grid-2-item">
+					<view class="x-tile" @click="onBag">
+						<text class="x-tile-ico">🎒</text>
+						<text class="x-tile-title">背包装扮</text>
+						<text class="x-tile-desc">称号 / 头像框</text>
+					</view>
+				</view>
+			</view>
+
+			<view class="recharge-row">
+				<text class="recharge-tip">钻石不足？</text>
+				<view class="x-btn" @click="goRecharge">
+					<text class="x-btn-text">充值</text>
+				</view>
 			</view>
 		</view>
 	</scroll-view>

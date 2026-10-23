@@ -52,6 +52,8 @@ export type RankRow = {
 	rank: number
 	name: string
 	emoji: string
+	/** 真实头像完整 URL（优先于 emoji） */
+	avatarUrl?: string
 	level: number
 	score: number
 	isMe?: boolean

@@ -303,12 +303,19 @@ export const auditItems: AuditItem[] = [
 export const archiveMonths: ArchiveMonth[] = [
 	{
 		monthLabel: '10 月',
-		count: 8,
+		count: 2,
 		articleId: '0',
 		articleTitle: 'uni-app x 上手笔记',
+		articles: [
+			{ id: '0', title: 'uni-app x 上手笔记', timeLabel: '今天' },
+			{ id: '1', title: 'NestJS 接入微信支付 V3', timeLabel: '3 天前' },
+		],
 	},
-	{ monthLabel: '9 月', count: 5 },
-	{ monthLabel: '8 月', count: 3 },
+	{
+		monthLabel: '9 月',
+		count: 1,
+		articles: [{ id: '2', title: '冒险页做成任务板', timeLabel: '上周' }],
+	},
 ]
 
 /** 签到日历：本月已签日期（1-based） */

@@ -53,8 +53,13 @@ export async function fetchCollectList(page = 1, pageSize = 20): Promise<Article
 	const arr = res != null && res.list != null ? res.list : Array.isArray(res) ? res : []
 	const list: ArticleSummary[] = []
 	for (let i = 0; i < arr.length; i++) {
-		const item = arr[i].article != null ? arr[i].article : arr[i]
-		list.push(mapArticleSummary(item))
+		const row = arr[i]
+		if (row == null) continue
+		const item = row.article != null ? row.article : row
+		if (item == null || item.id == null) continue
+		const mapped = mapArticleSummary(item)
+		if (mapped.id.length == 0 || mapped.title.length == 0) continue
+		list.push(mapped)
 	}
 	return list
 }

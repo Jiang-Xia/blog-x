@@ -1,11 +1,38 @@
 <template>
-	<!-- 搜索：示意关键词 + 结果列表 -->
+	<!-- 搜索：可输入关键词 + 结果 + 本地搜索历史 chip -->
 	<view class="x-page">
 		<x-navbar title="搜索"></x-navbar>
 		<view class="query-row">
-			<text class="query">{{ query }}</text>
+			<input
+				class="query-input"
+				type="text"
+				v-model="query"
+				placeholder="搜索文章、标签…"
+				placeholder-class="query-ph"
+				confirm-type="search"
+				@confirm="onSearch"
+			/>
+			<text class="search-btn" @click="onSearch">搜索</text>
 			<text class="clear" @click="onClear">清除</text>
 		</view>
+
+		<view v-if="history.length > 0" class="hist-block">
+			<view class="hist-head">
+				<text class="hist-title">最近搜索</text>
+				<text class="hist-clear" @click="onClearHistory">清空</text>
+			</view>
+			<view class="chip-row">
+				<view
+					v-for="(h, i) in history"
+					:key="'h' + i"
+					class="x-chip x-chip-plain"
+					@click="onChip(h)"
+				>
+					<text class="chip-t">{{ h }}</text>
+				</view>
+			</view>
+		</view>
+
 		<view
 			v-for="item in results"
 			:key="item.id"
@@ -20,32 +47,53 @@
 				<text class="cover-em">{{ item.coverEmoji }}</text>
 			</view>
 		</view>
-		<view class="chip-row">
-			<text class="x-chip x-chip-plain">NestJS</text>
-			<text class="x-chip x-chip-plain">V3</text>
-			<text class="x-chip x-chip-plain">退款</text>
+		<view v-if="searched && results.length == 0" class="empty-tip">
+			<text class="x-meta">暂无相关文章</text>
 		</view>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 搜索页：联调 POST /article/list?title=；失败回落 mock
+ * 搜索页：联调 POST /article/list?title=；chip-row 为本地搜索历史
+ * 数据来源：API + utils/storage SearchHistoryKey
  */
 import { searchResults } from '../../mock/data'
 import type { ArticleSummary } from '../../types/article'
 import { fetchArticleList } from '../../api/modules/article'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import {
+	clearSearchHistory,
+	getSearchHistory,
+	pushSearchHistory,
+} from '../../utils/storage'
 import { showXToast } from '../../utils/toast'
 
-const query = ref('微信支付')
-const results = ref(searchResults as ArticleSummary[])
+const query = ref('')
+const results = ref([] as ArticleSummary[])
+const history = ref([] as string[])
+const searched = ref(false)
 
 /**
- * 按关键词搜文章
+ * 刷新本地搜索历史 chip
  */
-async function doSearch(): Promise<void> {
-	const q = query.value
+function reloadHistory(): void {
+	history.value = getSearchHistory()
+}
+
+/**
+ * 按关键词搜文章，并写入本地历史
+ */
+async function doSearch(raw: string): Promise<void> {
+	const q = raw.trim()
+	query.value = q
+	if (q.length == 0) {
+		results.value = []
+		searched.value = false
+		return
+	}
+	history.value = pushSearchHistory(q)
+	searched.value = true
 	results.value = await apiOrMock(async () => {
 		const res = await fetchArticleList({ page: 1, pageSize: 20, title: q, client: true })
 		return res.list
@@ -53,16 +101,35 @@ async function doSearch(): Promise<void> {
 }
 
 onLoad((options) => {
+	reloadHistory()
 	if (options != null && options['q'] != null && ('' + options['q']).length > 0) {
-		query.value = decodeURIComponent('' + options['q'])
+		const q = decodeURIComponent('' + options['q'])
+		doSearch(q)
 	}
-	doSearch()
 })
+
+function onSearch(): void {
+	doSearch(query.value)
+}
+
+/**
+ * 点击历史 chip 再搜
+ */
+function onChip(h: string): void {
+	doSearch(h)
+}
 
 function onClear(): void {
 	query.value = ''
 	results.value = []
+	searched.value = false
 	showXToast('⌫', '已清除', '')
+}
+
+function onClearHistory(): void {
+	clearSearchHistory()
+	history.value = []
+	showXToast('⌫', '已清空历史', '')
 }
 
 function goDetail(id: string): void {
@@ -76,20 +143,67 @@ function goDetail(id: string): void {
 	align-items: center;
 	background-color: #ffffff;
 	border-radius: 999px;
-	padding: 11px 14px;
+	padding: 8px 12px;
 	margin-bottom: 12px;
 }
 
-.query {
+.query-input {
 	flex: 1;
 	font-size: 14px;
 	color: #1c1a17;
 	font-weight: 600;
+	height: 28px;
+}
+
+.query-ph {
+	color: #9a948a;
+	font-weight: 400;
+}
+
+.search-btn {
+	font-size: 12px;
+	color: #3db89a;
+	font-weight: 600;
+	margin-left: 8px;
+	margin-right: 8px;
 }
 
 .clear {
 	font-size: 12px;
-	color: #3db89a;
+	color: #9a948a;
+}
+
+.hist-block {
+	margin-bottom: 12px;
+}
+
+.hist-head {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.hist-title {
+	font-size: 12px;
+	font-weight: 600;
+	color: #5c574f;
+}
+
+.hist-clear {
+	font-size: 11px;
+	color: #9a948a;
+}
+
+.chip-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.chip-t {
+	font-size: 11px;
+	color: #5c574f;
+	font-weight: 500;
 }
 
 .article {
@@ -124,9 +238,8 @@ function goDetail(id: string): void {
 	font-size: 22px;
 }
 
-.chip-row {
-	flex-direction: row;
-	flex-wrap: wrap;
-	margin-top: 8px;
+.empty-tip {
+	align-items: center;
+	padding: 24px 0;
 }
 </style>
