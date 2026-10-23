@@ -48,6 +48,7 @@
 - [ ] 消息中心分段「评论/赞藏/系统」能过滤列表
 - [ ] 写文章：封面 `upload-media?category=cover`；分类 `/category`；标签 `/tag`；定时 `status=scheduled` + scheduledPublishAt；正文工具栏插图；`POST /article/create`；未登录跳登录
 - [ ] 背包装扮：`GET /rpg/inventory` + `/rpg/loadout`；称号/头像框穿戴卸下；宠物段 `GET /rpg/pets` 出战/休息
+- [ ] 审核台：`GET /sensitive-word/hit`（来源/状态筛选）；待审项 `approve` / `reject`；需管理员登录
 - [ ] 详情打赏：钻石档位 → `POST /rpg/article/tip`；站点赞赏 → `POST /site/tip/create` + status 轮询
 - [ ] 充值下单返回 `outTradeNo`（真支付到账需支付宝环境）
 - [ ] 通知 / 收件箱有列表或空态；AI 配额来自 `/rag/quota`；发送走 `/rag/query-stream` 有流式或整包回复
@@ -71,7 +72,7 @@
 | favorites | `/pages-blog/favorites/index` | |
 | inbox | `/pages-blog/inbox/index` | 列表 + 回复联调 |
 | profile | `/pages-blog/profile/index` | |
-| audit | `/pages-blog/audit/index` | mock 保留 |
+| audit | `/pages-blog/audit/index` | hit 列表 + approve/reject |
 | ai | `/pages-blog/ai/index` | 配额 + query-stream |
 | tags | `/pages-blog/tags/index` | GET /tag |
 | lottery | `/pages-rpg/lottery/index` | |
@@ -86,6 +87,5 @@
 
 ## 本阶段不做
 
-- 审核台真实 C 端 API
 - 微信支付真单（站点赞赏走支付宝链接复制 + 轮询）
 - 工具箱分包 `pages-tool` 真实工具

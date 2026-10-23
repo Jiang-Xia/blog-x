@@ -86,13 +86,16 @@ const RPG_ROWS: ApiRow[] = [
 	{ name: 'getMyPets', label: '我的宠物', method: 'GET', path: '/rpg/pets' },
 ]
 
-/** 通知 / AI */
+/** 通知 / AI / 审核 */
 const EXTRA_ROWS: ApiRow[] = [
 	{ name: 'getNotifications', label: '通知列表', method: 'GET', path: '/notification/list' },
 	{ name: 'getUnreadNotificationCount', label: '未读通知数', method: 'GET', path: '/notification/unread-count' },
 	{ name: 'markNotificationsRead', label: '标记通知已读', method: 'PATCH', path: '/notification/read' },
 	{ name: 'getRagQuota', label: 'RAG 配额', method: 'GET', path: '/rag/quota' },
 	{ name: 'getRagStatus', label: 'RAG 状态', method: 'GET', path: '/rag/status' },
+	{ name: 'getSensitiveHits', label: '敏感词命中', method: 'GET', path: '/sensitive-word/hit' },
+	{ name: 'approveSensitiveHit', label: '审核通过', method: 'POST', path: '/sensitive-word/hit/:id/approve' },
+	{ name: 'rejectSensitiveHit', label: '审核拒绝', method: 'POST', path: '/sensitive-word/hit/:id/reject' },
 ]
 
 /** 全量注册表（合并各业务分段；避免依赖对象展开以兼容 uvue/uts） */

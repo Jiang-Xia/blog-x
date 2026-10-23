@@ -1,5 +1,5 @@
 <template>
-	<!-- 审核台：分段 + 通过/驳回示意 -->
+	<!-- 审核台：敏感词命中列表 + 通过/驳回 -->
 	<view class="x-page">
 		<x-navbar title="审核台">
 			<template v-slot:right>
@@ -7,56 +7,239 @@
 			</template>
 		</x-navbar>
 
+		<!-- 来源分段：空 / comment / msgboard / reply -->
 		<view class="x-seg">
 			<view
 				v-for="(s, i) in segs"
 				:key="s"
 				:class="segIndex === i ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
-				@click="segIndex = i"
+				@click="setSeg(i)"
 			>
 				<text :class="segIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
 			</view>
 		</view>
 
+		<!-- 状态：默认待审 -->
+		<view class="status-row">
+			<view
+				v-for="(st, si) in statusSegs"
+				:key="st.value"
+				:class="statusIndex === si ? 'st-chip st-chip-on' : 'st-chip'"
+				@click="setStatus(si)"
+			>
+				<text :class="statusIndex === si ? 'st-t st-t-on' : 'st-t'">{{ st.label }}</text>
+			</view>
+		</view>
+
 		<view v-for="item in items" :key="item.id" class="audit-item">
-			<text class="kind">{{ item.kind }}</text>
-			<text class="summary">
-				{{ item.summary }}
-				<text v-if="item.highlight != null" class="hl">「{{ item.highlight }}」</text>
-			</text>
-			<view class="actions">
-				<view class="x-btn" @click="onPass">
+			<view class="meta-row">
+				<text class="kind">{{ item.sourceType }}</text>
+				<text class="status">{{ item.status }}</text>
+			</view>
+			<text class="summary">{{ item.content }}</text>
+			<text v-if="item.hitWords.length > 0" class="hl">命中「{{ item.hitWords }}」</text>
+			<view v-if="item.status == 'pending'" class="actions">
+				<view class="x-btn" @click="onPass(item)">
 					<text class="x-btn-text">通过</text>
 				</view>
-				<view class="x-btn warn" @click="onReject">
+				<view class="x-btn warn" @click="onReject(item)">
 					<text class="warn-t">驳回</text>
 				</view>
 			</view>
 		</view>
 
-		<text class="footer">今日访客 1.2k · 新评论 12</text>
+		<x-empty v-if="items.length == 0" text="暂无命中记录"></x-empty>
+		<text class="footer">共 {{ total }} 条</text>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 审核台：mock auditItems；分段仅 UI
+ * 审核台：GET /sensitive-word/hit + approve/reject（对齐 blog-admin 敏感词审核）
+ * 展示字段来自命中记录实体；需登录（管理员权限）
  */
-import { auditItems } from '../../mock/data'
+import {
+	approveAuditHit,
+	fetchAuditHits,
+	rejectAuditHit,
+	type AuditHit,
+} from '../../api/modules/audit'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
+import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
 
-const segs = ['评论12', '留言3', '友链1', '敏感词2']
+const segs = ['全部', '评论', '留言', '回复']
+const segTypes = ['', 'comment', 'msgboard', 'reply']
 const segIndex = ref(0)
-const items = auditItems
 
-function onPass(): void {
-	showXToast('✅', '已通过', '')
+const statusSegs = [
+	{ label: '待审', value: 'pending' },
+	{ label: '已通过', value: 'approved' },
+	{ label: '已拒绝', value: 'rejected' },
+	{ label: '全部', value: '' },
+]
+const statusIndex = ref(0)
+
+const mockHits: AuditHit[] = [
+	{
+		id: 1,
+		sourceType: 'comment',
+		sourceId: 'c1',
+		content: '这条评论含敏感词示例',
+		hitWords: '垃圾',
+		status: 'pending',
+		createTime: '',
+	},
+	{
+		id: 2,
+		sourceType: 'msgboard',
+		sourceId: '2',
+		content: '留言板内容待审',
+		hitWords: '广告',
+		status: 'pending',
+		createTime: '',
+	},
+]
+
+const items = ref(mockHits as AuditHit[])
+const total = ref(mockHits.length)
+const acting = ref(false)
+const userStore = useUserStore()
+
+/**
+ * 当前筛选：来源 + 状态
+ */
+function currentQuery(): { sourceType: string; status: string } {
+	return {
+		sourceType: segTypes[segIndex.value],
+		status: statusSegs[statusIndex.value].value,
+	}
 }
 
-function onReject(): void {
-	showXToast('❌', '已驳回', '')
+/**
+ * 拉取命中列表
+ */
+async function loadHits(): Promise<void> {
+	const q = currentQuery()
+	const mockFiltered: AuditHit[] = []
+	for (let i = 0; i < mockHits.length; i++) {
+		const h = mockHits[i]
+		if (q.sourceType.length > 0 && h.sourceType != q.sourceType) continue
+		if (q.status.length > 0 && h.status != q.status) continue
+		mockFiltered.push(h)
+	}
+	const res = await apiOrMock(
+		() =>
+			fetchAuditHits({
+				page: 1,
+				pageSize: 50,
+				sourceType: q.sourceType,
+				status: q.status,
+			}),
+		{ list: mockFiltered, total: mockFiltered.length },
+	)
+	items.value = res.list
+	total.value = res.total
 }
 
+onMounted(() => {
+	if (!USE_MOCK && !userStore.loggedIn) {
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	loadHits()
+})
+
+/**
+ * 切换来源分段
+ */
+function setSeg(i: number): void {
+	segIndex.value = i
+	loadHits()
+}
+
+/**
+ * 切换审核状态筛选
+ */
+function setStatus(i: number): void {
+	statusIndex.value = i
+	loadHits()
+}
+
+/**
+ * 通过
+ */
+function onPass(item: AuditHit): void {
+	if (acting.value) return
+	uni.showModal({
+		title: '确认通过？',
+		content: '将标记该内容为合规并同步来源状态',
+		success: (res) => {
+			if (res.confirm) doApprove(item)
+		},
+	})
+}
+
+/**
+ * 驳回
+ */
+function onReject(item: AuditHit): void {
+	if (acting.value) return
+	uni.showModal({
+		title: '确认驳回？',
+		content: '将标记该内容为违规并同步来源状态',
+		success: (res) => {
+			if (res.confirm) doReject(item)
+		},
+	})
+}
+
+/**
+ * 执行通过
+ */
+async function doApprove(item: AuditHit): Promise<void> {
+	if (USE_MOCK) {
+		item.status = 'approved'
+		showXToast('✅', '已通过', 'mock')
+		loadHits()
+		return
+	}
+	acting.value = true
+	try {
+		await approveAuditHit(item.id)
+		showXToast('✅', '已通过', '')
+		await loadHits()
+	} catch (_) {
+	} finally {
+		acting.value = false
+	}
+}
+
+/**
+ * 执行驳回
+ */
+async function doReject(item: AuditHit): Promise<void> {
+	if (USE_MOCK) {
+		item.status = 'rejected'
+		showXToast('❌', '已驳回', 'mock')
+		loadHits()
+		return
+	}
+	acting.value = true
+	try {
+		await rejectAuditHit(item.id)
+		showXToast('❌', '已驳回', '')
+		await loadHits()
+	} catch (_) {
+	} finally {
+		acting.value = false
+	}
+}
+
+/**
+ * 返回上一页
+ */
 function onExit(): void {
 	uni.navigateBack()
 }
@@ -69,6 +252,34 @@ function onExit(): void {
 	font-weight: 600;
 }
 
+.status-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+	margin-bottom: 10px;
+}
+
+.st-chip {
+	padding: 4px 12px;
+	border-radius: 8px;
+	background-color: rgba(28, 26, 23, 0.06);
+	margin-right: 8px;
+	margin-bottom: 6px;
+}
+
+.st-chip-on {
+	background-color: #3db89a;
+}
+
+.st-t {
+	font-size: 12px;
+	color: #5c574f;
+	font-weight: 600;
+}
+
+.st-t-on {
+	color: #ffffff;
+}
+
 .audit-item {
 	background-color: #ffffff;
 	border-radius: 18px;
@@ -76,27 +287,42 @@ function onExit(): void {
 	margin-bottom: 10px;
 }
 
+.meta-row {
+	flex-direction: row;
+	justify-content: space-between;
+	margin-bottom: 6px;
+}
+
 .kind {
 	font-size: 11px;
 	color: #6d5fa0;
 	font-weight: 600;
-	margin-bottom: 6px;
+}
+
+.status {
+	font-size: 11px;
+	color: #9a948a;
 }
 
 .summary {
 	font-size: 13px;
 	color: #5c574f;
 	line-height: 1.45;
-	margin-bottom: 10px;
+	margin-bottom: 6px;
 }
 
 .hl {
+	font-size: 12px;
 	color: #c2543f;
 	background-color: rgba(232, 137, 122, 0.22);
+	margin-bottom: 10px;
+	padding: 2px 6px;
+	border-radius: 4px;
 }
 
 .actions {
 	flex-direction: row;
+	margin-top: 8px;
 }
 
 .warn {
@@ -114,6 +340,7 @@ function onExit(): void {
 	font-size: 11px;
 	color: #9a948a;
 	margin-top: 8px;
+	margin-bottom: 24px;
 	text-align: center;
 }
 </style>

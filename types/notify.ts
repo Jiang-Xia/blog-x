@@ -36,6 +36,7 @@ export type InboxItem = {
 	articleId?: string
 }
 
+/** @deprecated 旧 mock 结构；审核台已改用 api/modules/audit.AuditHit */
 export type AuditItem = {
 	id: string
 	kind: string
