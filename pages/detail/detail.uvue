@@ -1,5 +1,5 @@
 <template>
-	<!-- 文章详情：正文占位、AI、相关、评论发表、底栏赞藏赏 -->
+	<!-- 文章详情：作者/封面/正文/相关横滑/评论头像/底栏赞藏赏 -->
 	<view class="page-wrap">
 		<scroll-view class="x-page detail-scroll" scroll-y="true">
 			<x-navbar title="文章">
@@ -8,29 +8,53 @@
 				</template>
 			</x-navbar>
 
-			<view class="author-row">
-				<view class="x-avatar av">
-					<text>{{ article.authorEmoji }}</text>
+			<view class="author-row" @click="goAuthor">
+				<view class="av">
+					<image
+						v-if="article.authorAvatarUrl.length > 0"
+						class="av-img"
+						:src="article.authorAvatarUrl"
+						mode="aspectFill"
+					></image>
+					<text v-else class="av-em">{{ article.authorEmoji }}</text>
 				</view>
 				<view class="author-meta">
 					<text class="author-name">{{ article.authorName }}</text>
-					<text class="x-meta">{{ article.readLabel }}</text>
+					<text class="x-meta">{{ authorSubLine }}</text>
 				</view>
 			</view>
 
 			<text class="detail-title">{{ article.title }}</text>
-			<text class="x-meta meta-line">{{ article.categoryName }} · {{ article.timeLabel }}</text>
+			<text class="x-meta meta-line">{{ articleMetaLine }}</text>
 
-			<view class="prose">
-				<view class="l"></view>
-				<view class="l"></view>
-				<view class="l s"></view>
-				<view class="code"></view>
-				<view class="l"></view>
-				<view class="l s"></view>
+			<view v-if="article.tagLabels.length > 0" class="tag-row">
+				<text v-for="(t, ti) in article.tagLabels" :key="ti" class="x-chip tag-chip">{{ t }}</text>
 			</view>
 
-			<view class="x-card ai-card" @click="goAi">
+			<view
+				v-if="article.coverUrl.length > 0"
+				class="cover-hero"
+				@click="previewCover"
+			>
+				<image class="cover-hero-img" :src="article.coverUrl" mode="aspectFill"></image>
+			</view>
+
+			<!-- 正文：优先 HTML，否则 Markdown/纯文本 -->
+			<view v-if="article.contentHtml.length > 0" class="prose">
+				<rich-text :nodes="article.contentHtml"></rich-text>
+			</view>
+			<view v-else-if="article.content.length > 0" class="prose">
+				<text class="prose-text">{{ article.content }}</text>
+			</view>
+			<view v-else-if="article.description.length > 0" class="prose">
+				<text class="prose-text">{{ article.description }}</text>
+			</view>
+
+			<view
+				v-if="article.aiSummary.length > 0"
+				class="x-card ai-card"
+				@click="goAi"
+			>
 				<text class="ai-label">✦ AI 摘要</text>
 				<text class="ai-body">{{ article.aiSummary }}</text>
 			</view>
@@ -38,7 +62,12 @@
 			<view class="x-section-head">
 				<text class="x-section-title">相关阅读</text>
 			</view>
-			<scroll-view class="related" scroll-x="true">
+			<scroll-view
+				v-if="related.length > 0"
+				class="related"
+				scroll-x="true"
+				show-scrollbar="false"
+			>
 				<view class="related-inner">
 					<view
 						v-for="m in related"
@@ -46,11 +75,23 @@
 						class="mini"
 						@click="goDetail(m.id)"
 					>
-						<text class="mini-em">{{ m.emoji }}</text>
+						<view class="mini-cover" :style="{ backgroundColor: m.coverC1 }">
+							<image
+								v-if="m.coverUrl.length > 0"
+								class="mini-cover-img"
+								:src="m.coverUrl"
+								mode="aspectFill"
+							></image>
+							<text v-else class="mini-em">{{ m.coverEmoji }}</text>
+						</view>
 						<text class="mini-t">{{ m.title }}</text>
+						<text class="mini-meta">{{ m.categoryName }}</text>
 					</view>
 				</view>
 			</scroll-view>
+			<view v-else class="related-empty">
+				<text class="x-meta">暂无相关文章</text>
+			</view>
 
 			<view class="x-section-head">
 				<text class="x-section-title">评论</text>
@@ -71,12 +112,39 @@
 			</view>
 			<view v-for="(c, idx) in comments" :key="idx" class="comment">
 				<view class="cav">
-					<text>{{ c.emoji }}</text>
+					<image
+						v-if="c.avatarUrl.length > 0"
+						class="cav-img"
+						:src="c.avatarUrl"
+						mode="aspectFill"
+					></image>
+					<text v-else>{{ c.emoji }}</text>
 				</view>
 				<view class="bubble">
-					<text class="c-name">{{ c.name }} {{ c.tag }}</text>
+					<text class="c-name">{{ c.name }}{{ c.tag.length > 0 ? ' ' + c.tag : '' }}</text>
 					<text class="c-text">{{ c.text }}</text>
+					<!-- 回复：后端字段 replys（comment.findAll enrich） -->
+					<view v-for="(r, ri) in c.replies" :key="ri" class="reply">
+						<view class="rav">
+							<image
+								v-if="r.avatarUrl.length > 0"
+								class="rav-img"
+								:src="r.avatarUrl"
+								mode="aspectFill"
+							></image>
+							<text v-else class="rav-em">{{ r.emoji }}</text>
+						</view>
+						<view class="reply-body">
+							<text class="r-name">
+								{{ r.name }}{{ r.replyToName.length > 0 ? ' @ ' + r.replyToName : '' }}
+							</text>
+							<text class="r-text">{{ r.text }}</text>
+						</view>
+					</view>
 				</view>
+			</view>
+			<view v-if="comments.length == 0" class="cmt-empty">
+				<text class="x-meta">暂无评论</text>
 			</view>
 			<view class="bottom-pad"></view>
 		</scroll-view>
@@ -106,10 +174,11 @@
 <script setup lang="ts">
 /**
  * 文章详情：联调 info/views/related/comment + 赞藏 + 发表评论 + 钻石打赏
+ * 展示：作者真实头像、封面/正文/标签、相关阅读横滑全标题、评论头像
  * 失败回落 mock；赏打开 tip-sheet（paid 带 amount）
  */
 import { articles, detailComments, relatedMinis } from '../../mock/data'
-import type { ArticleDetail } from '../../types/article'
+import type { ArticleDetail, ArticleSummary } from '../../types/article'
 import {
 	fetchArticleInfo,
 	fetchRelatedArticles,
@@ -133,12 +202,31 @@ import {
 	toggleMockLike,
 } from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
+import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
 
-type CommentRow = { emoji: string; name: string; tag: string; text: string }
+/** 单条回复展示行（来自评论 replys[]） */
+type ReplyRow = {
+	avatarUrl: string
+	emoji: string
+	name: string
+	/** 被回复者昵称（tUserInfo.nickname）；无则空 */
+	replyToName: string
+	text: string
+}
+
+/** 顶层评论 + 嵌套回复 */
+type CommentRow = {
+	avatarUrl: string
+	emoji: string
+	name: string
+	tag: string
+	text: string
+	replies: ReplyRow[]
+}
 
 const article = ref(articles[0] as ArticleDetail)
-const related = ref(relatedMinis as Array<{ id: string; emoji: string; title: string }>)
+const related = ref(relatedMinis as ArticleSummary[])
 const comments = ref(detailComments as CommentRow[])
 const tipOpen = ref(false)
 const liked = ref(false)
@@ -148,32 +236,85 @@ const commentDraft = ref('')
 const submitting = ref(false)
 const userStore = useUserStore()
 
+/** 作者行副文案：阅读量 */
+const authorSubLine = computed((): string => {
+	return article.value.readLabel
+})
+
+/** 标题下 meta：分类 · 时间 · 赞评 */
+const articleMetaLine = computed((): string => {
+	const a = article.value
+	const parts: string[] = []
+	if (a.categoryName.length > 0) parts.push(a.categoryName)
+	if (a.timeLabel.length > 0) parts.push(a.timeLabel)
+	parts.push('👍 ' + a.likeCount)
+	parts.push('💬 ' + a.commentCount)
+	return parts.join(' · ')
+})
+
+/**
+ * 从 userInfo 解析头像完整 URL
+ */
+function avatarFromUser(u: any): string {
+	const avRaw = u != null && u.avatar != null ? ('' + u.avatar).trim() : ''
+	return avRaw.length > 0 ? resolveStaticUrl(avRaw) : ''
+}
+
+/**
+ * 映射单条回复（replys 项：userInfo / tUserInfo / content）
+ */
+function mapReplyRow(r: any): ReplyRow {
+	const u = r != null ? r.userInfo : null
+	const t = r != null ? r.tUserInfo : null
+	return {
+		avatarUrl: avatarFromUser(u),
+		emoji: '↩',
+		name: u != null && u.nickname != null ? '' + u.nickname : '用户',
+		replyToName: t != null && t.nickname != null ? '' + t.nickname : '',
+		text: r != null && r.content != null ? '' + r.content : '',
+	}
+}
+
 /**
  * 将服务端评论列表映射为展示行
+ * 头像取 userInfo.avatar；回复取后端 enrich 的 replys（兼容 replies）
  */
 function mapCommentRows(res: any): CommentRow[] {
 	const arr = res != null && res.list != null ? res.list : []
 	const out: CommentRow[] = []
 	for (let i = 0; i < arr.length; i++) {
 		const c = arr[i]
+		if (c == null) continue
+		const u = c.userInfo
+		const rawReplies =
+			c.replys != null && Array.isArray(c.replys)
+				? c.replys
+				: c.replies != null && Array.isArray(c.replies)
+					? c.replies
+					: []
+		const replies: ReplyRow[] = []
+		for (let j = 0; j < rawReplies.length; j++) {
+			replies.push(mapReplyRow(rawReplies[j]))
+		}
 		out.push({
+			avatarUrl: avatarFromUser(u),
 			emoji: '💬',
-			name: c.userInfo != null && c.userInfo.nickname != null ? '' + c.userInfo.nickname : '用户',
+			name: u != null && u.nickname != null ? '' + u.nickname : '用户',
 			tag: '',
 			text: c.content != null ? '' + c.content : '',
+			replies,
 		})
 	}
 	return out
 }
 
 /**
- * 重新拉取评论列表
+ * 重新拉取评论列表（成功即用接口结果，含空列表；失败才回落 mock）
  */
 async function reloadComments(id: string): Promise<void> {
 	const cmt = await apiOrMock(async () => {
 		const res = await fetchComments(id)
-		const rows = mapCommentRows(res)
-		return rows.length > 0 ? rows : detailComments
+		return mapCommentRows(res)
 	}, detailComments)
 	comments.value = cmt
 }
@@ -198,12 +339,7 @@ async function loadDetail(id: string): Promise<void> {
 	reportArticleViews(id).catch(() => {})
 
 	const rel = await apiOrMock(async () => {
-		const list = await fetchRelatedArticles(id, 6)
-		return list.map((a) => ({
-			id: a.id,
-			emoji: a.coverEmoji,
-			title: a.title,
-		}))
+		return await fetchRelatedArticles(id, 12)
 	}, relatedMinis)
 	related.value = rel
 
@@ -232,6 +368,20 @@ function goDetail(id: string): void {
 	uni.redirectTo({ url: '/pages/detail/detail?id=' + id })
 }
 
+/** 进作者公开主页 */
+function goAuthor(): void {
+	const uid = article.value.authorUid
+	if (uid <= 0) return
+	uni.navigateTo({ url: '/pages-blog/profile/index?uid=' + uid })
+}
+
+/** 预览封面大图 */
+function previewCover(): void {
+	const url = article.value.coverUrl
+	if (url.length == 0) return
+	uni.previewImage({ urls: [url] })
+}
+
 /** 底栏点输入区时提示滚动到评论框 */
 function focusCompose(): void {
 	showXToast('💬', '评论', '请在上方评论框输入')
@@ -250,7 +400,14 @@ async function onSubmitComment(): Promise<void> {
 	}
 	if (USE_MOCK) {
 		comments.value = [
-			{ emoji: '🦊', name: '我', tag: '', text: text },
+			{
+				avatarUrl: '',
+				emoji: '🦊',
+				name: '我',
+				tag: '',
+				text: text,
+				replies: [] as ReplyRow[],
+			},
 		].concat(comments.value)
 		commentDraft.value = ''
 		showXToast('💬', '已评论', 'mock')
@@ -345,7 +502,21 @@ async function onTipPaid(amount: number): Promise<void> {
 .av {
 	width: 36px;
 	height: 36px;
+	border-radius: 18px;
+	background-color: #f0e6d8;
+	align-items: center;
+	justify-content: center;
 	margin-right: 10px;
+	overflow: hidden;
+}
+
+.av-img {
+	width: 36px;
+	height: 36px;
+}
+
+.av-em {
+	font-size: 16px;
 }
 
 .author-name {
@@ -363,29 +534,41 @@ async function onTipPaid(amount: number): Promise<void> {
 }
 
 .meta-line {
-	margin-bottom: 14px;
+	margin-bottom: 10px;
 }
 
-.prose {
+.tag-row {
+	flex-direction: row;
+	flex-wrap: wrap;
 	margin-bottom: 12px;
 }
 
-.l {
-	height: 8px;
-	border-radius: 3px;
+.tag-chip {
+	margin-bottom: 6px;
+}
+
+.cover-hero {
+	width: 100%;
+	height: 180px;
+	border-radius: 16px;
+	overflow: hidden;
+	margin-bottom: 14px;
 	background-color: #ebe6df;
-	margin-bottom: 8px;
 }
 
-.s {
-	width: 62%;
+.cover-hero-img {
+	width: 100%;
+	height: 180px;
 }
 
-.code {
-	height: 48px;
-	border-radius: 12px;
-	background-color: #2c2924;
-	margin: 10px 0;
+.prose {
+	margin-bottom: 14px;
+}
+
+.prose-text {
+	font-size: 15px;
+	color: #1c1a17;
+	line-height: 1.7;
 }
 
 .ai-card {
@@ -406,33 +589,62 @@ async function onTipPaid(amount: number): Promise<void> {
 }
 
 .related {
-	height: 90px;
+	/* 横滑展示全部相关；标题完整换行，高度留足 */
+	height: 200px;
 	margin-bottom: 12px;
+	flex-direction: row;
 }
 
 .related-inner {
 	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	padding-right: 8px;
 }
 
 .mini {
-	width: 120px;
+	width: 148px;
+	flex-shrink: 0;
 	border-radius: 14px;
 	padding: 10px;
 	background-color: #ffffff;
 	margin-right: 8px;
 }
 
+.mini-cover {
+	width: 128px;
+	height: 72px;
+	border-radius: 10px;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+
+.mini-cover-img {
+	width: 128px;
+	height: 72px;
+}
+
 .mini-em {
-	font-size: 20px;
-	margin-bottom: 4px;
+	font-size: 22px;
 }
 
 .mini-t {
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 650;
 	color: #1c1a17;
-	lines: 2;
-	text-overflow: ellipsis;
+	line-height: 1.35;
+	margin-bottom: 4px;
+}
+
+.mini-meta {
+	font-size: 11px;
+	color: #9a948a;
+}
+
+.related-empty {
+	margin-bottom: 12px;
 }
 
 .cmt-compose {
@@ -477,6 +689,12 @@ async function onTipPaid(amount: number): Promise<void> {
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;
+	overflow: hidden;
+}
+
+.cav-img {
+	width: 32px;
+	height: 32px;
 }
 
 .bubble {
@@ -497,6 +715,57 @@ async function onTipPaid(amount: number): Promise<void> {
 	font-size: 13px;
 	color: #5c574f;
 	line-height: 1.45;
+}
+
+.reply {
+	flex-direction: row;
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top-width: 1px;
+	border-top-color: #ebe6df;
+	border-top-style: solid;
+}
+
+.rav {
+	width: 24px;
+	height: 24px;
+	border-radius: 12px;
+	background-color: #f0e6d8;
+	align-items: center;
+	justify-content: center;
+	margin-right: 8px;
+	overflow: hidden;
+	flex-shrink: 0;
+}
+
+.rav-img {
+	width: 24px;
+	height: 24px;
+}
+
+.rav-em {
+	font-size: 11px;
+}
+
+.reply-body {
+	flex: 1;
+}
+
+.r-name {
+	font-size: 11px;
+	font-weight: 600;
+	color: #1c1a17;
+	margin-bottom: 2px;
+}
+
+.r-text {
+	font-size: 12px;
+	color: #5c574f;
+	line-height: 1.4;
+}
+
+.cmt-empty {
+	margin-bottom: 12px;
 }
 
 .bottom-pad {
@@ -546,11 +815,11 @@ async function onTipPaid(amount: number): Promise<void> {
 	margin-bottom: 2px;
 }
 
-.on .ic {
+.ic-on {
 	background-color: rgba(232, 137, 122, 0.22);
 }
 
-.fav-on .ic {
+.ic-fav {
 	background-color: rgba(246, 217, 168, 0.65);
 }
 

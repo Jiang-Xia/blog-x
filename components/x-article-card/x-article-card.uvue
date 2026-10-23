@@ -1,0 +1,120 @@
+<template>
+	<!-- 文章列表小卡：封面优先文章 coverUrl，无则 emoji 占位 -->
+	<view class="x-card article" @click="onOpen">
+		<view class="article-body">
+			<view v-if="showMeta" class="meta-row">
+				<text class="x-meta">{{ metaLine }}</text>
+			</view>
+			<text class="article-title">{{ title }}</text>
+			<text v-if="showStat" class="article-stat">👍 {{ likeCount }} · 💬 {{ commentCount }}</text>
+			<text v-else-if="statLine.length > 0" class="article-stat">{{ statLine }}</text>
+		</view>
+		<view class="cover" :style="{ backgroundColor: coverC1 }">
+			<image
+				v-if="coverUrl.length > 0"
+				class="cover-img"
+				:src="coverUrl"
+				mode="aspectFill"
+			></image>
+			<text v-else class="cover-em">{{ coverEmoji }}</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 文章卡片（列表复用）
+ * - 封面：文章 coverUrl（API cover 经 resolveStaticUrl）；空则 coverEmoji + coverC1
+ * - 点击抛 open(id)，由父页跳转详情
+ */
+const props = defineProps({
+	id: { type: String, default: '' },
+	title: { type: String, default: '' },
+	categoryName: { type: String, default: '' },
+	timeLabel: { type: String, default: '' },
+	coverUrl: { type: String, default: '' },
+	coverEmoji: { type: String, default: '📗' },
+	coverC1: { type: String, default: '#c8efe4' },
+	likeCount: { type: Number, default: 0 },
+	commentCount: { type: Number, default: 0 },
+	/** 热度等自定义副文案；有值时替代 category·time */
+	hotLabel: { type: String, default: '' },
+	/** 是否展示点赞/评论 */
+	showStat: { type: Boolean, default: true },
+	/** 无 showStat 时的自定义一行（如「热度 1.2k · 💭」） */
+	statLine: { type: String, default: '' },
+	/** 是否展示 meta 行 */
+	showMeta: { type: Boolean, default: true },
+})
+
+const emit = defineEmits(['open'])
+
+const metaLine = computed((): string => {
+	if (props.hotLabel.length > 0) return props.hotLabel
+	const cat = props.categoryName
+	const time = props.timeLabel
+	if (cat.length > 0 && time.length > 0) return cat + ' · ' + time
+	if (cat.length > 0) return cat
+	return time
+})
+
+/**
+ * 打开文章详情
+ */
+function onOpen(): void {
+	if (props.id.length == 0) return
+	emit('open', props.id)
+}
+</script>
+
+<style>
+@import '../../styles/x-base.css';
+
+.article {
+	flex-direction: row;
+	align-items: center;
+}
+
+.article-body {
+	flex: 1;
+	margin-right: 12px;
+}
+
+.meta-row {
+	flex-direction: row;
+	margin-bottom: 4px;
+}
+
+.article-title {
+	font-size: 14px;
+	font-weight: 650;
+	color: #1c1a17;
+	line-height: 1.35;
+	margin-bottom: 4px;
+	lines: 2;
+	text-overflow: ellipsis;
+}
+
+.article-stat {
+	font-size: 11px;
+	color: #5c574f;
+}
+
+.cover {
+	width: 78px;
+	height: 78px;
+	border-radius: 16px;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.cover-img {
+	width: 78px;
+	height: 78px;
+}
+
+.cover-em {
+	font-size: 26px;
+}
+</style>

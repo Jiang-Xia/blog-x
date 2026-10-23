@@ -1,0 +1,108 @@
+<template>
+	<!-- 分类筛选横滑：chip 过多时横向滚动，不换行 -->
+	<scroll-view class="cat-scroll" scroll-x="true" show-scrollbar="false">
+		<view class="cat-row">
+			<view
+				v-for="(c, i) in items"
+				:key="chipKey(c, i)"
+				class="cat-chip"
+				:class="i === activeIndex ? 'cat-chip-on' : 'cat-chip-off'"
+				@click="onTap(i)"
+			>
+				<text :class="i === activeIndex ? 'cat-t-on' : 'cat-t'">{{ c.label }}</text>
+			</view>
+		</view>
+	</scroll-view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 分类筛选横滑业务组件
+ * - 数据：父组件传入 CategoryChip[]（id + label，展示用后端 label）
+ * - 交互：点击抛 select(index, chip)；activeIndex 由父组件控制选中态
+ */
+import type { CategoryChip } from '../../types/article'
+
+const props = defineProps({
+	/** 分类列表；首项通常为「全部」id='' */
+	items: {
+		type: Array,
+		default: () => [] as CategoryChip[],
+	},
+	/** 当前选中下标 */
+	activeIndex: {
+		type: Number,
+		default: 0,
+	},
+})
+
+const emit = defineEmits(['select'])
+
+/**
+ * chip 稳定 key（优先 id）
+ */
+function chipKey(c: CategoryChip, i: number): string {
+	if (c != null && c.id != null && ('' + c.id).length > 0) return '' + c.id
+	if (c != null && c.label != null) return c.label + '-' + i
+	return '' + i
+}
+
+/**
+ * 点击某一分类
+ */
+function onTap(i: number): void {
+	const list = props.items as CategoryChip[]
+	const chip = list[i]
+	if (chip == null) return
+	emit('select', i, chip)
+}
+</script>
+
+<style>
+.cat-scroll {
+	width: 100%;
+	height: 40px;
+	margin-bottom: 12px;
+	/* 横向滚动：避免被纵向布局压成换行 */
+	flex-direction: row;
+}
+
+.cat-row {
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: center;
+	height: 40px;
+	padding-right: 8px;
+}
+
+.cat-chip {
+	flex-shrink: 0;
+	padding: 5px 12px;
+	border-radius: 999px;
+	margin-right: 8px;
+	align-items: center;
+	justify-content: center;
+}
+
+.cat-chip-on {
+	background-color: #1c1a17;
+}
+
+.cat-chip-off {
+	background-color: #ffffff;
+}
+
+.cat-t {
+	font-size: 11px;
+	color: #5c574f;
+	font-weight: 500;
+	lines: 1;
+}
+
+.cat-t-on {
+	font-size: 11px;
+	color: #ffffff;
+	font-weight: 500;
+	lines: 1;
+}
+</style>

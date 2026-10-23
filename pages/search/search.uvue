@@ -46,20 +46,21 @@
 				</view>
 			</view>
 
-			<view
+			<x-article-card
 				v-for="item in results"
 				:key="item.id"
-				class="x-card article"
-				@click="goDetail(item.id)"
-			>
-				<view class="article-body">
-					<text class="article-title">{{ item.title }}</text>
-					<text class="x-meta">{{ item.categoryName }} · {{ item.timeLabel }}</text>
-				</view>
-				<view class="cover">
-					<text class="cover-em">{{ item.coverEmoji }}</text>
-				</view>
-			</view>
+				:id="item.id"
+				:title="item.title"
+				:category-name="item.categoryName"
+				:time-label="item.timeLabel"
+				:cover-url="item.coverUrl"
+				:cover-emoji="item.coverEmoji"
+				:cover-c1="item.coverC1"
+				:like-count="item.likeCount"
+				:comment-count="item.commentCount"
+				:show-stat="false"
+				@open="goDetail"
+			></x-article-card>
 			<view v-if="searched && results.length == 0 && showFooter" class="empty-tip">
 				<text class="x-meta">暂无相关文章</text>
 			</view>
@@ -281,38 +282,6 @@ function goDetail(id: string): void {
 	font-size: 11px;
 	color: #5c574f;
 	font-weight: 500;
-}
-
-.article {
-	flex-direction: row;
-	align-items: center;
-}
-
-.article-body {
-	flex: 1;
-	margin-right: 12px;
-}
-
-.article-title {
-	font-size: 14px;
-	font-weight: 650;
-	color: #1c1a17;
-	margin-bottom: 4px;
-	lines: 2;
-	text-overflow: ellipsis;
-}
-
-.cover {
-	width: 64px;
-	height: 64px;
-	border-radius: 14px;
-	background-color: #ffe8d6;
-	align-items: center;
-	justify-content: center;
-}
-
-.cover-em {
-	font-size: 22px;
 }
 
 .empty-tip {

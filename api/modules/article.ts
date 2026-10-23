@@ -37,19 +37,40 @@ export async function fetchArticleList(params: {
 	return { list, total }
 }
 
-/**
- * 文章详情（404 静默）
- */
-export async function fetchArticleInfo(id: string | number): Promise<ArticleDetail | null> {
-	if (id == null || id === '') return null
-	try {
-		const res = await get('/article/info', { id }, { silent: true })
+	/**
+	 * 解包 GET /article/info 的 data（对齐 uniapp parseArticleDetail）
+	 * 标准形态：{ info, prev, next }；兼容直接返回文章字段的扁平结构
+	 */
+	function unwrapArticleInfoPayload(res: any): any {
 		if (res == null) return null
-		return mapArticleDetail(res)
-	} catch (_) {
+		if (res.info != null && typeof res.info === 'object') {
+			return res.info
+		}
+		// 扁平：自身带 title/content/id 即视为文章
+		if (res.title != null || res.content != null || res.contentHtml != null) {
+			return res
+		}
+		if (res.id != null) {
+			return res
+		}
 		return null
 	}
-}
+
+	/**
+	 * 文章详情（404 静默）
+	 * 注意：request 已解到 data，此处再取 data.info 再 map，勿把包装对象当文章
+	 */
+	export async function fetchArticleInfo(id: string | number): Promise<ArticleDetail | null> {
+		if (id == null || id === '') return null
+		try {
+			const res = await get('/article/info', { id }, { silent: true })
+			const raw = unwrapArticleInfoPayload(res)
+			if (raw == null) return null
+			return mapArticleDetail(raw)
+		} catch (_) {
+			return null
+		}
+	}
 
 /**
  * 上报浏览量

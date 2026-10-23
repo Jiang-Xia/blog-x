@@ -4,6 +4,7 @@
  */
 import type { ArticleDetail, ArticleSummary } from '../../types/article'
 import type { ArchiveArticle, ArchiveMonth, ArchiveYear } from '../../types/notify'
+import { resolveStaticUrl } from '../../utils/static-url'
 
 const COVER_PALETTE = [
 	{ c1: '#c8efe4', c2: '#b8e0f0', emoji: '📗' },
@@ -30,7 +31,7 @@ function formatTimeLabel(raw: any): string {
 }
 
 /**
- * 按 id 选封面色（稳定伪随机）
+ * 按 id 选封面色（无真实 cover 时稳定伪随机占位）
  */
 function coverOf(id: string | number) {
 	const n = typeof id === 'number' ? id : parseInt('' + id, 10)
@@ -39,11 +40,53 @@ function coverOf(id: string | number) {
 }
 
 /**
- * 列表项 → ArticleSummary
+ * 从文章 raw 解析封面完整 URL（优先 cover 字段）
+ */
+function coverUrlOf(raw: any): string {
+	if (raw == null || raw.cover == null) return ''
+	const path = ('' + raw.cover).trim()
+	if (path.length == 0) return ''
+	return resolveStaticUrl(path)
+}
+
+/**
+ * 从 userInfo.avatar 解析头像 URL
+ */
+function avatarUrlOf(user: any): string {
+	if (user == null || user.avatar == null) return ''
+	const path = ('' + user.avatar).trim()
+	if (path.length == 0) return ''
+	return resolveStaticUrl(path)
+}
+
+/**
+ * 标签数组 → 展示名列表（优先 label）
+ */
+function tagLabelsOf(raw: any): string[] {
+	const out: string[] = []
+	if (raw == null || !Array.isArray(raw.tags)) return out
+	for (let i = 0; i < raw.tags.length; i++) {
+		const t = raw.tags[i]
+		if (t == null) continue
+		const label =
+			t.label != null
+				? '' + t.label
+				: t.name != null
+					? '' + t.name
+					: t.value != null
+						? '' + t.value
+						: ''
+		if (label.length > 0) out.push(label)
+	}
+	return out
+}
+
+/**
+ * 列表项 → ArticleSummary（封面取文章 cover）
  */
 export function mapArticleSummary(raw: any): ArticleSummary {
 	const id = raw != null && raw.id != null ? '' + raw.id : ''
-	const cover = coverOf(id)
+	const palette = coverOf(id)
 	const cat =
 		raw != null && raw.category != null && raw.category.label != null
 			? '' + raw.category.label
@@ -62,26 +105,33 @@ export function mapArticleSummary(raw: any): ArticleSummary {
 		timeLabel: formatTimeLabel(raw != null ? raw.createTime : null),
 		likeCount: likes,
 		commentCount: comments,
-		coverEmoji: cover.emoji,
-		coverC1: cover.c1,
-		coverC2: cover.c2,
+		coverUrl: coverUrlOf(raw),
+		coverEmoji: palette.emoji,
+		coverC1: palette.c1,
+		coverC2: palette.c2,
 		pinned: pinned,
 	}
 }
 
 /**
- * 详情 → ArticleDetail
+ * 详情 → ArticleDetail（作者头像 / 正文 / 标签）
  */
 export function mapArticleDetail(raw: any): ArticleDetail {
 	const base = mapArticleSummary(raw)
 	const user = raw != null ? raw.userInfo : null
 	const views = raw != null && raw.views != null ? Number(raw.views) : 0
+	const description =
+		raw != null && raw.description != null ? '' + raw.description : ''
 	const ai =
 		raw != null && raw.aiSummary != null
 			? '' + raw.aiSummary
-			: raw != null && raw.description != null
-				? '' + raw.description
-				: ''
+			: description
+	const uidRaw =
+		raw != null && raw.uid != null
+			? Number(raw.uid)
+			: user != null && user.id != null
+				? Number(user.id)
+				: 0
 	return {
 		id: base.id,
 		title: base.title,
@@ -89,14 +139,21 @@ export function mapArticleDetail(raw: any): ArticleDetail {
 		timeLabel: base.timeLabel,
 		likeCount: base.likeCount,
 		commentCount: base.commentCount,
+		coverUrl: base.coverUrl,
 		coverEmoji: base.coverEmoji,
 		coverC1: base.coverC1,
 		coverC2: base.coverC2,
 		pinned: base.pinned,
+		authorUid: isNaN(uidRaw) ? 0 : uidRaw,
 		authorName: user != null && user.nickname != null ? '' + user.nickname : '作者',
+		authorAvatarUrl: avatarUrlOf(user),
 		authorEmoji: '🦊',
 		readLabel: views > 0 ? views + ' 阅读' : '',
 		aiSummary: ai,
+		content: raw != null && raw.content != null ? '' + raw.content : '',
+		contentHtml: raw != null && raw.contentHtml != null ? '' + raw.contentHtml : '',
+		description,
+		tagLabels: tagLabelsOf(raw),
 	}
 }
 

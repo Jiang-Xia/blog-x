@@ -31,15 +31,21 @@
 			<view class="x-section-head">
 				<text class="x-section-title">TA 的文章</text>
 			</view>
-			<view
+			<x-article-card
 				v-for="art in articleList"
 				:key="art.id"
-				class="x-card"
-				@click="goDetail(art.id)"
-			>
-				<text class="art-t">{{ art.title }}</text>
-				<text class="x-meta">{{ art.categoryName }} · {{ art.timeLabel }}</text>
-			</view>
+				:id="art.id"
+				:title="art.title"
+				:category-name="art.categoryName"
+				:time-label="art.timeLabel"
+				:cover-url="art.coverUrl"
+				:cover-emoji="art.coverEmoji"
+				:cover-c1="art.coverC1"
+				:like-count="art.likeCount"
+				:comment-count="art.commentCount"
+				:show-stat="false"
+				@open="goDetail"
+			></x-article-card>
 		</x-scroll-page>
 	</view>
 </template>
@@ -221,13 +227,6 @@ function goDetail(id: string): void {
 .line {
 	font-size: 12px;
 	color: #5c574f;
-	margin-bottom: 4px;
-}
-
-.art-t {
-	font-size: 14px;
-	font-weight: 650;
-	color: #1c1a17;
 	margin-bottom: 4px;
 }
 </style>

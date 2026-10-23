@@ -49,43 +49,31 @@
 		</view>
 
 		<!-- 分类横滑：点击按 category.id 筛选 -->
-		<scroll-view class="cat-scroll" scroll-x="true" show-scrollbar="false">
-			<view class="chip-row nowrap">
-				<view
-					v-for="(c, i) in categories"
-					:key="c.id"
-					:class="catIndex === i ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
-					@click="onSelectCat(i)"
-				>
-					<text :class="catIndex === i ? 'chip-t-dark' : 'chip-t'">{{ c.label }}</text>
-				</view>
-			</view>
-		</scroll-view>
+		<x-category-chips
+			:items="categories"
+			:active-index="catIndex"
+			@select="onSelectCat"
+		></x-category-chips>
 
 		<view class="x-section-head">
 			<text class="x-section-title">最新文章</text>
 			<text class="x-link" @click="goDiscover">全部</text>
 		</view>
 
-		<view
+		<x-article-card
 			v-for="item in list"
 			:key="item.id"
-			class="x-card article"
-			@click="goDetail(item.id)"
-		>
-			<view class="article-body">
-				<view class="meta-row">
-					<text class="x-meta">{{ item.categoryName }}</text>
-					<text class="x-meta"> · </text>
-					<text class="x-meta">{{ item.timeLabel }}</text>
-				</view>
-				<text class="article-title">{{ item.title }}</text>
-				<text class="article-stat">👍 {{ item.likeCount }} · 💬 {{ item.commentCount }}</text>
-			</view>
-			<view class="cover" :style="{ backgroundColor: item.coverC1 }">
-				<text class="cover-em">{{ item.coverEmoji }}</text>
-			</view>
-		</view>
+			:id="item.id"
+			:title="item.title"
+			:category-name="item.categoryName"
+			:time-label="item.timeLabel"
+			:cover-url="item.coverUrl"
+			:cover-emoji="item.coverEmoji"
+			:cover-c1="item.coverC1"
+			:like-count="item.likeCount"
+			:comment-count="item.commentCount"
+			@open="goDetail"
+		></x-article-card>
 	</x-scroll-page>
 </template>
 
@@ -96,7 +84,7 @@
  * 滚动：x-scroll-page(variant=tab) 下拉刷新 + 文章上滑加载更多
  */
 import { homeArticles, homeCategories, rpgQuestsSeed } from '../../mock/data'
-import type { ArticleSummary } from '../../types/article'
+import type { ArticleSummary, CategoryChip } from '../../types/article'
 import { fetchArticleList, fetchCategories, type CategoryOption } from '../../api/modules/article'
 import { fetchUnreadCount } from '../../api/modules/notification'
 import { fetchMyQuests, fetchSignInfo } from '../../api/modules/rpg'
@@ -106,14 +94,11 @@ import { useMockStore } from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
 import { goTab, TAB_DISCOVER, TAB_RPG } from '../../utils/tabNav'
 
-/** 分类 chip：id 为空表示「全部」 */
-type CatChip = { id: string; label: string }
-
 const list = ref([] as ArticleSummary[])
 const listTotal = ref(-1)
 const categories = ref([
 	{ id: '', label: '全部' },
-] as CatChip[])
+] as CategoryChip[])
 const catIndex = ref(0)
 const store = useMockStore()
 const userStore = useUserStore()
@@ -144,8 +129,8 @@ const {
 /**
  * 将 mock 分类名转成 chip（无 id）
  */
-function mockCats(): CatChip[] {
-	const out: CatChip[] = []
+function mockCats(): CategoryChip[] {
+	const out: CategoryChip[] = []
 	for (let i = 0; i < homeCategories.length; i++) {
 		out.push({ id: '', label: homeCategories[i] })
 	}
@@ -185,7 +170,7 @@ async function fetchArticlesPage(page: number): Promise<{ list: ArticleSummary[]
 async function loadHomeMeta(): Promise<void> {
 	const cats = await apiOrMock(async () => {
 		const rows = await fetchCategories()
-		const chips: CatChip[] = [{ id: '', label: '全部' }]
+		const chips: CategoryChip[] = [{ id: '', label: '全部' }]
 		for (let i = 0; i < rows.length; i++) {
 			const r = rows[i] as CategoryOption
 			chips.push({ id: r.id, label: r.label })
@@ -398,17 +383,6 @@ function goDetail(id: string): void {
 	margin-bottom: 12px;
 }
 
-.nowrap {
-	flex-wrap: nowrap;
-	flex-direction: row;
-}
-
-.cat-scroll {
-	margin-bottom: 12px;
-	height: 40px;
-	width: 100%;
-}
-
 .chip-t {
 	font-size: 11px;
 	color: #5c574f;
@@ -442,47 +416,5 @@ function goDetail(id: string): void {
 .ring-sub {
 	font-size: 9px;
 	color: #9a948a;
-}
-
-.article {
-	flex-direction: row;
-	align-items: center;
-}
-
-.article-body {
-	flex: 1;
-	margin-right: 12px;
-}
-
-.meta-row {
-	flex-direction: row;
-	margin-bottom: 4px;
-}
-
-.article-title {
-	font-size: 14px;
-	font-weight: 650;
-	color: #1c1a17;
-	line-height: 1.35;
-	margin-bottom: 4px;
-	lines: 2;
-	text-overflow: ellipsis;
-}
-
-.article-stat {
-	font-size: 11px;
-	color: #5c574f;
-}
-
-.cover {
-	width: 78px;
-	height: 78px;
-	border-radius: 16px;
-	align-items: center;
-	justify-content: center;
-}
-
-.cover-em {
-	font-size: 26px;
 }
 </style>
