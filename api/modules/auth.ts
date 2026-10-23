@@ -1,5 +1,6 @@
 /**
- * 认证 / 用户 API（对齐 blog-home-uniapp / Nuxt：密码 RSA 加密后提交）
+ * 认证 / 用户 API（对齐 blog-home-nuxt：密码 RSA 加密后提交）
+ * 登录 data 形状：{ info: { accessToken, refreshToken, ... } }（blog-server）
  */
 import { get, post } from '../request'
 import { encryptLoginPassword } from '../../utils/gateway-crypto'
@@ -8,20 +9,12 @@ import { mapPublicRpg, mapUserProfile } from '../adapters/user'
 import type { PublicRpgCard, UserProfile } from '../../types/user'
 
 /**
- * 从登录响应取出双 token 并落盘
- * Nest 返回 `{ info: { accessToken, refreshToken, token } }`；亦兼容扁平结构
+ * 从登录响应取出双 token 并落盘（仅认 Nest login 的 info 包装）
  */
 export function applyLoginTokens(data: any): void {
-	if (data == null) return
-	// 兼容 info 包装（blog-server login）与扁平（refresh / 部分端）
-	const payload =
-		data.info != null && typeof data.info === 'object' ? data.info : data
-	const access =
-		payload.accessToken != null
-			? '' + payload.accessToken
-			: payload.token != null
-				? '' + payload.token
-				: ''
+	if (data == null || data.info == null) return
+	const payload = data.info
+	const access = payload.accessToken != null ? '' + payload.accessToken : ''
 	const refresh = payload.refreshToken != null ? '' + payload.refreshToken : ''
 	if (access.length > 0) {
 		setAuthTokens(access, refresh)

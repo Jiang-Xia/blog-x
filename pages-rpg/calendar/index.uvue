@@ -39,11 +39,8 @@
  * 签到日历：联调 GET /rpg/sign-info
  * 后端无逐日明细；用 lastSignDate + consecutiveSignDays 推算本月命中格
  */
-import { calendarHits } from '../../mock/data'
 import { fetchSignInfo, type SignInfoSummary } from '../../api/modules/rpg'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-import { USE_MOCK } from '../../api/config'
 
 const {
 	refreshing,
@@ -108,26 +105,16 @@ function buildHitsFromSign(sign: SignInfoSummary): number[] {
  * 拉取签到摘要并刷新网格
  */
 async function loadCalendar(): Promise<void> {
-	const mockSign: SignInfoSummary = {
-		signedToday: true,
-		streakDays: calendarHits.length,
-		totalSignDays: calendarHits.length,
-		lastSignDate:
-			year +
-			'-' +
-			(month + 1 < 10 ? '0' : '') +
-			(month + 1) +
-			'-' +
-			(todayDate < 10 ? '0' : '') +
-			todayDate,
+	let sign: SignInfoSummary = {
+		signedToday: false,
+		streakDays: 0,
+		totalSignDays: 0,
+		lastSignDate: '',
 	}
-	const sign = await apiOrMock(() => fetchSignInfo(), mockSign)
-	// USE_MOCK 用种子 hits；联调始终用推算结果（可为空，不再回落假数据）
-	if (USE_MOCK) {
-		hits.value = calendarHits
-	} else {
-		hits.value = buildHitsFromSign(sign)
-	}
+	try {
+		sign = await fetchSignInfo()
+	} catch (_) {}
+	hits.value = buildHitsFromSign(sign)
 	todayOn.value = sign.signedToday
 	const signedCount = hits.value.length
 	const streak = sign.streakDays > 0 ? sign.streakDays : signedCount

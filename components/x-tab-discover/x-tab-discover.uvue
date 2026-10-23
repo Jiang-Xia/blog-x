@@ -84,14 +84,26 @@
  * 数据来源：联调文章列表取热门；分类 GET /category
  * 滚动：x-scroll-page 下拉刷新（入口页无分页）
  */
-import { discoverCategories, hotArticle } from '../../mock/data'
 import type { ArticleSummary, CategoryChip } from '../../types/article'
 import { fetchArticleList, fetchCategories } from '../../api/modules/article'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
 
+const emptyHot: ArticleSummary = {
+	id: '',
+	title: '',
+	categoryName: '',
+	timeLabel: '',
+	likeCount: 0,
+	commentCount: 0,
+	coverUrl: '',
+	coverEmoji: '🔥',
+	coverC1: '#e8a87c',
+	coverC2: '#f4d4a8',
+	hotLabel: '',
+}
+
 const categories = ref([] as CategoryChip[])
-const hot = ref(hotArticle as ArticleSummary)
+const hot = ref(emptyHot)
 
 const {
 	refreshing,
@@ -112,33 +124,25 @@ const hotStatLine = computed((): string => {
 })
 
 /**
- * mock / 名称列表 → CategoryChip
- */
-function namesToChips(names: string[]): CategoryChip[] {
-	const out: CategoryChip[] = []
-	for (let i = 0; i < names.length; i++) {
-		out.push({ id: '', label: names[i] })
-	}
-	return out
-}
-
-/**
  * 加载分类 + 热门（列表首条）
  */
 async function loadDiscover(): Promise<void> {
-	categories.value = await apiOrMock(async () => {
+	try {
 		const rows = await fetchCategories()
 		const chips: CategoryChip[] = [{ id: '', label: '推荐' }]
 		for (let i = 0; i < rows.length; i++) {
 			chips.push({ id: rows[i].id, label: rows[i].label })
 		}
-		return chips
-	}, namesToChips(discoverCategories))
+		categories.value = chips
+	} catch (_) {
+		categories.value = [{ id: '', label: '推荐' }]
+	}
 
-	const articles = await apiOrMock(async () => {
+	let articles = [] as ArticleSummary[]
+	try {
 		const res = await fetchArticleList({ page: 1, pageSize: 5, client: true })
-		return res.list
-	}, [hotArticle])
+		articles = res.list
+	} catch (_) {}
 	if (articles.length > 0) {
 		const top = articles[0]
 		hot.value = {

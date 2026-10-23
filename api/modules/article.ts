@@ -1,6 +1,5 @@
 /**
- * 文章 / 分类 / 标签 API（对齐 blog-home-uniapp api/article）
- * 路径见 registry ARTICLE_ROWS；本文件提供带适配的业务方法
+ * 文章 / 分类 / 标签 API（对齐 blog-home-nuxt；data 形状仅认 blog-server）
  */
 import { get, post } from '../request'
 import { mapArchives, mapArticleDetail, mapArticleSummary } from '../adapters/article'
@@ -8,7 +7,7 @@ import type { ArticleDetail, ArticleSummary } from '../../types/article'
 import type { ArchiveYear } from '../../types/notify'
 
 /**
- * 文章分页列表
+ * 文章分页列表 → { list, pagination.total }
  */
 export async function fetchArticleList(params: {
 	page?: number
@@ -33,44 +32,23 @@ export async function fetchArticleList(params: {
 	const total =
 		res != null && res.pagination != null && res.pagination.total != null
 			? Number(res.pagination.total)
-			: list.length
+			: 0
 	return { list, total }
 }
 
-	/**
-	 * 解包 GET /article/info 的 data（对齐 uniapp parseArticleDetail）
-	 * 标准形态：{ info, prev, next }；兼容直接返回文章字段的扁平结构
-	 */
-	function unwrapArticleInfoPayload(res: any): any {
-		if (res == null) return null
-		if (res.info != null && typeof res.info === 'object') {
-			return res.info
-		}
-		// 扁平：自身带 title/content/id 即视为文章
-		if (res.title != null || res.content != null || res.contentHtml != null) {
-			return res
-		}
-		if (res.id != null) {
-			return res
-		}
+/**
+ * 文章详情（404 静默）：data 为 { info, prev?, next? }，正文在 info
+ */
+export async function fetchArticleInfo(id: string | number): Promise<ArticleDetail | null> {
+	if (id == null || id === '') return null
+	try {
+		const res = await get('/article/info', { id }, { silent: true })
+		if (res == null || res.info == null) return null
+		return mapArticleDetail(res.info)
+	} catch (_) {
 		return null
 	}
-
-	/**
-	 * 文章详情（404 静默）
-	 * 注意：request 已解到 data，此处再取 data.info 再 map，勿把包装对象当文章
-	 */
-	export async function fetchArticleInfo(id: string | number): Promise<ArticleDetail | null> {
-		if (id == null || id === '') return null
-		try {
-			const res = await get('/article/info', { id }, { silent: true })
-			const raw = unwrapArticleInfoPayload(res)
-			if (raw == null) return null
-			return mapArticleDetail(raw)
-		} catch (_) {
-			return null
-		}
-	}
+}
 
 /**
  * 上报浏览量
@@ -96,7 +74,7 @@ export type CreateArticleBody = {
 
 /**
  * 创建文章：POST /article/create（需登录）
- * @returns 新建 id（兼容 data.id / data.info.id）
+ * @returns 新建 id（Nest/Nuxt：data.id，偶发 data.info.id）
  */
 export async function createArticle(body: CreateArticleBody): Promise<string> {
 	const payload: Record<string, any> = {
@@ -120,7 +98,7 @@ export async function createArticle(body: CreateArticleBody): Promise<string> {
 }
 
 /**
- * 归档（按年 → 月 → 文章，对齐 Nest getArchives）
+ * 归档（Nest：[{ year, data: { January: Article[] } }]）
  */
 export async function fetchArchives(): Promise<ArchiveYear[]> {
 	const res = await get('/article/archives')
@@ -128,11 +106,11 @@ export async function fetchArchives(): Promise<ArchiveYear[]> {
 }
 
 /**
- * 相关文章
+ * 相关文章（裸数组）
  */
 export async function fetchRelatedArticles(id: string | number, limit = 6): Promise<ArticleSummary[]> {
 	const res = await get('/article/related', { id, limit }, { silent: true })
-	const arr = Array.isArray(res) ? res : res != null && res.list != null ? res.list : []
+	const arr = Array.isArray(res) ? res : []
 	const list: ArticleSummary[] = []
 	for (let i = 0; i < arr.length; i++) {
 		list.push(mapArticleSummary(arr[i]))
@@ -140,29 +118,22 @@ export async function fetchRelatedArticles(id: string | number, limit = 6): Prom
 	return list
 }
 
-/** 分类选项（创作页 picker；展示用 label，勿本地 map） */
+/** 分类选项（创作页 picker；展示用 label） */
 export type CategoryOption = {
 	id: string
 	label: string
 }
 
 /**
- * 分类列表（含 id，供写文章选择）
+ * 分类列表（Nest：裸数组，字段 label）
  */
 export async function fetchCategories(): Promise<CategoryOption[]> {
 	const res = await get('/category', { isDelete: true }, { silent: true })
-	const arr = Array.isArray(res) ? res : res != null && res.list != null ? res.list : []
+	const arr = Array.isArray(res) ? res : []
 	const list: CategoryOption[] = []
 	for (let i = 0; i < arr.length; i++) {
 		const c = arr[i]
-		const label =
-			c.label != null
-				? '' + c.label
-				: c.name != null
-					? '' + c.name
-					: c.value != null
-						? '' + c.value
-						: ''
+		const label = c != null && c.label != null ? '' + c.label : ''
 		if (label.length == 0) continue
 		list.push({
 			id: c.id != null ? '' + c.id : '' + i,
@@ -185,7 +156,7 @@ export async function fetchCategoryNames(): Promise<string[]> {
 }
 
 /**
- * 标签名列表（GET /tag；字段优先 label，兼容 name/value）
+ * 标签名列表
  */
 export async function fetchTagNames(): Promise<string[]> {
 	const tags = await fetchTags()
@@ -196,29 +167,22 @@ export async function fetchTagNames(): Promise<string[]> {
 	return names
 }
 
-/** 标签墙单项（展示用 label，勿本地 map 颜色） */
+/** 标签墙单项 */
 export type TagWallItem = {
 	id: string
 	label: string
 }
 
 /**
- * 标签墙列表
+ * 标签墙列表（Nest：裸数组，字段 label）
  */
 export async function fetchTags(): Promise<TagWallItem[]> {
 	const res = await get('/tag', { isDelete: true }, { silent: true })
-	const arr = Array.isArray(res) ? res : res != null && res.list != null ? res.list : []
+	const arr = Array.isArray(res) ? res : []
 	const list: TagWallItem[] = []
 	for (let i = 0; i < arr.length; i++) {
 		const t = arr[i]
-		const label =
-			t.label != null
-				? '' + t.label
-				: t.name != null
-					? '' + t.name
-					: t.value != null
-						? '' + t.value
-						: ''
+		const label = t != null && t.label != null ? '' + t.label : ''
 		if (label.length == 0) continue
 		list.push({
 			id: t.id != null ? '' + t.id : '' + i,

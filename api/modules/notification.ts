@@ -18,11 +18,9 @@ export async function fetchNotifications(page = 1, pageSize = 20): Promise<Notif
  */
 export async function fetchUnreadCount(): Promise<number> {
 	try {
+		// Nest countUnread：data 为 number
 		const res = await get('/notification/unread-count', null, { silent: true })
-		if (typeof res === 'number') return res
-		if (res != null && res.count != null) return Number(res.count)
-		if (res != null && res.unread != null) return Number(res.unread)
-		return 0
+		return typeof res === 'number' ? res : Number(res) || 0
 	} catch (_) {
 		return 0
 	}

@@ -95,9 +95,7 @@ import {
 	type BagLoadout,
 	type BagPet,
 } from '../../api/modules/rpg'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-import { USE_MOCK } from '../../api/config'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
 
@@ -125,50 +123,8 @@ const emptyLoadout: BagLoadout = {
 	petName: '',
 }
 
-/** mock 背包种子（USE_MOCK / 失败回落） */
-const mockItems: BagItem[] = [
-	{
-		id: 'm1',
-		itemCode: 'title_pixel',
-		quantity: 1,
-		name: '像素匠',
-		itemType: 'title',
-		itemTypeLabel: '称号',
-		sourceLabel: '等级奖励',
-		icon: '🏷️',
-		equippable: true,
-	},
-	{
-		id: 'm2',
-		itemCode: 'frame_mint',
-		quantity: 1,
-		name: '薄荷绿框',
-		itemType: 'avatar_frame',
-		itemTypeLabel: '头像框',
-		sourceLabel: '抽奖',
-		icon: '🖼️',
-		equippable: true,
-	},
-	{
-		id: 'm3',
-		itemCode: 'currency',
-		quantity: 128,
-		name: '钻石',
-		itemType: 'currency',
-		itemTypeLabel: '货币',
-		sourceLabel: '系统',
-		icon: '💎',
-		equippable: false,
-	},
-]
-
-const mockPets: BagPet[] = [
-	{ id: 1, petCode: 'pet_slime', name: '史莱姆', level: 3, icon: '🫧' },
-	{ id: 2, petCode: 'pet_fox', name: '灵狐', level: 5, icon: '🦊' },
-]
-
-const items = ref(mockItems as BagItem[])
-const pets = ref(mockPets as BagPet[])
+const items = ref([] as BagItem[])
+const pets = ref([] as BagPet[])
 const loadout = ref(emptyLoadout as BagLoadout)
 const userStore = useUserStore()
 
@@ -220,19 +176,21 @@ function slotOf(item: BagItem): string {
  * 拉取背包 + 装扮 + 宠物
  */
 async function loadBag(): Promise<void> {
-	items.value = await apiOrMock(() => fetchInventory(), mockItems)
-	pets.value = await apiOrMock(() => fetchMyPets(), mockPets)
-	loadout.value = await apiOrMock(
-		() => fetchLoadout(),
-		{
-			titleCode: 'title_pixel',
-			titleName: '像素匠',
-			frameCode: '',
-			frameName: '',
-			petId: 1,
-			petName: '史莱姆',
-		} as BagLoadout,
-	)
+	try {
+		items.value = await fetchInventory()
+	} catch (_) {
+		items.value = []
+	}
+	try {
+		pets.value = await fetchMyPets()
+	} catch (_) {
+		pets.value = []
+	}
+	try {
+		loadout.value = await fetchLoadout()
+	} catch (_) {
+		loadout.value = emptyLoadout
+	}
 }
 
 /**
@@ -246,7 +204,7 @@ async function onRefresh(): Promise<void> {
 }
 
 onMounted(() => {
-	if (!USE_MOCK && !userStore.loggedIn) {
+	if (!userStore.loggedIn) {
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
 	}
@@ -258,28 +216,6 @@ onMounted(() => {
  */
 async function onToggle(item: BagItem): Promise<void> {
 	const slot = slotOf(item)
-	if (USE_MOCK) {
-		if (isEquipped(item)) {
-			if (slot == 'title') {
-				loadout.value.titleCode = ''
-				loadout.value.titleName = ''
-			} else {
-				loadout.value.frameCode = ''
-				loadout.value.frameName = ''
-			}
-			showXToast('🎒', '已卸下', 'mock')
-		} else {
-			if (slot == 'title') {
-				loadout.value.titleCode = item.itemCode
-				loadout.value.titleName = item.name
-			} else {
-				loadout.value.frameCode = item.itemCode
-				loadout.value.frameName = item.name
-			}
-			showXToast('🎒', '已穿戴', 'mock')
-		}
-		return
-	}
 	try {
 		if (isEquipped(item)) {
 			await unequipLoadout(slot)
@@ -296,18 +232,6 @@ async function onToggle(item: BagItem): Promise<void> {
  * 宠物出战 / 休息
  */
 async function onTogglePet(pet: BagPet): Promise<void> {
-	if (USE_MOCK) {
-		if (loadout.value.petId == pet.id) {
-			loadout.value.petId = 0
-			loadout.value.petName = ''
-			showXToast('🐾', '已休息', 'mock')
-		} else {
-			loadout.value.petId = pet.id
-			loadout.value.petName = pet.name
-			showXToast('🐾', '已出战', 'mock')
-		}
-		return
-	}
 	try {
 		if (loadout.value.petId == pet.id) {
 			await unequipLoadout('pet')

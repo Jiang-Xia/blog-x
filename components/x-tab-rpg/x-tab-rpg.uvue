@@ -109,10 +109,9 @@
 <script setup lang="ts">
 /**
  * 冒险中心面板：对齐原型 rpg 屏
- * 数据来源：联调 /rpg/status|sign|my-quests；失败回落 mock
+ * 数据来源：联调 /rpg/status|sign|my-quests
  * 滚动：x-scroll-page 下拉刷新
  */
-import { rpgHeroSeed, rpgQuestsSeed } from '../../mock/data'
 import type { RpgHero, RpgQuest } from '../../types/rpg'
 import {
 	claimQuest,
@@ -121,15 +120,25 @@ import {
 	fetchSignInfo,
 	rpgSignIn,
 } from '../../api/modules/rpg'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-import { USE_MOCK } from '../../api/config'
-import { doMockCheckin, useMockStore } from '../../composables/useMockStore'
+import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 import { goTab, TAB_HOME } from '../../utils/tabNav'
 
-const hero = ref(rpgHeroSeed as RpgHero)
-const quests = ref(rpgQuestsSeed as RpgQuest[])
+const emptyHero: RpgHero = {
+	travelerName: '',
+	level: 0,
+	expToNext: 0,
+	expBarPercent: 0,
+	diamonds: 0,
+	coins: 0,
+	lotteryTickets: 0,
+	streakDays: 0,
+	weatherBuff: '',
+}
+
+const hero = ref(emptyHero)
+const quests = ref([] as RpgQuest[])
 const store = useMockStore()
 const diamonds = store.diamonds
 const streakDays = store.streakDays
@@ -161,21 +170,26 @@ const displayQuests = computed((): RpgQuest[] => {
  * 同步 RPG 状态到本地 store 与 hero
  */
 async function loadRpg(): Promise<void> {
-	const h = await apiOrMock(() => fetchRpgHero(), rpgHeroSeed)
-	hero.value = h
-	store.diamonds.value = h.diamonds
-	store.streakDays.value = h.streakDays
-	const sign = await apiOrMock(() => fetchSignInfo(), {
-		signedToday: store.checkedInToday.value,
-		streakDays: store.streakDays.value,
-		totalSignDays: store.streakDays.value,
-		lastSignDate: '',
-	})
-	store.checkedInToday.value = sign.signedToday
-	if (sign.streakDays > 0) store.streakDays.value = sign.streakDays
-	store.homeTodayTitle.value = sign.signedToday ? '今日已签到' : '今日待签到'
-	store.homeStreakLabel.value = '连续 ' + store.streakDays.value + ' 天'
-	quests.value = await apiOrMock(() => fetchMyQuests(), rpgQuestsSeed)
+	try {
+		const h = await fetchRpgHero()
+		hero.value = h
+		store.diamonds.value = h.diamonds
+		store.streakDays.value = h.streakDays
+	} catch (_) {}
+
+	try {
+		const sign = await fetchSignInfo()
+		store.checkedInToday.value = sign.signedToday
+		if (sign.streakDays > 0) store.streakDays.value = sign.streakDays
+		store.homeTodayTitle.value = sign.signedToday ? '今日已签到' : '今日待签到'
+		store.homeStreakLabel.value = '连续 ' + store.streakDays.value + ' 天'
+	} catch (_) {}
+
+	try {
+		quests.value = await fetchMyQuests()
+	} catch (_) {
+		quests.value = []
+	}
 }
 
 /**
@@ -193,11 +207,6 @@ onMounted(() => {
 
 /** 每日签到 */
 async function onCheckin(): Promise<void> {
-	if (USE_MOCK) {
-		const r = doMockCheckin()
-		showXToast(r.ok ? '☀️' : '📌', r.toastTitle, r.toastDesc)
-		return
-	}
 	if (checkedInToday.value) {
 		showXToast('📌', '今日已签到', '明天再来哦')
 		return
@@ -215,17 +224,6 @@ async function onCheckin(): Promise<void> {
  * 领取任务奖励：POST /rpg/quest/claim
  */
 async function onClaim(questCode: string): Promise<void> {
-	if (USE_MOCK) {
-		for (let i = 0; i < quests.value.length; i++) {
-			if (quests.value[i].id == questCode) {
-				quests.value[i].done = true
-				quests.value[i].claimable = false
-				break
-			}
-		}
-		showXToast('🎁', '奖励已领取', 'mock')
-		return
-	}
 	try {
 		await claimQuest(questCode)
 		showXToast('🎁', '奖励已领取', '')

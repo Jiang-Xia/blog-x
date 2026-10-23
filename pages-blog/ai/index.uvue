@@ -52,11 +52,9 @@
 <script setup lang="ts">
 /**
  * AI 助手：联调 /rag/quota|status + POST /rag/query-stream（SSE text-delta）
- * 需登录；流式失败时 toast；USE_MOCK 时本地假回复
+ * 需登录；流式失败时 toast
  */
 import { fetchRagQuota, fetchRagStatus } from '../../api/modules/notification'
-import { apiOrMock } from '../../composables/useApiOrMock'
-import { USE_MOCK } from '../../api/config'
 import { useUserStore } from '../../store/user'
 import { parseUiTextDelta, startSseStream } from '../../utils/sse-stream'
 import { showXToast } from '../../utils/toast'
@@ -81,8 +79,14 @@ let abortStream: (() => void) | null = null
  * 刷新配额文案
  */
 async function loadQuota(): Promise<void> {
-	const quota = await apiOrMock(() => fetchRagQuota(), null)
-	const status = await apiOrMock(() => fetchRagStatus(), null)
+	let quota: any = null
+	let status: any = null
+	try {
+		quota = await fetchRagQuota()
+	} catch (_) {}
+	try {
+		status = await fetchRagStatus()
+	} catch (_) {}
 	let used = 0
 	let total = 10
 	if (quota != null) {
@@ -136,7 +140,7 @@ function onSend(): void {
 	const q = draft.value.trim()
 	if (q.length == 0 || streaming.value) return
 
-	if (!USE_MOCK && !userStore.loggedIn) {
+	if (!userStore.loggedIn) {
 		showXToast('🔐', '请先登录', 'AI 问答需登录')
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
@@ -147,19 +151,6 @@ function onSend(): void {
 	messages.value.push({ role: 'assistant', content: '', cite: '' })
 	const assistantIndex = messages.value.length - 1
 	scrollToBottom()
-
-	if (USE_MOCK) {
-		streaming.value = true
-		setTimeout(() => {
-			messages.value[assistantIndex].content =
-				'（mock）已收到「' + q + '」。联调时将走 /rag/query-stream。'
-			messages.value[assistantIndex].cite = '站内引用'
-			streaming.value = false
-			scrollToBottom()
-			loadQuota()
-		}, 600)
-		return
-	}
 
 	streaming.value = true
 	if (abortStream != null) abortStream()

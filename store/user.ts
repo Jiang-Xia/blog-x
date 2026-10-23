@@ -5,21 +5,18 @@
  */
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { USE_MOCK } from '../api/config'
 import {
 	fetchUserInfo,
 	loginByAccount as apiLoginByAccount,
 	loginByWeixin as apiLoginByWeixin,
 	logoutLocal,
 } from '../api/modules/auth'
-import { meProfile } from '../mock/data'
 import type { UserProfile } from '../types/user'
 import {
 	clearToken,
 	getCachedProfile,
 	getToken,
 	setCachedProfile,
-	setToken,
 } from '../utils/storage'
 
 /** 未登录占位资料 */
@@ -63,7 +60,6 @@ export const useUserStore = defineStore('user', () => {
 		if (cached != null) {
 			profile.value = cached
 		} else if (profile.value.id == 0) {
-			// 有 token 尚无缓存：避免仍显示「未登录」
 			profile.value = {
 				id: 0,
 				nickname: '已登录',
@@ -101,18 +97,6 @@ export const useUserStore = defineStore('user', () => {
 	 */
 	async function afterLoginSuccess(): Promise<void> {
 		loggedIn.value = true
-		if (USE_MOCK) {
-			setProfile({
-				id: 1,
-				nickname: meProfile.nickname,
-				avatarEmoji: meProfile.avatarEmoji,
-				bio: meProfile.bio,
-				articleCount: meProfile.articleCount,
-				favoriteCount: meProfile.favoriteCount,
-				likeReceived: meProfile.likeReceived,
-			})
-			return
-		}
 		try {
 			await refreshProfile()
 		} catch (_) {
@@ -133,11 +117,6 @@ export const useUserStore = defineStore('user', () => {
 		if (submitting.value) return false
 		submitting.value = true
 		try {
-			if (USE_MOCK) {
-				setToken('mock_token_' + Date.now())
-				await afterLoginSuccess()
-				return true
-			}
 			await apiLoginByAccount({
 				username: form.username,
 				password: form.password,
@@ -159,11 +138,6 @@ export const useUserStore = defineStore('user', () => {
 		if (submitting.value) return false
 		submitting.value = true
 		try {
-			if (USE_MOCK) {
-				setToken('mock_wx_token_' + Date.now())
-				await afterLoginSuccess()
-				return true
-			}
 			await apiLoginByWeixin()
 			await afterLoginSuccess()
 			return true
@@ -188,11 +162,6 @@ export const useUserStore = defineStore('user', () => {
 	async function tryAutoLogin(): Promise<void> {
 		hydrateFromStorage()
 		if (!loggedIn.value) {
-			bootstrapped.value = true
-			return
-		}
-		if (USE_MOCK) {
-			await afterLoginSuccess()
 			bootstrapped.value = true
 			return
 		}

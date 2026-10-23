@@ -176,8 +176,6 @@ import {
 	type TagWallItem,
 } from '../../api/modules/article'
 import { uploadArticleImage, uploadCover } from '../../api/modules/resources'
-import { apiOrMock } from '../../composables/useApiOrMock'
-import { USE_MOCK } from '../../api/config'
 import { useUserStore } from '../../store/user'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
@@ -201,17 +199,8 @@ const previewing = ref(false)
 const submitting = ref(false)
 const uploading = ref(false)
 
-const mockCategories: CategoryOption[] = [
-	{ id: 'c1', label: '随笔' },
-	{ id: 'c2', label: '技术' },
-]
-const mockTags: TagWallItem[] = [
-	{ id: 't1', label: '前端' },
-	{ id: 't2', label: '生活' },
-]
-
-const categories = ref(mockCategories as CategoryOption[])
-const tags = ref(mockTags as TagWallItem[])
+const categories = ref([] as CategoryOption[])
+const tags = ref([] as TagWallItem[])
 
 /** 封面展示完整 URL */
 const coverDisplay = computed((): string => {
@@ -255,8 +244,16 @@ const primaryLabel = computed((): string => {
  * 拉取分类与标签
  */
 async function loadMeta(): Promise<void> {
-	categories.value = await apiOrMock(() => fetchCategories(), mockCategories)
-	tags.value = await apiOrMock(() => fetchTags(), mockTags)
+	try {
+		categories.value = await fetchCategories()
+	} catch (_) {
+		categories.value = []
+	}
+	try {
+		tags.value = await fetchTags()
+	} catch (_) {
+		tags.value = []
+	}
 	if (categoryId.value.length == 0 && categories.value.length > 0) {
 		categoryId.value = categories.value[0].id
 	}
@@ -328,7 +325,7 @@ function clearLocalDraft(): void {
 }
 
 onMounted(async () => {
-	if (!USE_MOCK && !userStore.loggedIn) {
+	if (!userStore.loggedIn) {
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
 	}
@@ -440,12 +437,6 @@ function pickCover(): void {
  * 执行封面上传
  */
 async function doUploadCover(path: string): Promise<void> {
-	if (USE_MOCK) {
-		cover.value = path
-		showXToast('🖼', '封面已选', 'mock')
-		saveLocalDraft()
-		return
-	}
 	uploading.value = true
 	uni.showLoading({ title: '上传中' })
 	try {
@@ -491,13 +482,6 @@ function pickInlineImage(): void {
  * 上传插图并写入 ![](url)
  */
 async function doInsertImage(path: string): Promise<void> {
-	if (USE_MOCK) {
-		const md = '![](' + path + ')'
-		content.value = content.value.length > 0 ? content.value + '\n' + md : md
-		showXToast('🖼', '已插入图片', 'mock')
-		saveLocalDraft()
-		return
-	}
 	uploading.value = true
 	uni.showLoading({ title: '上传中' })
 	try {
@@ -552,13 +536,6 @@ async function onSubmit(submitStatus: string): Promise<void> {
 
 	const okMsg =
 		submitStatus == 'draft' ? '草稿已存' : submitStatus == 'scheduled' ? '已设定时发布' : '发布成功'
-
-	if (USE_MOCK) {
-		showXToast('✍️', okMsg, 'mock')
-		clearLocalDraft()
-		submitting.value = false
-		return
-	}
 
 	try {
 		const id = await createArticle({

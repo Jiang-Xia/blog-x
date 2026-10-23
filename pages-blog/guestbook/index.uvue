@@ -46,12 +46,9 @@
  * 留言板：联调 GET/POST /msgboard；头像用接口 avatar 字段
  * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
-import { guestbookItems } from '../../mock/data'
 import type { GuestbookItem } from '../../types/notify'
 import { fetchMsgboard, postMsgboard } from '../../api/modules/interact'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-import { USE_MOCK } from '../../api/config'
 import { showXToast } from '../../utils/toast'
 
 const items = ref([] as GuestbookItem[])
@@ -84,10 +81,11 @@ function authorInitial(name: string): string {
  * 拉取一页留言
  */
 async function fetchPage(page: number): Promise<GuestbookItem[]> {
-	return await apiOrMock(
-		() => fetchMsgboard(page, pageSize),
-		page == 1 ? guestbookItems : [],
-	)
+	try {
+		return await fetchMsgboard(page, pageSize)
+	} catch (_) {
+		return []
+	}
 }
 
 /**
@@ -123,10 +121,6 @@ onMounted(() => {
  * 发布留言（联调真实接口；mock 仅 toast）
  */
 async function onPublish(): Promise<void> {
-	if (USE_MOCK) {
-		showXToast('💬', '已发布', '示意留言已提交')
-		return
-	}
 	try {
 		await postMsgboard({ name: '访客', comment: '来自 blog-x 的留言' })
 		showXToast('💬', '已发布', '')

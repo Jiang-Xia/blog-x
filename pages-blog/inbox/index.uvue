@@ -51,12 +51,9 @@
  * 评论收件箱：联调 GET /comment/on-my-articles + POST /reply/create
  * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
-import { inboxItems } from '../../mock/data'
 import type { InboxItem } from '../../types/notify'
 import { addReply, fetchInbox } from '../../api/modules/interact'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-import { USE_MOCK } from '../../api/config'
 import { useMockStore } from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
@@ -88,7 +85,11 @@ const {
  * 拉取一页收件箱
  */
 async function fetchPage(page: number): Promise<InboxItem[]> {
-	return await apiOrMock(() => fetchInbox(page, pageSize), page == 1 ? inboxItems : [])
+	try {
+		return await fetchInbox(page, pageSize)
+	} catch (_) {
+		return []
+	}
 }
 
 /**
@@ -123,7 +124,7 @@ onMounted(() => {
  * 展开回复输入
  */
 function onReply(item: InboxItem): void {
-	if (!USE_MOCK && !userStore.loggedIn) {
+	if (!userStore.loggedIn) {
 		showXToast('🔐', '请先登录', '')
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
@@ -152,12 +153,6 @@ async function onSubmitReply(): Promise<void> {
 			replyUid = items.value[i].replyUid
 			break
 		}
-	}
-
-	if (USE_MOCK) {
-		showXToast('↩️', '已回复', 'mock')
-		cancelReply()
-		return
 	}
 
 	submitting.value = true

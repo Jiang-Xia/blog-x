@@ -55,20 +55,26 @@
  * 公开主页：联调 /user/public/:uid + /rpg/public/:uid/status + 文章列表
  * 滚动：资料区随列表滚；文章分页加载更多
  */
-import { articles, meProfile, publicRpg } from '../../mock/data'
 import type { ArticleSummary } from '../../types/article'
 import type { PublicRpgCard } from '../../types/user'
 import { fetchPublicProfile, fetchPublicRpg } from '../../api/modules/auth'
 import { get } from '../../api/request'
 import { mapArticleSummary } from '../../api/adapters/article'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
 
+const emptyPublicRpg: PublicRpgCard = {
+	titleName: '',
+	guildName: '',
+	rankLabel: '',
+	petLabel: '',
+	streakDays: 0,
+}
+
 const userStore = useUserStore()
-const nickname = ref(meProfile.nickname)
-const bio = ref(meProfile.bio)
-const rpg = ref(publicRpg as PublicRpgCard)
+const nickname = ref('')
+const bio = ref('')
+const rpg = ref(emptyPublicRpg)
 const articleList = ref([] as ArticleSummary[])
 const uid = ref(0)
 const articleTotal = ref(-1)
@@ -112,32 +118,31 @@ async function resolveUid(): Promise<void> {
  */
 async function fetchArticles(page: number): Promise<{ list: ArticleSummary[]; total: number }> {
 	if (uid.value <= 0) {
-		return { list: page == 1 ? [articles[0]] : [], total: 1 }
+		return { list: [], total: 0 }
 	}
-	return await apiOrMock(
-		async () => {
-			const res = await get(
-				'/user/public/' + uid.value + '/articles',
-				{ page, pageSize },
-				{ silent: true },
-			)
-			const arr = res != null && res.list != null ? res.list : Array.isArray(res) ? res : []
-			const out: ArticleSummary[] = []
-			for (let i = 0; i < arr.length; i++) {
-				out.push(mapArticleSummary(arr[i]))
-			}
-			let total = out.length
-			if (res != null && res.pagination != null && res.pagination.total != null) {
-				total = Number(res.pagination.total)
-			} else if (res != null && res.total != null) {
-				total = Number(res.total)
-			} else {
-				total = -1
-			}
-			return { list: out, total }
-		},
-		page == 1 ? { list: [articles[0]], total: 1 } : { list: [], total: 0 },
-	)
+	try {
+		const res = await get(
+			'/user/public/' + uid.value + '/articles',
+			{ page, pageSize },
+			{ silent: true },
+		)
+		const arr = res != null && res.list != null ? res.list : Array.isArray(res) ? res : []
+		const out: ArticleSummary[] = []
+		for (let i = 0; i < arr.length; i++) {
+			out.push(mapArticleSummary(arr[i]))
+		}
+		let total = out.length
+		if (res != null && res.pagination != null && res.pagination.total != null) {
+			total = Number(res.pagination.total)
+		} else if (res != null && res.total != null) {
+			total = Number(res.total)
+		} else {
+			total = -1
+		}
+		return { list: out, total }
+	} catch (_) {
+		return { list: [], total: 0 }
+	}
 }
 
 /**
@@ -147,15 +152,21 @@ async function onRefresh(): Promise<void> {
 	beginRefresh()
 	await resolveUid()
 	if (uid.value > 0) {
-		const pub = await apiOrMock(() => fetchPublicProfile(uid.value), null)
-		if (pub != null) {
-			if (pub.nickname != null) nickname.value = '' + pub.nickname
-			if (pub.intro != null) bio.value = '' + pub.intro
+		try {
+			const pub = await fetchPublicProfile(uid.value)
+			if (pub != null) {
+				if (pub.nickname != null) nickname.value = '' + pub.nickname
+				if (pub.intro != null) bio.value = '' + pub.intro
+			}
+		} catch (_) {}
+		try {
+			rpg.value = await fetchPublicRpg(uid.value)
+		} catch (_) {
+			rpg.value = emptyPublicRpg
 		}
-		rpg.value = await apiOrMock(() => fetchPublicRpg(uid.value), publicRpg)
 	}
 	const res = await fetchArticles(1)
-	articleList.value = res.list.length > 0 ? res.list : uid.value > 0 ? [] : [articles[0]]
+	articleList.value = res.list
 	articleTotal.value = res.total
 	endRefresh(res.list.length, articleList.value.length, res.total)
 }

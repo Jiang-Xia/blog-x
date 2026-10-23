@@ -3,15 +3,16 @@
  * 数据来源：常量默认值；HBuilderX 无 Vite 时改本文件即可切换联调目标
  */
 
-/** 是否整页走 mock（true 时业务模块可直接读 mock/，不发 HTTP） */
+/**
+ * 是否合并 api/mocks 挡板（仅 apis 注册表层；页面禁止 if(USE_MOCK)）
+ * 见 x-10-data-contract-simplicity.mdc
+ */
 export const USE_MOCK = false
 
 /**
- * API 根地址（含前缀）
- * - 本地 Nest blog-server：http://localhost:5000/api/v1
- * - 本地 Go 单体：http://localhost:8000/api/v1
- * - 线上 Nest：https://jiang-xia.top/x-blog/api/v1
- * - 线上 Go：https://go.jiang-xia.top/api/v1
+ * API 根地址（含前缀）— 联调对象仅 blog-server
+ * - 本地：http://localhost:5000/api/v1
+ * - 线上：https://jiang-xia.top/x-blog/api/v1
  */
 export const API_ORIGIN = 'http://localhost:5000'
 export const API_PREFIX = '/api/v1'

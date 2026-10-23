@@ -49,7 +49,8 @@ uni-app x（uvue）· Vue 3 `<script setup>` + TypeScript · 蒸汽模式（mani
 
 - 最小 diff：只改任务相关文件，不重构无关模块。
 - 复用现有抽象：uni-ui x 组件、`uni.*` API、`uni.scss` 变量。
-- 跨端优先：优先写全端兼容代码，端差异用条件编译并注释（见 `x-03-conditional-platform.mdc`）。
+- **数据结构只认 blog-server**（字段形态对齐 blog-home-nuxt）：禁止多形态兼容链与侵入式 mock；见 `x-10-data-contract-simplicity.mdc`。
+- 跨端 UI/API：优先写全端可用代码；**端差异**用条件编译并注释（见 `x-03-conditional-platform.mdc`）。此处「兼容」指平台，不是响应体多形状兜底。
 - uvue 模板只用 uni-app x 内置组件（view/text/image…），禁用 div/span 等浏览器标签。
 - 页面开发细则见 `x-05-page-development.mdc`（详 `docs/page-development-guide.md`）。
 - 注释约束见 `x-04-commenting-hard-requirement.mdc`。

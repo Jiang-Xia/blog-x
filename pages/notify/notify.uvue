@@ -49,14 +49,13 @@
  * 分段「全部/评论/赞藏/系统」按 NotifyItem.kind 前端过滤（后端 list 无 type 筛选参数）
  * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
-import { notifyItems } from '../../mock/data'
 import type { NotifyItem } from '../../types/notify'
 import { fetchNotifications, markNotificationsRead } from '../../api/modules/notification'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-import { USE_MOCK } from '../../api/config'
-import { clearNotifyBadge } from '../../composables/useMockStore'
+import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
+
+const store = useMockStore()
 
 const segs = ['全部', '评论', '赞藏', '系统']
 /** 与 segs 下标对齐；空串 = 全部 */
@@ -101,7 +100,11 @@ function setSeg(i: number): void {
  * 拉取一页通知
  */
 async function fetchPage(page: number): Promise<NotifyItem[]> {
-	return await apiOrMock(() => fetchNotifications(page, pageSize), page == 1 ? notifyItems : [])
+	try {
+		return await fetchNotifications(page, pageSize)
+	} catch (_) {
+		return []
+	}
 }
 
 /**
@@ -135,12 +138,10 @@ onMounted(() => {
  * 全部已读：清角标 + PATCH /notification/read
  */
 async function onReadAll(): Promise<void> {
-	clearNotifyBadge()
-	if (!USE_MOCK) {
-		try {
-			await markNotificationsRead()
-		} catch (_) {}
-	}
+	store.notifyBadge.value = 0
+	try {
+		await markNotificationsRead()
+	} catch (_) {}
 	showXToast('✓', '全部已读', '角标已清')
 }
 </script>

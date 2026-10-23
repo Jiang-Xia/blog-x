@@ -34,7 +34,6 @@
  * 滚动：全量列表，仅下拉刷新
  */
 import { fetchTags, type TagWallItem } from '../../api/modules/article'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
 
 const tags = ref([] as TagWallItem[])
@@ -54,7 +53,11 @@ const {
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
-	tags.value = await apiOrMock(() => fetchTags(), [] as TagWallItem[])
+	try {
+		tags.value = await fetchTags()
+	} catch (_) {
+		tags.value = []
+	}
 	endRefresh(tags.value.length, tags.value.length, tags.value.length)
 }
 

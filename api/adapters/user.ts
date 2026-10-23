@@ -32,7 +32,7 @@ export function mapUserProfile(raw: any, extras: Record<string, number> = {}): U
  */
 export function mapPublicRpg(raw: any): PublicRpgCard {
 	return {
-		titleName: raw != null && raw.titleName != null ? '' + raw.titleName : raw != null && raw.title != null ? '' + raw.title : '旅行者',
+		titleName: raw != null && raw.titleName != null ? '' + raw.titleName : '旅行者',
 		guildName: raw != null && raw.guildName != null ? '' + raw.guildName : '暂无公会',
 		rankLabel: raw != null && raw.rankLabel != null ? '' + raw.rankLabel : '',
 		petLabel: raw != null && raw.petLabel != null ? '' + raw.petLabel : '',
@@ -86,23 +86,17 @@ function mapNotifyDesc(payload: any): string {
 
 /**
  * 通知列表 → NotifyItem[]
- * 数据来源：GET /notification/list（type + payload，勿本地 dict 回显业务名）
+ * Nest：{ list, pagination }，字段 type + payload
  */
 export function mapNotifyItems(raw: any): NotifyItem[] {
 	const list: NotifyItem[] = []
-	const arr = raw == null ? [] : Array.isArray(raw) ? raw : raw.list != null ? raw.list : []
+	const arr = raw != null && raw.list != null ? raw.list : []
 	for (let i = 0; i < arr.length; i++) {
 		const n = arr[i]
-		const type = n.type != null ? '' + n.type : n.kind != null ? '' + n.kind : 'system'
+		const type = n.type != null ? '' + n.type : 'system'
 		const payload = n.payload != null ? n.payload : null
 		const emoji =
-			n.emoji != null
-				? '' + n.emoji
-				: type.indexOf('comment') >= 0
-					? '💬'
-					: type.indexOf('like') >= 0
-						? '❤️'
-						: '🔔'
+			type.indexOf('comment') >= 0 ? '💬' : type.indexOf('like') >= 0 ? '❤️' : '🔔'
 		list.push({
 			id: n.id != null ? '' + n.id : '' + i,
 			emoji,
@@ -110,12 +104,7 @@ export function mapNotifyItems(raw: any): NotifyItem[] {
 				n.title != null && ('' + n.title).length > 0
 					? '' + n.title
 					: mapNotifyTitle(type, payload),
-			desc:
-				n.content != null
-					? '' + n.content
-					: n.desc != null
-						? '' + n.desc
-						: mapNotifyDesc(payload),
+			desc: n.content != null ? '' + n.content : mapNotifyDesc(payload),
 			kind: mapNotifySegKind(type),
 		})
 	}
@@ -123,11 +112,11 @@ export function mapNotifyItems(raw: any): NotifyItem[] {
 }
 
 /**
- * 留言 → GuestbookItem[]（扁平 pId=0 为主楼）
+ * 留言 → GuestbookItem[]（Nest：{ list }，扁平 pId=0 为主楼）
  */
 export function mapGuestbookItems(raw: any): GuestbookItem[] {
 	const list: GuestbookItem[] = []
-	const arr = raw == null ? [] : Array.isArray(raw) ? raw : raw.list != null ? raw.list : []
+	const arr = raw != null && raw.list != null ? raw.list : []
 	let floor = 0
 	for (let i = 0; i < arr.length; i++) {
 		const m = arr[i]
@@ -156,11 +145,11 @@ export function mapGuestbookItems(raw: any): GuestbookItem[] {
 }
 
 /**
- * 友链 → FriendLink[]
+ * 友链 → FriendLink[]（Nest：裸数组）
  */
 export function mapFriendLinks(raw: any): FriendLink[] {
 	const list: FriendLink[] = []
-	const arr = Array.isArray(raw) ? raw : raw != null && raw.list != null ? raw.list : []
+	const arr = Array.isArray(raw) ? raw : []
 	for (let i = 0; i < arr.length; i++) {
 		const l = arr[i]
 		list.push({
@@ -174,36 +163,23 @@ export function mapFriendLinks(raw: any): FriendLink[] {
 
 /**
  * 评论收件箱 → InboxItem[]
- * 数据来源：GET /comment/on-my-articles（含 userInfo.id 供回复）
+ * Nest：{ list }，含 userInfo.id 供回复
  */
 export function mapInboxItems(raw: any): InboxItem[] {
 	const list: InboxItem[] = []
-	const arr = raw == null ? [] : Array.isArray(raw) ? raw : raw.list != null ? raw.list : []
+	const arr = raw != null && raw.list != null ? raw.list : []
 	for (let i = 0; i < arr.length; i++) {
 		const c = arr[i]
 		const ui = c.userInfo != null ? c.userInfo : null
 		const replyUid =
-			ui != null && ui.id != null
-				? '' + ui.id
-				: c.uid != null
-					? '' + c.uid
-					: '0'
+			ui != null && ui.id != null ? '' + ui.id : c.uid != null ? '' + c.uid : '0'
 		list.push({
 			id: c.id != null ? '' + c.id : '' + i,
-			articleTitle:
-				c.articleTitle != null
-					? '' + c.articleTitle
-					: c.title != null
-						? '' + c.title
-						: '文章',
+			articleTitle: c.articleTitle != null ? '' + c.articleTitle : '文章',
 			author:
 				ui != null && ui.nickname != null
 					? '' + ui.nickname
-					: c.nickname != null
-						? '' + c.nickname
-						: c.userName != null
-							? '' + c.userName
-							: '用户',
+					: '用户',
 			content: c.content != null ? '' + c.content : '',
 			replyUid,
 			articleId: c.articleId != null ? '' + c.articleId : undefined,

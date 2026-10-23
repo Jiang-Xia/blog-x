@@ -30,12 +30,9 @@
  * 友链页：联调 GET/POST /link
  * 滚动：一次全量，仅下拉刷新
  */
-import { friendLinks } from '../../mock/data'
 import type { FriendLink } from '../../types/notify'
 import { createLink, fetchLinks } from '../../api/modules/interact'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-import { USE_MOCK } from '../../api/config'
 import { showXToast } from '../../utils/toast'
 
 const links = ref([] as FriendLink[])
@@ -55,7 +52,11 @@ const {
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
-	links.value = await apiOrMock(() => fetchLinks(), friendLinks)
+	try {
+		links.value = await fetchLinks()
+	} catch (_) {
+		links.value = []
+	}
 	endRefresh(links.value.length, links.value.length, links.value.length)
 }
 
@@ -67,10 +68,6 @@ onMounted(() => {
  * 申请友链
  */
 async function onApply(): Promise<void> {
-	if (USE_MOCK) {
-		showXToast('🔗', '申请友链', '示意已提交审核')
-		return
-	}
 	try {
 		await createLink({ title: '申请友链', url: 'https://example.com', desp: '来自 blog-x' })
 		showXToast('🔗', '已提交', '等待审核')

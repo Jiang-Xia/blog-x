@@ -1,5 +1,5 @@
 <template>
-	<!-- 钻石充值：SKU + 支付增加 mock 钻石 -->
+	<!-- 钻石充值：SKU + 支付下单轮询 -->
 	<view class="x-page-flex">
 		<x-navbar title="钻石充值"></x-navbar>
 		<x-scroll-page
@@ -36,18 +36,21 @@
 
 <script setup lang="ts">
 /**
- * 钻石充值：联调 create + 轮询 status；USE_MOCK 写本地钻石
+ * 钻石充值：联调 create + 轮询 status
  * 滚动：x-scroll-page 下拉刷新余额
  */
-import { rechargeSkus } from '../../mock/data'
-import { USE_MOCK } from '../../api/config'
+import type { RechargeSku } from '../../types/rpg'
 import { createRpgRecharge, getRpgRechargeStatus, fetchRpgHero } from '../../api/modules/rpg'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-import { addMockDiamonds, useMockStore } from '../../composables/useMockStore'
+import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 
-const skus = rechargeSkus
+const skus: RechargeSku[] = [
+	{ id: '60', diamonds: 60, priceYuan: 6 },
+	{ id: '300', diamonds: 300, priceYuan: 30, bonusLabel: '+30' },
+	{ id: '680', diamonds: 680, priceYuan: 68 },
+	{ id: '1280', diamonds: 1280, priceYuan: 128 },
+]
 const selectedId = ref('300')
 const store = useMockStore()
 const diamonds = store.diamonds
@@ -69,10 +72,10 @@ const {
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
-	const hero = await apiOrMock(() => fetchRpgHero(), null)
-	if (hero != null) {
+	try {
+		const hero = await fetchRpgHero()
 		store.diamonds.value = hero.diamonds
-	}
+	} catch (_) {}
 	endRefresh(1, 1, 1)
 }
 
@@ -134,20 +137,11 @@ function pollRecharge(outTradeNo: string, left: number): void {
 }
 
 /**
- * 下单或 mock 加钻
+ * 下单充值
  */
 async function onPay(): Promise<void> {
 	const s = findSku(selectedId.value)
 	if (s == null || paying.value) return
-	if (USE_MOCK) {
-		let add = s.diamonds
-		if (s.bonusLabel != null && s.bonusLabel.indexOf('+') === 0) {
-			add = add + parseInt(s.bonusLabel.substring(1))
-		}
-		addMockDiamonds(add)
-		showXToast('💎', '充值成功', '+' + add + ' 钻石')
-		return
-	}
 	paying.value = true
 	try {
 		const res = await createRpgRecharge(s.priceYuan)

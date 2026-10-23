@@ -18,23 +18,16 @@ export async function fetchRpgHero(): Promise<RpgHero> {
 	}
 	const hero = mapRpgHero(status, weather)
 	try {
+		// Nest：{ tickets: number }
 		const tickets = await get('/rpg/lottery/tickets', null, { silent: true })
-		if (tickets != null) {
-			const n =
-				typeof tickets === 'number'
-					? tickets
-					: tickets.count != null
-						? Number(tickets.count)
-						: tickets.tickets != null
-							? Number(tickets.tickets)
-							: hero.lotteryTickets
-			hero.lotteryTickets = n
+		if (tickets != null && tickets.tickets != null) {
+			hero.lotteryTickets = Number(tickets.tickets)
 		}
 	} catch (_) {}
 	return hero
 }
 
-/** 签到摘要（对齐 Nest/Go getSignInfo） */
+/** 签到摘要（对齐 Nest getSignInfo） */
 export type SignInfoSummary = {
 	signedToday: boolean
 	/** 连续签到天数 */
@@ -46,28 +39,15 @@ export type SignInfoSummary = {
 }
 
 /**
- * 签到信息（今日是否已签、连续/累计天数、最近签到日）
+ * 签到信息（Nest：signedToday / consecutiveSignDays / totalSignDays / lastSignDate）
  */
 export async function fetchSignInfo(): Promise<SignInfoSummary> {
 	const res = await get('/rpg/sign-info', null, { silent: true })
-	const streak =
-		res != null && res.consecutiveSignDays != null
-			? Number(res.consecutiveSignDays)
-			: res != null && res.signDays != null
-				? Number(res.signDays)
-				: 0
-	const total =
-		res != null && res.totalSignDays != null
-			? Number(res.totalSignDays)
-			: streak
-	const last =
-		res != null && res.lastSignDate != null ? '' + res.lastSignDate : ''
+	const last = res != null && res.lastSignDate != null ? '' + res.lastSignDate : ''
 	return {
-		signedToday:
-			res != null &&
-			(res.signedToday === true || res.todaySigned === true || res.hasSigned === true),
-		streakDays: streak,
-		totalSignDays: total,
+		signedToday: res != null && res.signedToday === true,
+		streakDays: res != null && res.consecutiveSignDays != null ? Number(res.consecutiveSignDays) : 0,
+		totalSignDays: res != null && res.totalSignDays != null ? Number(res.totalSignDays) : 0,
 		lastSignDate: last.length >= 10 ? last.substring(0, 10) : last,
 	}
 }
@@ -170,53 +150,26 @@ export type BagPet = {
 }
 
 /**
- * 背包列表：GET /rpg/inventory
+ * 背包列表：GET /rpg/inventory → { items }
  */
 export async function fetchInventory(itemType?: string): Promise<BagItem[]> {
 	const query = itemType != null && itemType.length > 0 ? { itemType } : null
 	const res = await get('/rpg/inventory', query)
-	const arr =
-		res == null
-			? []
-			: Array.isArray(res)
-				? res
-				: res.items != null
-					? res.items
-					: []
+	const arr = res != null && res.items != null ? res.items : []
 	const list: BagItem[] = []
 	for (let i = 0; i < arr.length; i++) {
 		const row = arr[i]
 		const cfg = row.config != null ? row.config : null
-		const type =
-			cfg != null && cfg.itemType != null
-				? '' + cfg.itemType
-				: row.itemType != null
-					? '' + row.itemType
-					: ''
+		const type = cfg != null && cfg.itemType != null ? '' + cfg.itemType : ''
 		const equippable = type == 'title' || type == 'avatar_frame'
 		list.push({
 			id: row.id != null ? '' + row.id : '' + i,
 			itemCode: row.itemCode != null ? '' + row.itemCode : '',
 			quantity: row.quantity != null ? Number(row.quantity) : 1,
-			name:
-				cfg != null && cfg.name != null
-					? '' + cfg.name
-					: row.itemCode != null
-						? '' + row.itemCode
-						: '物品',
+			name: cfg != null && cfg.name != null ? '' + cfg.name : row.itemCode != null ? '' + row.itemCode : '物品',
 			itemType: type,
-			itemTypeLabel:
-				cfg != null && cfg.itemTypeLabel != null
-					? '' + cfg.itemTypeLabel
-					: type.length > 0
-						? type
-						: '其他',
-			sourceLabel:
-				row.sourceLabel != null
-					? '' + row.sourceLabel
-					: row.source != null
-						? '' + row.source
-						: '',
+			itemTypeLabel: cfg != null && cfg.itemTypeLabel != null ? '' + cfg.itemTypeLabel : type.length > 0 ? type : '其他',
+			sourceLabel: row.sourceLabel != null ? '' + row.sourceLabel : '',
 			icon:
 				cfg != null && cfg.itemTypeIcon != null
 					? '' + cfg.itemTypeIcon
@@ -230,53 +183,40 @@ export async function fetchInventory(itemType?: string): Promise<BagItem[]> {
 }
 
 /**
- * 装备栏详情：GET /rpg/loadout（含出战宠物）
+ * 装备栏详情：GET /rpg/loadout（Nest LoadoutDetailVo：titleCode + title / avatarFrame / pet）
  */
 export async function fetchLoadout(): Promise<BagLoadout> {
 	const res = await get('/rpg/loadout', null, { silent: true })
-	const title = res != null && res.title != null ? res.title : null
-	const frame = res != null && res.avatarFrame != null ? res.avatarFrame : null
-	const pet = res != null && res.pet != null ? res.pet : null
-	const petCfg = pet != null && pet.config != null ? pet.config : null
-	const petIdRaw =
-		pet != null && pet.id != null
-			? Number(pet.id)
-			: res != null && res.petId != null
-				? Number(res.petId)
-				: 0
+	if (res == null) {
+		return { titleCode: '', titleName: '', frameCode: '', frameName: '', petId: 0, petName: '' }
+	}
+	const title = res.title
+	const frame = res.avatarFrame
+	const pet = res.pet
+	const petCfg = pet != null ? pet.config : null
+	const petIdRaw = res.petId != null ? Number(res.petId) : 0
+	const nick = pet != null && pet.nickname != null ? '' + pet.nickname : ''
 	return {
-		titleCode:
-			title != null && title.code != null
-				? '' + title.code
-				: res != null && res.titleCode != null
-					? '' + res.titleCode
-					: '',
+		titleCode: res.titleCode != null ? '' + res.titleCode : '',
 		titleName: title != null && title.name != null ? '' + title.name : '',
-		frameCode:
-			frame != null && frame.code != null
-				? '' + frame.code
-				: res != null && res.avatarFrameCode != null
-					? '' + res.avatarFrameCode
-					: '',
+		frameCode: res.avatarFrameCode != null ? '' + res.avatarFrameCode : '',
 		frameName: frame != null && frame.name != null ? '' + frame.name : '',
 		petId: petIdRaw > 0 ? petIdRaw : 0,
 		petName:
-			pet != null && pet.nickname != null && ('' + pet.nickname).length > 0
-				? '' + pet.nickname
+			nick.length > 0
+				? nick
 				: petCfg != null && petCfg.name != null
 					? '' + petCfg.name
-					: pet != null && pet.petCode != null
-						? '' + pet.petCode
-						: '',
+					: '',
 	}
 }
 
 /**
- * 我的宠物：GET /rpg/pets
+ * 我的宠物：GET /rpg/pets（裸数组）
  */
 export async function fetchMyPets(): Promise<BagPet[]> {
 	const res = await get('/rpg/pets', null, { silent: true })
-	const arr = Array.isArray(res) ? res : res != null && res.list != null ? res.list : []
+	const arr = Array.isArray(res) ? res : []
 	const list: BagPet[] = []
 	for (let i = 0; i < arr.length; i++) {
 		const row = arr[i]

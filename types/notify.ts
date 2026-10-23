@@ -53,7 +53,7 @@ export type ArchiveArticle = {
 	timeLabel?: string
 }
 
-/** 归档月块（兼容旧 mock + 真实 year/data 展平） */
+/** 归档月块（由 archives year/data 展平） */
 export type ArchiveMonth = {
 	monthLabel: string
 	count: number

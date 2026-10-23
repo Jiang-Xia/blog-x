@@ -80,15 +80,14 @@
 <script setup lang="ts">
 /**
  * 首页 Tab 面板：对齐小卡原型 home
- * 数据来源：联调 article/list、category、未读、sign-info、my-quests；失败回落 mock
+ * 数据来源：联调 article/list、category、未读、sign-info、my-quests
  * 滚动：x-scroll-page(variant=tab) 下拉刷新 + 文章上滑加载更多
  */
-import { homeArticles, homeCategories, rpgQuestsSeed } from '../../mock/data'
 import type { ArticleSummary, CategoryChip } from '../../types/article'
+import type { RpgQuest } from '../../types/rpg'
 import { fetchArticleList, fetchCategories, type CategoryOption } from '../../api/modules/article'
 import { fetchUnreadCount } from '../../api/modules/notification'
 import { fetchMyQuests, fetchSignInfo } from '../../api/modules/rpg'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
@@ -127,17 +126,6 @@ const {
 } = useListScroll(10)
 
 /**
- * 将 mock 分类名转成 chip（无 id）
- */
-function mockCats(): CategoryChip[] {
-	const out: CategoryChip[] = []
-	for (let i = 0; i < homeCategories.length; i++) {
-		out.push({ id: '', label: homeCategories[i] })
-	}
-	return out
-}
-
-/**
  * 当前选中分类 UUID（空=全部）
  */
 function currentCatId(): string | undefined {
@@ -150,52 +138,59 @@ function currentCatId(): string | undefined {
  * 拉取一页文章
  */
 async function fetchArticlesPage(page: number): Promise<{ list: ArticleSummary[]; total: number }> {
-	return await apiOrMock(
-		async () => {
-			const res = await fetchArticleList({
-				page,
-				pageSize,
-				client: true,
-				category: currentCatId(),
-			})
-			return { list: res.list, total: res.total }
-		},
-		page == 1 ? { list: homeArticles, total: homeArticles.length } : { list: [], total: 0 },
-	)
+	try {
+		const res = await fetchArticleList({
+			page,
+			pageSize,
+			client: true,
+			category: currentCatId(),
+		})
+		return { list: res.list, total: res.total }
+	} catch (_) {
+		return { list: [], total: 0 }
+	}
 }
 
 /**
  * 拉取首页头区（分类/未读/签到/任务），不含文章分页
  */
 async function loadHomeMeta(): Promise<void> {
-	const cats = await apiOrMock(async () => {
+	try {
 		const rows = await fetchCategories()
 		const chips: CategoryChip[] = [{ id: '', label: '全部' }]
 		for (let i = 0; i < rows.length; i++) {
 			const r = rows[i] as CategoryOption
 			chips.push({ id: r.id, label: r.label })
 		}
-		return chips
-	}, mockCats())
-	categories.value = cats
+		categories.value = chips
+	} catch (_) {
+		categories.value = [{ id: '', label: '全部' }]
+	}
 
-	const unread = await apiOrMock(() => fetchUnreadCount(), store.notifyBadge.value)
-	store.notifyBadge.value = unread
-	unreadChip.value = '未读 ' + unread
+	try {
+		const unread = await fetchUnreadCount()
+		store.notifyBadge.value = unread
+		unreadChip.value = '未读 ' + unread
+	} catch (_) {
+		unreadChip.value = '未读 —'
+	}
 
-	const sign = await apiOrMock(
-		() => fetchSignInfo(),
-		{
-			signedToday: store.checkedInToday.value,
-			streakDays: store.streakDays.value,
-			totalSignDays: store.streakDays.value,
-			lastSignDate: '',
-		},
-	)
-	store.checkedInToday.value = sign.signedToday
-	if (sign.streakDays > 0) store.streakDays.value = sign.streakDays
+	let sign = {
+		signedToday: false,
+		streakDays: 0,
+		totalSignDays: 0,
+		lastSignDate: '',
+	}
+	try {
+		sign = await fetchSignInfo()
+		store.checkedInToday.value = sign.signedToday
+		if (sign.streakDays > 0) store.streakDays.value = sign.streakDays
+	} catch (_) {}
 
-	const quests = await apiOrMock(() => fetchMyQuests(), rpgQuestsSeed)
+	let quests = [] as RpgQuest[]
+	try {
+		quests = await fetchMyQuests()
+	} catch (_) {}
 	let done = 0
 	const total = quests.length
 	for (let i = 0; i < quests.length; i++) {

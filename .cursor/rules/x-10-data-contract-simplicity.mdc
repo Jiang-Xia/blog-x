@@ -1,0 +1,56 @@
+---
+description: blog-x 数据结构只对齐 blog-server / Nuxt，禁止多余兼容与侵入式 mock
+alwaysApply: true
+---
+
+# 数据契约简洁（强制）
+
+目标：**简洁、明了、准确**。页面与接口处理只认 **blog-server** 真实响应；字段形态与 **blog-home-nuxt** 同接口封装一致。
+
+## 唯一数据源
+
+| 对 | 不对 |
+|----|------|
+| blog-server 现行接口 `data` 形状 | 为 blog-server-go / 历史扁平体 / 臆测多形态写兼容 |
+| 对照 `blog-home-nuxt/api/*` 取字段 | 页面里再猜 `list` / `items` / 裸数组 |
+| adapter 做「字段 → UI 模型」的薄映射 | adapter/页面堆「A 或 B 或 C」兜底链 |
+
+不确定字段时：**先打开 Nuxt 同名 API / 类型**，再写映射；禁止静默加第三种形状。
+
+## 禁止的兼容写法
+
+```typescript
+// ❌ 多形态兜底（除非 blog-server 文档明确只有过渡期且 Nuxt 也如此）
+const arr = Array.isArray(res) ? res : res?.list ?? res?.items ?? []
+const payload = data.info != null ? data.info : data
+const replies = c.replys ?? c.replies
+
+// ✅ 只认与 Nuxt 相同的一种契约（示例：列表在 data.list）
+const arr = res.list
+const payload = data.info
+const replies = c.replys
+```
+
+- **禁止**为「可能旧接口 / 别的端」保留并行字段分支
+- **禁止**在页面/组件内二次解包或再兼容一层（解包只在 `api/request` + 对应 `modules`/`adapters`）
+- 展示文案只用后端 enrich 字段；禁止前端 dict/map 回显业务 code（见 `x-04`）
+
+## Mock：隔离、非侵入
+
+- Mock **只**放在 `api/mocks/`（或集中 `mock/` 数据文件），由 `USE_MOCK` + registry/`apis` 合并覆盖
+- **禁止**在页面/组件里大段 `if (USE_MOCK) { ... }` 改写业务路径（登录校验、提交、点赞等）
+- **禁止**为迁就 mock 把真实解析写成「接口或 mock 都能过」的宽松分支
+- 联调默认走真实接口；mock 形状必须 **抄真实 `data`**，不得另造字段名逼业务兼容
+- 已有 `apiOrMock`：仅作开发挡板，**新代码优先** registry mock；新增页面不要再铺开 `apiOrMock` + 本地 fallback 双轨
+
+## 适配层边界
+
+- `adapters/*`：Nest `data` → `types/*`，一行字段对一行；缺字段用空串/`0`/`false`，不猜别名
+- `modules/*`：URL、参数、调用 adapter；不在此堆兼容矩阵
+- 需要改契约时：**先对齐 blog-server + Nuxt**，再改 blog-x；不要只在 x 端「兼容过去」
+
+## 自检
+
+1. 去掉 mock 后，解析路径是否仍通、是否只依赖一种 `data` 形状？
+2. 与 Nuxt 同接口的取值是否同字段名？
+3. diff 里是否出现新的 `??` / `!= null ? A : B` 字段别名链？有则删到只留 Nuxt 那一支。

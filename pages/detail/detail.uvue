@@ -175,9 +175,8 @@
 /**
  * 文章详情：联调 info/views/related/comment + 赞藏 + 发表评论 + 钻石打赏
  * 展示：作者真实头像、封面/正文/标签、相关阅读横滑全标题、评论头像
- * 失败回落 mock；赏打开 tip-sheet（paid 带 amount）
+ * 失败留空；赏打开 tip-sheet（paid 带 amount）
  */
-import { articles, detailComments, relatedMinis } from '../../mock/data'
 import type { ArticleDetail, ArticleSummary } from '../../types/article'
 import {
 	fetchArticleInfo,
@@ -193,14 +192,6 @@ import {
 	toggleCollect,
 	toggleLike,
 } from '../../api/modules/interact'
-import { apiOrMock } from '../../composables/useApiOrMock'
-import { USE_MOCK } from '../../api/config'
-import {
-	isMockFaved,
-	isMockLiked,
-	toggleMockFav,
-	toggleMockLike,
-} from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
@@ -225,9 +216,32 @@ type CommentRow = {
 	replies: ReplyRow[]
 }
 
-const article = ref(articles[0] as ArticleDetail)
-const related = ref(relatedMinis as ArticleSummary[])
-const comments = ref(detailComments as CommentRow[])
+const emptyArticle: ArticleDetail = {
+	id: '',
+	title: '',
+	categoryName: '',
+	timeLabel: '',
+	likeCount: 0,
+	commentCount: 0,
+	coverUrl: '',
+	coverEmoji: '📄',
+	coverC1: '#d4cfc7',
+	coverC2: '#ebe6de',
+	authorUid: 0,
+	authorName: '',
+	authorAvatarUrl: '',
+	authorEmoji: '🙂',
+	readLabel: '',
+	aiSummary: '',
+	content: '',
+	contentHtml: '',
+	description: '',
+	tagLabels: [],
+}
+
+const article = ref(emptyArticle)
+const related = ref([] as ArticleSummary[])
+const comments = ref([] as CommentRow[])
 const tipOpen = ref(false)
 const liked = ref(false)
 const faved = ref(false)
@@ -277,7 +291,7 @@ function mapReplyRow(r: any): ReplyRow {
 
 /**
  * 将服务端评论列表映射为展示行
- * 头像取 userInfo.avatar；回复取后端 enrich 的 replys（兼容 replies）
+ * 头像取 userInfo.avatar；回复取后端 enrich 的 replys
  */
 function mapCommentRows(res: any): CommentRow[] {
 	const arr = res != null && res.list != null ? res.list : []
@@ -286,12 +300,7 @@ function mapCommentRows(res: any): CommentRow[] {
 		const c = arr[i]
 		if (c == null) continue
 		const u = c.userInfo
-		const rawReplies =
-			c.replys != null && Array.isArray(c.replys)
-				? c.replys
-				: c.replies != null && Array.isArray(c.replies)
-					? c.replies
-					: []
+		const rawReplies = c.replys != null && Array.isArray(c.replys) ? c.replys : []
 		const replies: ReplyRow[] = []
 		for (let j = 0; j < rawReplies.length; j++) {
 			replies.push(mapReplyRow(rawReplies[j]))
@@ -309,48 +318,41 @@ function mapCommentRows(res: any): CommentRow[] {
 }
 
 /**
- * 重新拉取评论列表（成功即用接口结果，含空列表；失败才回落 mock）
+ * 重新拉取评论列表
  */
 async function reloadComments(id: string): Promise<void> {
-	const cmt = await apiOrMock(async () => {
+	try {
 		const res = await fetchComments(id)
-		return mapCommentRows(res)
-	}, detailComments)
-	comments.value = cmt
+		comments.value = mapCommentRows(res)
+	} catch (_) {
+		comments.value = []
+	}
 }
 
 /**
  * 加载详情、相关、评论与赞藏状态
  */
 async function loadDetail(id: string): Promise<void> {
-	const mockArt = articles[0]
-	for (let i = 0; i < articles.length; i++) {
-		if (articles[i].id === id) {
-			article.value = articles[i]
-			break
-		}
-	}
-	const info = await apiOrMock(() => fetchArticleInfo(id), null as ArticleDetail | null)
-	if (info != null) {
-		article.value = info
-	} else if (article.value.id !== id) {
-		article.value = mockArt
-	}
+	try {
+		const info = await fetchArticleInfo(id)
+		if (info != null) article.value = info
+	} catch (_) {}
 	reportArticleViews(id).catch(() => {})
 
-	const rel = await apiOrMock(async () => {
-		return await fetchRelatedArticles(id, 12)
-	}, relatedMinis)
-	related.value = rel
+	try {
+		related.value = await fetchRelatedArticles(id, 12)
+	} catch (_) {
+		related.value = []
+	}
 
 	await reloadComments(id)
 
-	if (USE_MOCK) {
-		liked.value = isMockLiked(id)
-		faved.value = isMockFaved(id)
-	} else {
+	try {
 		liked.value = await checkLiked(id)
 		faved.value = await checkCollected(id)
+	} catch (_) {
+		liked.value = false
+		faved.value = false
 	}
 }
 
@@ -393,24 +395,9 @@ function focusCompose(): void {
 async function onSubmitComment(): Promise<void> {
 	const text = commentDraft.value.trim()
 	if (text.length == 0 || submitting.value) return
-	if (!USE_MOCK && !userStore.loggedIn) {
+	if (!userStore.loggedIn) {
 		showXToast('🔐', '请先登录', '')
 		uni.navigateTo({ url: '/pages/login/login' })
-		return
-	}
-	if (USE_MOCK) {
-		comments.value = [
-			{
-				avatarUrl: '',
-				emoji: '🦊',
-				name: '我',
-				tag: '',
-				text: text,
-				replies: [] as ReplyRow[],
-			},
-		].concat(comments.value)
-		commentDraft.value = ''
-		showXToast('💬', '已评论', 'mock')
 		return
 	}
 	submitting.value = true
@@ -434,11 +421,6 @@ async function onSubmitComment(): Promise<void> {
  * 点赞：联调 POST /like
  */
 async function onLike(): Promise<void> {
-	if (USE_MOCK) {
-		liked.value = toggleMockLike(articleId.value)
-		showXToast(liked.value ? '❤️' : '🤍', liked.value ? '已点赞' : '取消点赞', '')
-		return
-	}
 	try {
 		await toggleLike(articleId.value)
 		liked.value = await checkLiked(articleId.value)
@@ -450,11 +432,6 @@ async function onLike(): Promise<void> {
  * 收藏：联调 POST /collect
  */
 async function onFav(): Promise<void> {
-	if (USE_MOCK) {
-		faved.value = toggleMockFav(articleId.value)
-		showXToast(faved.value ? '⭐' : '☆', faved.value ? '已收藏' : '取消收藏', '')
-		return
-	}
 	try {
 		await toggleCollect(articleId.value)
 		faved.value = await checkCollected(articleId.value)
@@ -466,7 +443,6 @@ async function onFav(): Promise<void> {
  * tip-sheet 钻石打赏：联调 POST /rpg/article/tip
  */
 async function onTipPaid(amount: number): Promise<void> {
-	if (USE_MOCK) return
 	const idNum = parseInt(articleId.value, 10)
 	if (isNaN(idNum)) return
 	const tipAmount = amount > 0 ? amount : 1

@@ -52,10 +52,8 @@
  * 排行榜：联调 GET /rpg/leaderboard；头像用接口 avatar 字段
  * 滚动：接口一次返回 TopN，仅下拉刷新 + 纵向滚动
  */
-import { rankRows } from '../../mock/data'
 import type { RankRow } from '../../types/rpg'
 import { fetchLeaderboard } from '../../api/modules/rpg'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
 
 const segs = ['本周经验', '钻石', '连续签到']
@@ -88,7 +86,11 @@ function setSeg(i: number): void {
 async function onRefresh(): Promise<void> {
 	beginRefresh()
 	const type = types[segIndex.value]
-	rows.value = await apiOrMock(() => fetchLeaderboard(type, 20, 'week'), rankRows)
+	try {
+		rows.value = await fetchLeaderboard(type, 20, 'week')
+	} catch (_) {
+		rows.value = []
+	}
 	endRefresh(rows.value.length, rows.value.length, rows.value.length)
 }
 

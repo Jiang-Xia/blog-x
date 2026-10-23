@@ -36,19 +36,16 @@
  * 幸运抽奖：联调 pool + draw；UI 轮转后 toast 服务端结果
  * 滚动：x-scroll-page 下拉刷新奖池
  */
-import { lotteryCells } from '../../mock/data'
 import type { LotteryCell } from '../../types/rpg'
 import { fetchLotteryPool, lotteryDraw } from '../../api/modules/rpg'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-import { USE_MOCK } from '../../api/config'
 import { showXToast } from '../../utils/toast'
 
 /** 外围 8 格顺序（跳过中心 index 4） */
 const ringOrder = [0, 1, 2, 5, 8, 7, 6, 3]
 const hiIndex = ref(-1)
 const spinning = ref(false)
-const pool = ref(lotteryCells as LotteryCell[])
+const pool = ref([] as LotteryCell[])
 const recentLabel = ref('宠物蛋 · 钻石+10')
 
 const {
@@ -67,7 +64,11 @@ const {
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
-	pool.value = await apiOrMock(() => fetchLotteryPool(), lotteryCells)
+	try {
+		pool.value = await fetchLotteryPool()
+	} catch (_) {
+		pool.value = []
+	}
 	endRefresh(1, 1, 1)
 }
 
@@ -121,23 +122,17 @@ async function spinLottery(): Promise<void> {
 	spinning.value = true
 	let winLabel = ''
 	let winEmoji = '✨'
-	if (!USE_MOCK) {
-		try {
-			const res = await lotteryDraw(1, 'ticket')
-			const first =
-				res != null && res.rewards != null && res.rewards.length > 0
-					? res.rewards[0]
-					: res != null && res.list != null && res.list.length > 0
-						? res.list[0]
-						: res
-			if (first != null) {
-				winLabel = first.name != null ? '' + first.name : first.label != null ? '' + first.label : '奖品'
-				winEmoji = first.icon != null ? '' + first.icon : first.emoji != null ? '' + first.emoji : '✨'
-			}
-		} catch (_) {
-			spinning.value = false
-			return
+	try {
+		const res = await lotteryDraw(1, 'ticket')
+		const first =
+			res != null && res.rewards != null && res.rewards.length > 0 ? res.rewards[0] : null
+		if (first != null) {
+			winLabel = first.name != null ? '' + first.name : ''
+			winEmoji = first.icon != null ? '' + first.icon : '✨'
 		}
+	} catch (_) {
+		spinning.value = false
+		return
 	}
 	let step = 0
 	const total = 16 + Math.floor(Math.random() * 8)
@@ -151,10 +146,6 @@ async function spinLottery(): Promise<void> {
 			const winRing = ringOrder[(step - 1) % ringOrder.length]
 			const prizePos = ringOrder.indexOf(winRing)
 			const prize = cells[prizePos]
-			if (USE_MOCK && prize != null) {
-				winEmoji = prize.emoji
-				winLabel = prize.label
-			}
 			if (winLabel.length == 0 && prize != null) {
 				winEmoji = prize.emoji
 				winLabel = prize.label

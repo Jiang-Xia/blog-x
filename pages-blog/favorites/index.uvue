@@ -45,10 +45,8 @@
  */
 import type { ArticleSummary } from '../../types/article'
 import { fetchCollectList } from '../../api/modules/interact'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
 import { goTab, TAB_HOME } from '../../utils/tabNav'
-import { showXToast } from '../../utils/toast'
 
 const list = ref([] as ArticleSummary[])
 const {
@@ -71,9 +69,8 @@ const {
  */
 async function fetchPage(page: number): Promise<ArticleSummary[]> {
 	try {
-		return await apiOrMock(() => fetchCollectList(page, pageSize), [])
+		return await fetchCollectList(page, pageSize)
 	} catch (_) {
-		showXToast('⚠️', '加载失败', '请确认已登录')
 		return []
 	}
 }

@@ -53,16 +53,9 @@
  * 归档页：联调 GET /article/archives（年→英文月→文章列表）
  * 滚动：整树一次返回，仅下拉刷新 + 纵向滚动
  */
-import { archiveMonths } from '../../mock/data'
 import type { ArchiveYear } from '../../types/notify'
 import { fetchArchives } from '../../api/modules/article'
-import { apiOrMock } from '../../composables/useApiOrMock'
 import { useListScroll } from '../../composables/useListScroll'
-
-/** mock 回落：包一层假年份 */
-function mockYears(): ArchiveYear[] {
-	return [{ year: '2026', months: archiveMonths }]
-}
 
 const years = ref([] as ArchiveYear[])
 const {
@@ -89,7 +82,11 @@ function barWidth(count: number): string {
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
-	years.value = await apiOrMock(() => fetchArchives(), mockYears())
+	try {
+		years.value = await fetchArchives()
+	} catch (_) {
+		years.value = []
+	}
 	endRefresh(years.value.length, years.value.length, years.value.length)
 }
 

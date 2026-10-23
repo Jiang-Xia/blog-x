@@ -39,25 +39,23 @@ export function toggleCollect(articleId: string | number): Promise<any> {
 export async function checkCollected(articleId: string | number): Promise<boolean> {
 	try {
 		const res = await get('/collect/check', { articleId: '' + articleId }, { silent: true })
-		return res != null && (res.collected === true || res.isCollect === true)
+		return res != null && res.collected === true
 	} catch (_) {
 		return false
 	}
 }
 
 /**
- * 我的收藏列表
+ * 我的收藏列表（Nest：{ list, pagination }，行内 article）
  */
 export async function fetchCollectList(page = 1, pageSize = 20): Promise<ArticleSummary[]> {
 	const res = await get('/collect/list', { page, pageSize })
-	const arr = res != null && res.list != null ? res.list : Array.isArray(res) ? res : []
+	const arr = res != null && res.list != null ? res.list : []
 	const list: ArticleSummary[] = []
 	for (let i = 0; i < arr.length; i++) {
 		const row = arr[i]
-		if (row == null) continue
-		const item = row.article != null ? row.article : row
-		if (item == null || item.id == null) continue
-		const mapped = mapArticleSummary(item)
+		if (row == null || row.article == null) continue
+		const mapped = mapArticleSummary(row.article)
 		if (mapped.id.length == 0 || mapped.title.length == 0) continue
 		list.push(mapped)
 	}

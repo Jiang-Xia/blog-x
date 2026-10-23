@@ -58,17 +58,15 @@ export async function fetchAuditHits(
 		params.status = query.status
 	}
 	const res = await get('/sensitive-word/hit', params)
-	const arr = res != null && Array.isArray(res.list) ? res.list : []
+	const arr = res != null && res.list != null ? res.list : []
 	const list: AuditHit[] = []
 	for (let i = 0; i < arr.length; i++) {
 		list.push(mapHit(arr[i]))
 	}
-	let total = list.length
-	if (res != null && res.pagination != null && res.pagination.total != null) {
-		total = Number(res.pagination.total)
-	} else if (res != null && res.total != null) {
-		total = Number(res.total)
-	}
+	const total =
+		res != null && res.pagination != null && res.pagination.total != null
+			? Number(res.pagination.total)
+			: 0
 	return { list, total }
 }
 
