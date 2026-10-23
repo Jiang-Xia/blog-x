@@ -14,7 +14,10 @@
 		>
 			<view class="x-card bal-card">
 				<text class="bal-label">当前钻石</text>
-				<text class="bal-n">💎 {{ diamonds }}</text>
+				<view class="bal-n-row">
+					<x-icon name="diamond" :size="22" color="#1c1a17"></x-icon>
+					<text class="bal-n">{{ diamonds }}</text>
+				</view>
 			</view>
 			<view class="pack">
 				<view
@@ -108,7 +111,7 @@ function selectSku(id: string): void {
 function pollRecharge(outTradeNo: string, left: number): void {
 	if (left <= 0) {
 		paying.value = false
-		showXToast('⏳', '支付处理中', '请稍后在冒险中心查看钻石')
+		showXToast('hourglass', '支付处理中', '请稍后在冒险中心查看钻石')
 		return
 	}
 	getRpgRechargeStatus(outTradeNo)
@@ -122,7 +125,7 @@ function pollRecharge(outTradeNo: string, left: number): void {
 					const hero = await fetchRpgHero()
 					store.diamonds.value = hero.diamonds
 				} catch (_) {}
-				showXToast('💎', '充值成功', '')
+				showXToast('diamond', '充值成功', '')
 				return
 			}
 			setTimeout(() => {
@@ -153,10 +156,10 @@ async function onPay(): Promise<void> {
 					: ''
 		if (outTradeNo.length == 0) {
 			paying.value = false
-			showXToast('⚠️', '下单失败', '')
+			showXToast('alert-triangle', '下单失败', '')
 			return
 		}
-		showXToast('💳', '请完成支付', '正在确认到账…')
+		showXToast('credit-card', '请完成支付', '正在确认到账…')
 		pollRecharge(outTradeNo, 15)
 	} catch (_) {
 		paying.value = false
@@ -178,10 +181,16 @@ async function onPay(): Promise<void> {
 	margin-bottom: 6px;
 }
 
+.bal-n-row {
+	flex-direction: row;
+	align-items: center;
+}
+
 .bal-n {
 	font-size: 22px;
 	font-weight: 700;
 	color: #1c1a17;
+	margin-left: 6px;
 }
 
 .pack {

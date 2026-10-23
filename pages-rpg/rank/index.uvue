@@ -35,7 +35,7 @@
 						:src="row.avatarUrl"
 						mode="aspectFill"
 					></image>
-					<text v-else class="em">{{ row.emoji }}</text>
+					<x-icon v-else :name="row.icon" :size="20" color="#1c1a17"></x-icon>
 				</view>
 				<view class="body">
 					<text class="name">{{ row.name }}{{ row.isMe ? '（我）' : '' }}</text>

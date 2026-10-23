@@ -34,7 +34,8 @@ export type RpgQuest = {
 /** 抽奖格 */
 export type LotteryCell = {
 	index: number
-	emoji: string
+	/** Tabler 图标名（奖品展示；游戏资产图另走 static/images/rpg） */
+	icon: string
 	label: string
 }
 
@@ -51,8 +52,9 @@ export type RechargeSku = {
 export type RankRow = {
 	rank: number
 	name: string
-	emoji: string
-	/** 真实头像完整 URL（优先于 emoji） */
+	/** 无头像时的 Tabler 图标名 */
+	icon: string
+	/** 真实头像完整 URL（优先于 icon） */
 	avatarUrl?: string
 	level: number
 	score: number

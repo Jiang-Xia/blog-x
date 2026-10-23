@@ -4,7 +4,8 @@
 
 export type NotifyItem = {
 	id: string
-	emoji: string
+	/** Tabler 图标名 */
+	icon: string
 	title: string
 	desc: string
 	/** 分段过滤：comment | like | system（由 type 归类，见 mapNotifySegKind） */

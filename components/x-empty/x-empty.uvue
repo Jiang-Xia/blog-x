@@ -1,7 +1,9 @@
 <template>
-	<!-- 空状态：大表情 + 文案 + 可选操作按钮 -->
+	<!-- 空状态：x-icon + 文案 + 可选操作按钮 -->
 	<view class="x-empty">
-		<text class="x-empty-em">{{ emoji }}</text>
+		<view class="x-empty-ico">
+			<x-icon :name="icon" :size="40" color="#9a948a"></x-icon>
+		</view>
 		<text class="x-empty-text">{{ text }}</text>
 		<view v-if="actionText.length > 0" class="x-empty-btn" @click="onAction">
 			<text class="x-empty-btn-text">{{ actionText }}</text>
@@ -14,7 +16,8 @@
  * 空状态展示组件
  */
 defineProps({
-	emoji: { type: String, default: '📭' },
+	/** Tabler 图标名 */
+	icon: { type: String, default: 'mailbox' },
 	text: { type: String, default: '暂无内容' },
 	actionText: { type: String, default: '' },
 })
@@ -35,10 +38,10 @@ function onAction(): void {
 	padding: 48px 12px;
 }
 
-.x-empty-em {
-	font-size: 40px;
+.x-empty-ico {
 	margin-bottom: 10px;
-	text-align: center;
+	align-items: center;
+	justify-content: center;
 }
 
 .x-empty-text {

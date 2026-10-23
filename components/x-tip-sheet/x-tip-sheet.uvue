@@ -52,10 +52,10 @@ const props = defineProps({
 const emit = defineEmits(['close', 'paid'])
 
 const tipDiamondSkus = [
-	{ id: '1', amount: 1, label: '💎 1', desc: '鼓励一下' },
-	{ id: '5', amount: 5, label: '💎 5', desc: '加油' },
-	{ id: '10', amount: 10, label: '💎 10', desc: '送花' },
-	{ id: '50', amount: 50, label: '💎 50', desc: '砸蛋礼' },
+	{ id: '1', amount: 1, label: '1 钻', desc: '鼓励一下' },
+	{ id: '5', amount: 5, label: '5 钻', desc: '加油' },
+	{ id: '10', amount: 10, label: '10 钻', desc: '送花' },
+	{ id: '50', amount: 50, label: '50 钻', desc: '砸蛋礼' },
 ]
 
 const tipSiteSkus = [
@@ -148,7 +148,7 @@ function findSelected(): SkuRow | null {
 function pollSiteTip(outTradeNo: string, left: number): void {
 	if (left <= 0) {
 		paying.value = false
-		showXToast('⏳', '支付处理中', '稍后可在关于页流水查看')
+		showXToast('hourglass', '支付处理中', '稍后可在关于页流水查看')
 		emit('close')
 		return
 	}
@@ -157,13 +157,13 @@ function pollSiteTip(outTradeNo: string, left: number): void {
 			const status = res != null && res.status != null ? '' + res.status : ''
 			if (status == 'PAID' || status == 'paid') {
 				paying.value = false
-				showXToast('☕', '赞赏成功', '感谢支持')
+				showXToast('coffee', '赞赏成功', '感谢支持')
 				emit('close')
 				return
 			}
 			if (status.length > 0 && status != 'PENDING' && status != 'pending') {
 				paying.value = false
-				showXToast('❌', '支付未完成', status)
+				showXToast('circle-x', '支付未完成', status)
 				return
 			}
 			setTimeout(() => {
@@ -214,7 +214,7 @@ async function onPay(): Promise<void> {
 					: ''
 		if (outTradeNo.length == 0) {
 			paying.value = false
-			showXToast('❌', '下单失败', '')
+			showXToast('circle-x', '下单失败', '')
 			return
 		}
 		if (link.length > 0) {
@@ -222,7 +222,7 @@ async function onPay(): Promise<void> {
 			uni.setClipboardData({
 				data: link,
 				success: () => {
-					showXToast('📋', '支付链接已复制', '请在浏览器打开完成支付')
+					showXToast('clipboard', '支付链接已复制', '请在浏览器打开完成支付')
 				},
 			})
 		}

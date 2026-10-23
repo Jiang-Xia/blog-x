@@ -3,7 +3,12 @@
  * 须在使用方 <style> 中 @import：App.uvue（页面）+ 各组件（styleIsolation v2 不继承 App）
  */
 
-/* Tabler Icons 字体（x-icon 组件依赖；双声明去重由各端自动处理） */
+/*
+ * Tabler Icons 字体（x-icon 依赖）
+ * 微信小程序：WXSS 不支持本地字体，见 utils/load-tabler-fonts.ts（loadFontFace + HTTPS）
+ * App / Web：本地 /static/fonts
+ */
+/* #ifndef MP-WEIXIN */
 @font-face {
 	font-family: 'tabler-icons';
 	src: url('/static/fonts/tabler-icons.ttf');
@@ -13,6 +18,7 @@
 	font-family: 'tabler-icons-filled';
 	src: url('/static/fonts/tabler-icons-filled.ttf');
 }
+/* #endif */
 
 .uni-row {
 	flex-direction: row;
@@ -175,8 +181,9 @@
 }
 
 .x-tile-ico {
-	font-size: 22px;
 	margin-bottom: 6px;
+	align-items: center;
+	justify-content: center;
 }
 
 .x-tile-title {

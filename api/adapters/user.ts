@@ -11,21 +11,24 @@ import type {
 } from '../../types/notify'
 import { resolveStaticUrl } from '../../utils/static-url'
 
-/**
- * /user/info → UserProfile
- */
-export function mapUserProfile(raw: any, extras: Record<string, number> = {}): UserProfile {
-	const idRaw = raw != null && raw.id != null ? Number(raw.id) : 0
-	return {
-		id: isNaN(idRaw) ? 0 : idRaw,
-		nickname: raw != null && raw.nickname != null ? '' + raw.nickname : '游客',
-		avatarEmoji: '🦊',
-		bio: raw != null && raw.intro != null ? '' + raw.intro : '',
-		articleCount: extras.articleCount != null ? extras.articleCount : 0,
-		favoriteCount: extras.favoriteCount != null ? extras.favoriteCount : 0,
-		likeReceived: extras.likeReceived != null ? extras.likeReceived : 0,
+	/**
+	 * /user/info → UserProfile（头像取 avatar，简介取 intro；勿本地 dict 回显）
+	 */
+	export function mapUserProfile(raw: any, extras: Record<string, number> = {}): UserProfile {
+		const idRaw = raw != null && raw.id != null ? Number(raw.id) : 0
+		const avatarRaw =
+			raw != null && raw.avatar != null ? ('' + raw.avatar).trim() : ''
+		return {
+			id: isNaN(idRaw) ? 0 : idRaw,
+			nickname: raw != null && raw.nickname != null ? '' + raw.nickname : '游客',
+			avatarUrl: avatarRaw.length > 0 ? resolveStaticUrl(avatarRaw) : '',
+			avatarIcon: 'paw',
+			bio: raw != null && raw.intro != null ? '' + raw.intro : '',
+			articleCount: extras.articleCount != null ? extras.articleCount : 0,
+			favoriteCount: extras.favoriteCount != null ? extras.favoriteCount : 0,
+			likeReceived: extras.likeReceived != null ? extras.likeReceived : 0,
+		}
 	}
-}
 
 /**
  * 公开 RPG → PublicRpgCard
@@ -95,11 +98,11 @@ export function mapNotifyItems(raw: any): NotifyItem[] {
 		const n = arr[i]
 		const type = n.type != null ? '' + n.type : 'system'
 		const payload = n.payload != null ? n.payload : null
-		const emoji =
-			type.indexOf('comment') >= 0 ? '💬' : type.indexOf('like') >= 0 ? '❤️' : '🔔'
+		const icon =
+			type.indexOf('comment') >= 0 ? 'message' : type.indexOf('like') >= 0 ? 'heart' : 'bell'
 		list.push({
 			id: n.id != null ? '' + n.id : '' + i,
-			emoji,
+			icon,
 			title:
 				n.title != null && ('' + n.title).length > 0
 					? '' + n.title

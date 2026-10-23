@@ -9,7 +9,7 @@
 <script setup lang="ts">
 /**
  * Tabler 字体图标组件（easycom：x-icon）
- * 跨端一致性：字体随包分发，Android / iOS / 鸿蒙 / Web 渲染完全一致，可任意换色缩放
+ * App/Web：styles/x-base.css @font-face 本地字体；微信小程序：App.onLaunch → load-tabler-fonts
  */
 import type { IconGlyph } from './icons'
 import { ICON_OUTLINE, ICON_FILLED } from './icons'

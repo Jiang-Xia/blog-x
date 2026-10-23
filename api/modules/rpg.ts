@@ -175,7 +175,7 @@ export async function fetchInventory(itemType?: string): Promise<BagItem[]> {
 					? '' + cfg.itemTypeIcon
 					: cfg != null && cfg.icon != null
 						? '' + cfg.icon
-						: '🎁',
+						: 'gift',
 			equippable,
 		})
 	}
@@ -239,7 +239,7 @@ export async function fetchMyPets(): Promise<BagPet[]> {
 					? '' + cfg.itemTypeIcon
 					: cfg != null && cfg.icon != null
 						? '' + cfg.icon
-						: '🐾',
+						: 'paw',
 		})
 	}
 	return list

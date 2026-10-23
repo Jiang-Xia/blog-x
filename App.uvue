@@ -1,15 +1,19 @@
 <script setup lang="ts">
 	/**
 	 * 应用生命周期：冷启动有缓存 token 时走 Pinia 自动登录
+	 * 微信小程序：onLaunch 加载 Tabler 字体（WXSS 不支持本地 @font-face）
 	 */
 	import { useUserStore } from './store/user'
 	import { onAuthCleared } from './utils/auth-events'
+	import { loadTablerFonts } from './utils/load-tabler-fonts'
 
 	// #ifdef APP-ANDROID || APP-HARMONY
 	let firstBackTime = 0
 	// #endif
 
 	onLaunch(() => {
+		// 小程序须在 App.onLaunch 调 loadFontFace 且 global:true，图标才全局可见
+		loadTablerFonts()
 		const userStore = useUserStore()
 		// request 层 clearToken（401）时同步 Pinia，避免 UI 仍显示已登录
 		onAuthCleared(() => {

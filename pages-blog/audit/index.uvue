@@ -227,7 +227,7 @@ async function doApprove(item: AuditHit): Promise<void> {
 	acting.value = true
 	try {
 		await approveAuditHit(item.id)
-		showXToast('✅', '已通过', '')
+		showXToast('circle-check', '已通过', '')
 		await onRefresh()
 	} catch (_) {
 	} finally {
@@ -242,7 +242,7 @@ async function doReject(item: AuditHit): Promise<void> {
 	acting.value = true
 	try {
 		await rejectAuditHit(item.id)
-		showXToast('❌', '已驳回', '')
+		showXToast('circle-x', '已驳回', '')
 		await onRefresh()
 	} catch (_) {
 	} finally {

@@ -125,7 +125,7 @@ onMounted(() => {
  */
 function onReply(item: InboxItem): void {
 	if (!userStore.loggedIn) {
-		showXToast('🔐', '请先登录', '')
+		showXToast('lock', '请先登录', '')
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
 	}
@@ -160,9 +160,9 @@ async function onSubmitReply(): Promise<void> {
 		const res = await addReply({ parentId, content: text, replyUid })
 		const status = res != null && res.status != null ? '' + res.status : ''
 		if (status == 'pending') {
-			showXToast('⏳', '已提交', '待审核后展示')
+			showXToast('hourglass', '已提交', '待审核后展示')
 		} else {
-			showXToast('↩️', '回复成功', '')
+			showXToast('arrow-back', '回复成功', '')
 		}
 		cancelReply()
 	} catch (_) {

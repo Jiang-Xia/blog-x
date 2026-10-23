@@ -15,7 +15,9 @@
 		<text class="x-page-title">发现</text>
 
 		<view class="search-bar" @click="goSearch">
-			<text class="search-ico">⌕</text>
+			<view class="search-ico">
+				<x-icon name="search" :size="14" color="#9a948a"></x-icon>
+			</view>
 			<text class="search-ph">搜索文章、标签、作者</text>
 		</view>
 
@@ -29,28 +31,28 @@
 		<view class="x-grid-2">
 			<view class="x-grid-2-item">
 				<view class="x-tile" @click="goArchive">
-					<text class="x-tile-ico">📚</text>
+					<view class="x-tile-ico"><x-icon name="books" :size="22" color="#1c1a17"></x-icon></view>
 					<text class="x-tile-title">归档</text>
 					<text class="x-tile-desc">按月浏览</text>
 				</view>
 			</view>
 			<view class="x-grid-2-item">
 				<view class="x-tile" @click="goTags">
-					<text class="x-tile-ico">🏷️</text>
+					<view class="x-tile-ico"><x-icon name="tag" :size="22" color="#1c1a17"></x-icon></view>
 					<text class="x-tile-title">标签墙</text>
 					<text class="x-tile-desc">全部标签</text>
 				</view>
 			</view>
 			<view class="x-grid-2-item">
 				<view class="x-tile" @click="goGuestbook">
-					<text class="x-tile-ico">💬</text>
+					<view class="x-tile-ico"><x-icon name="message" :size="22" color="#1c1a17"></x-icon></view>
 					<text class="x-tile-title">留言板</text>
 					<text class="x-tile-desc">访客留言</text>
 				</view>
 			</view>
 			<view class="x-grid-2-item">
 				<view class="x-tile" @click="goLinks">
-					<text class="x-tile-ico">🔗</text>
+					<view class="x-tile-ico"><x-icon name="link" :size="22" color="#1c1a17"></x-icon></view>
 					<text class="x-tile-title">友链</text>
 					<text class="x-tile-desc">友情链接</text>
 				</view>
@@ -66,7 +68,7 @@
 			:category-name="hot.categoryName"
 			:time-label="hot.timeLabel"
 			:cover-url="hot.coverUrl"
-			:cover-emoji="hot.coverEmoji"
+			:cover-icon="hot.coverIcon"
 			:cover-c1="hot.coverC1"
 			:like-count="hot.likeCount"
 			:comment-count="hot.commentCount"
@@ -96,7 +98,7 @@ const emptyHot: ArticleSummary = {
 	likeCount: 0,
 	commentCount: 0,
 	coverUrl: '',
-	coverEmoji: '🔥',
+	coverIcon: 'flame',
 	coverC1: '#e8a87c',
 	coverC2: '#f4d4a8',
 	hotLabel: '',
@@ -119,8 +121,8 @@ const {
 /** 热门卡副文案 */
 const hotStatLine = computed((): string => {
 	const h = hot.value.hotLabel
-	if (h != null && h.length > 0) return h + ' · 💭'
-	return '热门 · 💭'
+	if (h != null && h.length > 0) return h
+	return '热门'
 })
 
 /**
@@ -220,9 +222,9 @@ function goDetail(id: string): void {
 }
 
 .search-ico {
-	font-size: 14px;
-	color: #9a948a;
 	margin-right: 8px;
+	align-items: center;
+	justify-content: center;
 }
 
 .search-ph {

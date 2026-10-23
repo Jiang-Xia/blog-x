@@ -23,25 +23,53 @@
 		<uni-tab-bar class="blur-tab-list" :style="tabBarStyle">
 			<uni-tab-item class="blur-tab-item">
 				<view :class="activeIndex == 0 ? 'tab-inner tab-inner-on' : 'tab-inner'">
-					<text :class="activeIndex == 0 ? 'ti ti-on' : 'ti'">⌂</text>
+					<view class="ti-wrap">
+						<x-icon
+							name="home"
+							:size="17"
+							:filled="activeIndex == 0"
+							:color="activeIndex == 0 ? '#2a8f76' : '#9a948a'"
+						></x-icon>
+					</view>
 					<text :class="activeIndex == 0 ? 'tl tl-on' : 'tl'">首页</text>
 				</view>
 			</uni-tab-item>
 			<uni-tab-item class="blur-tab-item">
 				<view :class="activeIndex == 1 ? 'tab-inner tab-inner-on' : 'tab-inner'">
-					<text :class="activeIndex == 1 ? 'ti ti-on' : 'ti'">◎</text>
+					<view class="ti-wrap">
+						<x-icon
+							name="compass"
+							:size="17"
+							:filled="activeIndex == 1"
+							:color="activeIndex == 1 ? '#2a8f76' : '#9a948a'"
+						></x-icon>
+					</view>
 					<text :class="activeIndex == 1 ? 'tl tl-on' : 'tl'">发现</text>
 				</view>
 			</uni-tab-item>
 			<uni-tab-item class="blur-tab-item">
 				<view :class="activeIndex == 2 ? 'tab-inner tab-inner-on' : 'tab-inner'">
-					<text :class="activeIndex == 2 ? 'ti ti-on' : 'ti'">✦</text>
+					<view class="ti-wrap">
+						<x-icon
+							name="sword"
+							:size="17"
+							:filled="activeIndex == 2"
+							:color="activeIndex == 2 ? '#2a8f76' : '#9a948a'"
+						></x-icon>
+					</view>
 					<text :class="activeIndex == 2 ? 'tl tl-on' : 'tl'">冒险</text>
 				</view>
 			</uni-tab-item>
 			<uni-tab-item class="blur-tab-item">
 				<view :class="activeIndex == 3 ? 'tab-inner tab-inner-on' : 'tab-inner'">
-					<text :class="activeIndex == 3 ? 'ti ti-on' : 'ti'">☺</text>
+					<view class="ti-wrap">
+						<x-icon
+							name="user"
+							:size="17"
+							:filled="activeIndex == 3"
+							:color="activeIndex == 3 ? '#2a8f76' : '#9a948a'"
+						></x-icon>
+					</view>
 					<text :class="activeIndex == 3 ? 'tl tl-on' : 'tl'">我的</text>
 				</view>
 			</uni-tab-item>
@@ -52,7 +80,7 @@
 <script setup lang="ts">
 /**
  * 主壳页：自定义 tab-bar-blur（半透明毛玻璃）承载四 Tab
- * 图标与文案对齐原型 ⌂/◎/✦/☺；切 Tab 用 utils/tabNav.goTab，勿用 switchTab
+ * 底栏图标用 x-icon（home/compass/sword/user）；切 Tab 用 utils/tabNav.goTab，勿用 switchTab
  */
 import { useUserStore } from '../../store/user'
 import { tabActiveIndex, TAB_HOME, TAB_ME } from '../../utils/tabNav'
@@ -182,21 +210,16 @@ onShow(() => {
 	background-color: rgba(61, 184, 154, 0.12);
 }
 
-.ti {
-	font-size: 17px;
-	line-height: 1;
-	color: #9a948a;
+.ti-wrap {
 	margin-bottom: 2px;
+	align-items: center;
+	justify-content: center;
 }
 
 .tl {
 	font-size: 10px;
 	font-weight: 600;
 	color: #9a948a;
-}
-
-.ti-on {
-	color: #2a8f76;
 }
 
 .tl-on {

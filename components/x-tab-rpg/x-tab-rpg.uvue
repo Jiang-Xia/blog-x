@@ -24,15 +24,25 @@
 					<view class="bar-i" :style="{ width: hero.expBarPercent + '%' }"></view>
 				</view>
 				<view class="bal-row">
-					<text class="bal">💎 {{ diamonds }}</text>
-					<text class="bal">🪙 {{ hero.coins }}</text>
-					<text class="bal">抽奖券 ×{{ hero.lotteryTickets }}</text>
+					<view class="bal">
+						<x-icon name="diamond" :size="14" color="#ffffff"></x-icon>
+						<text class="bal-t">{{ diamonds }}</text>
+					</view>
+					<view class="bal">
+						<x-icon name="coin" :size="14" color="#ffffff"></x-icon>
+						<text class="bal-t">{{ hero.coins }}</text>
+					</view>
+					<text class="bal-t">抽奖券 ×{{ hero.lotteryTickets }}</text>
 				</view>
 			</view>
 
 			<view class="x-card quest">
 				<view :class="checkedInToday ? 'q-icon done' : 'q-icon'">
-					<text>{{ checkedInToday ? '✅' : '☀️' }}</text>
+					<x-icon
+						:name="checkedInToday ? 'circle-check' : 'sun'"
+						:size="18"
+						:color="checkedInToday ? '#2a8f76' : '#1c1a17'"
+					></x-icon>
 				</view>
 				<view class="q-body">
 					<text class="q-title">每日签到</text>
@@ -49,7 +59,11 @@
 			<!-- 签到任务已有独立卡片，列表排除 kind=checkin -->
 			<view v-for="q in displayQuests" :key="q.id" class="x-card quest">
 				<view :class="q.done ? 'q-icon done' : 'q-icon peach'">
-					<text>{{ q.done ? '✅' : q.icon }}</text>
+					<x-icon
+						:name="q.done ? 'circle-check' : q.icon"
+						:size="18"
+						:color="q.done ? '#2a8f76' : '#1c1a17'"
+					></x-icon>
 				</view>
 				<view class="q-body">
 					<text class="q-title">{{ q.title }}</text>
@@ -69,28 +83,28 @@
 			<view class="x-grid-2">
 				<view class="x-grid-2-item">
 					<view class="x-tile" @click="goLottery">
-						<text class="x-tile-ico">🎰</text>
+						<view class="x-tile-ico"><x-icon name="dice" :size="22" color="#1c1a17"></x-icon></view>
 						<text class="x-tile-title">幸运抽奖</text>
 						<text class="x-tile-desc">消耗抽奖券</text>
 					</view>
 				</view>
 				<view class="x-grid-2-item">
 					<view class="x-tile" @click="goRank">
-						<text class="x-tile-ico">🏆</text>
+						<view class="x-tile-ico"><x-icon name="trophy" :size="22" color="#1c1a17"></x-icon></view>
 						<text class="x-tile-title">排行榜</text>
 						<text class="x-tile-desc">本周经验</text>
 					</view>
 				</view>
 				<view class="x-grid-2-item">
 					<view class="x-tile" @click="goCalendar">
-						<text class="x-tile-ico">📅</text>
+						<view class="x-tile-ico"><x-icon name="calendar" :size="22" color="#1c1a17"></x-icon></view>
 						<text class="x-tile-title">签到日历</text>
 						<text class="x-tile-desc">本月进度</text>
 					</view>
 				</view>
 				<view class="x-grid-2-item">
 					<view class="x-tile" @click="onBag">
-						<text class="x-tile-ico">🎒</text>
+						<view class="x-tile-ico"><x-icon name="backpack" :size="22" color="#1c1a17"></x-icon></view>
 						<text class="x-tile-title">背包装扮</text>
 						<text class="x-tile-desc">称号 / 头像框</text>
 					</view>
@@ -208,12 +222,12 @@ onMounted(() => {
 /** 每日签到 */
 async function onCheckin(): Promise<void> {
 	if (checkedInToday.value) {
-		showXToast('📌', '今日已签到', '明天再来哦')
+		showXToast('pin', '今日已签到', '明天再来哦')
 		return
 	}
 	try {
 		await rpgSignIn()
-		showXToast('☀️', '签到成功', '')
+		showXToast('sun', '签到成功', '')
 		await loadRpg()
 		store.homeTodayTitle.value = '已签到'
 		store.homeStreakLabel.value = '连续 ' + store.streakDays.value + ' 天'
@@ -226,7 +240,7 @@ async function onCheckin(): Promise<void> {
 async function onClaim(questCode: string): Promise<void> {
 	try {
 		await claimQuest(questCode)
-		showXToast('🎁', '奖励已领取', '')
+		showXToast('gift', '奖励已领取', '')
 		await loadRpg()
 	} catch (_) {}
 }
@@ -312,9 +326,15 @@ function onBag(): void {
 }
 
 .bal {
+	flex-direction: row;
+	align-items: center;
+	margin-right: 14px;
+}
+
+.bal-t {
 	font-size: 11px;
 	color: rgba(255, 255, 255, 0.9);
-	margin-right: 14px;
+	margin-left: 4px;
 }
 
 .quest {

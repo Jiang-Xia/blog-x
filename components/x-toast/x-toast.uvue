@@ -1,7 +1,7 @@
 <template>
-	<!-- 原型风格居中 Toast：emoji + 标题 + 描述 -->
+	<!-- 原型风格居中 Toast：x-icon + 标题 + 描述 -->
 	<view v-if="visible" class="x-toast">
-		<text class="x-toast-emoji">{{ emoji }}</text>
+		<x-icon v-if="icon.length > 0" class="x-toast-ico" :name="icon" :size="28" color="#ffffff"></x-icon>
 		<text class="x-toast-title">{{ title }}</text>
 		<text v-if="desc.length > 0" class="x-toast-desc">{{ desc }}</text>
 	</view>
@@ -12,9 +12,10 @@
  * 小卡风格 Toast 展示组件（纯展示）
  * 父组件控制 visible / 文案；也可配合 utils/toast.showXToast
  */
-const props = defineProps({
+defineProps({
 	visible: { type: Boolean, default: false },
-	emoji: { type: String, default: '☀️' },
+	/** Tabler 图标名 */
+	icon: { type: String, default: 'sun' },
 	title: { type: String, default: '' },
 	desc: { type: String, default: '' },
 })
@@ -34,10 +35,8 @@ const props = defineProps({
 	min-width: 150px;
 }
 
-.x-toast-emoji {
-	font-size: 28px;
+.x-toast-ico {
 	margin-bottom: 6px;
-	text-align: center;
 }
 
 .x-toast-title {

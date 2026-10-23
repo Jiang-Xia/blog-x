@@ -4,7 +4,10 @@
 		<scroll-view class="x-page detail-scroll" scroll-y="true">
 			<x-navbar title="文章">
 				<template v-slot:right>
-					<text class="nav-more">⋯  ↗</text>
+					<view class="nav-more">
+						<x-icon name="dots" :size="18" color="#5c574f"></x-icon>
+						<x-icon name="share" :size="18" color="#5c574f"></x-icon>
+					</view>
 				</template>
 			</x-navbar>
 
@@ -16,7 +19,7 @@
 						:src="article.authorAvatarUrl"
 						mode="aspectFill"
 					></image>
-					<text v-else class="av-em">{{ article.authorEmoji }}</text>
+					<x-icon v-else :name="article.authorIcon" :size="22" color="#1c1a17"></x-icon>
 				</view>
 				<view class="author-meta">
 					<text class="author-name">{{ article.authorName }}</text>
@@ -55,7 +58,10 @@
 				class="x-card ai-card"
 				@click="goAi"
 			>
-				<text class="ai-label">✦ AI 摘要</text>
+				<view class="ai-label-row">
+					<x-icon name="sparkles" :size="12" color="#2a8f76"></x-icon>
+					<text class="ai-label">AI 摘要</text>
+				</view>
 				<text class="ai-body">{{ article.aiSummary }}</text>
 			</view>
 
@@ -82,7 +88,7 @@
 								:src="m.coverUrl"
 								mode="aspectFill"
 							></image>
-							<text v-else class="mini-em">{{ m.coverEmoji }}</text>
+							<x-icon v-else :name="m.coverIcon" :size="20" color="#5c574f"></x-icon>
 						</view>
 						<text class="mini-t">{{ m.title }}</text>
 						<text class="mini-meta">{{ m.categoryName }}</text>
@@ -118,7 +124,7 @@
 						:src="c.avatarUrl"
 						mode="aspectFill"
 					></image>
-					<text v-else>{{ c.emoji }}</text>
+					<x-icon v-else :name="c.icon" :size="16" color="#1c1a17"></x-icon>
 				</view>
 				<view class="bubble">
 					<text class="c-name">{{ c.name }}{{ c.tag.length > 0 ? ' ' + c.tag : '' }}</text>
@@ -132,7 +138,7 @@
 								:src="r.avatarUrl"
 								mode="aspectFill"
 							></image>
-							<text v-else class="rav-em">{{ r.emoji }}</text>
+							<x-icon v-else :name="r.icon" :size="14" color="#1c1a17"></x-icon>
 						</view>
 						<view class="reply-body">
 							<text class="r-name">
@@ -154,15 +160,21 @@
 				<text class="cmt-ph">{{ commentDraft.length > 0 ? commentDraft : '说点什么…' }}</text>
 			</view>
 			<view class="act" @click="onLike">
-				<view :class="liked ? 'ic ic-on' : 'ic'"></view>
+				<view :class="liked ? 'ic ic-on' : 'ic'">
+					<x-icon name="heart" :size="14" :filled="liked" :color="liked ? '#e8897a' : '#5c574f'"></x-icon>
+				</view>
 				<text class="act-t">赞</text>
 			</view>
 			<view class="act" @click="onFav">
-				<view :class="faved ? 'ic ic-fav' : 'ic'"></view>
+				<view :class="faved ? 'ic ic-fav' : 'ic'">
+					<x-icon name="star" :size="14" :filled="faved" :color="faved ? '#c9a227' : '#5c574f'"></x-icon>
+				</view>
 				<text class="act-t">藏</text>
 			</view>
 			<view class="act" @click="tipOpen = true">
-				<view class="ic tip"></view>
+				<view class="ic tip">
+					<x-icon name="diamond" :size="14" color="#2a8f76"></x-icon>
+				</view>
 				<text class="act-t">赏</text>
 			</view>
 		</view>
@@ -199,7 +211,7 @@ import { showXToast } from '../../utils/toast'
 /** 单条回复展示行（来自评论 replys[]） */
 type ReplyRow = {
 	avatarUrl: string
-	emoji: string
+	icon: string
 	name: string
 	/** 被回复者昵称（tUserInfo.nickname）；无则空 */
 	replyToName: string
@@ -209,7 +221,7 @@ type ReplyRow = {
 /** 顶层评论 + 嵌套回复 */
 type CommentRow = {
 	avatarUrl: string
-	emoji: string
+	icon: string
 	name: string
 	tag: string
 	text: string
@@ -224,13 +236,13 @@ const emptyArticle: ArticleDetail = {
 	likeCount: 0,
 	commentCount: 0,
 	coverUrl: '',
-	coverEmoji: '📄',
+	coverIcon: 'file',
 	coverC1: '#d4cfc7',
 	coverC2: '#ebe6de',
 	authorUid: 0,
 	authorName: '',
 	authorAvatarUrl: '',
-	authorEmoji: '🙂',
+	authorIcon: 'mood-smile',
 	readLabel: '',
 	aiSummary: '',
 	content: '',
@@ -261,8 +273,8 @@ const articleMetaLine = computed((): string => {
 	const parts: string[] = []
 	if (a.categoryName.length > 0) parts.push(a.categoryName)
 	if (a.timeLabel.length > 0) parts.push(a.timeLabel)
-	parts.push('👍 ' + a.likeCount)
-	parts.push('💬 ' + a.commentCount)
+	parts.push('赞 ' + a.likeCount)
+	parts.push('评 ' + a.commentCount)
 	return parts.join(' · ')
 })
 
@@ -282,7 +294,7 @@ function mapReplyRow(r: any): ReplyRow {
 	const t = r != null ? r.tUserInfo : null
 	return {
 		avatarUrl: avatarFromUser(u),
-		emoji: '↩',
+		icon: 'arrow-back',
 		name: u != null && u.nickname != null ? '' + u.nickname : '用户',
 		replyToName: t != null && t.nickname != null ? '' + t.nickname : '',
 		text: r != null && r.content != null ? '' + r.content : '',
@@ -307,7 +319,7 @@ function mapCommentRows(res: any): CommentRow[] {
 		}
 		out.push({
 			avatarUrl: avatarFromUser(u),
-			emoji: '💬',
+			icon: 'message',
 			name: u != null && u.nickname != null ? '' + u.nickname : '用户',
 			tag: '',
 			text: c.content != null ? '' + c.content : '',
@@ -386,7 +398,7 @@ function previewCover(): void {
 
 /** 底栏点输入区时提示滚动到评论框 */
 function focusCompose(): void {
-	showXToast('💬', '评论', '请在上方评论框输入')
+	showXToast('message', '评论', '请在上方评论框输入')
 }
 
 /**
@@ -396,7 +408,7 @@ async function onSubmitComment(): Promise<void> {
 	const text = commentDraft.value.trim()
 	if (text.length == 0 || submitting.value) return
 	if (!userStore.loggedIn) {
-		showXToast('🔐', '请先登录', '')
+		showXToast('lock', '请先登录', '')
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
 	}
@@ -406,9 +418,9 @@ async function onSubmitComment(): Promise<void> {
 		commentDraft.value = ''
 		const status = res != null && res.status != null ? '' + res.status : ''
 		if (status == 'pending') {
-			showXToast('⏳', '已提交', '待审核后展示')
+			showXToast('hourglass', '已提交', '待审核后展示')
 		} else {
-			showXToast('💬', '评论成功', '')
+			showXToast('message', '评论成功', '')
 		}
 		await reloadComments(articleId.value)
 	} catch (_) {
@@ -424,7 +436,7 @@ async function onLike(): Promise<void> {
 	try {
 		await toggleLike(articleId.value)
 		liked.value = await checkLiked(articleId.value)
-		showXToast(liked.value ? '❤️' : '🤍', liked.value ? '已点赞' : '取消点赞', '')
+		showXToast('heart', liked.value ? '已点赞' : '取消点赞', '')
 	} catch (_) {}
 }
 
@@ -435,7 +447,7 @@ async function onFav(): Promise<void> {
 	try {
 		await toggleCollect(articleId.value)
 		faved.value = await checkCollected(articleId.value)
-		showXToast(faved.value ? '⭐' : '☆', faved.value ? '已收藏' : '取消收藏', '')
+		showXToast('star', faved.value ? '已收藏' : '取消收藏', '')
 	} catch (_) {}
 }
 
@@ -448,7 +460,7 @@ async function onTipPaid(amount: number): Promise<void> {
 	const tipAmount = amount > 0 ? amount : 1
 	try {
 		await tipArticle(idNum, tipAmount)
-		showXToast('💎', '打赏成功', tipAmount + ' 钻石')
+		showXToast('diamond', '打赏成功', tipAmount + ' 钻石')
 	} catch (_) {}
 }
 </script>
@@ -465,8 +477,8 @@ async function onTipPaid(amount: number): Promise<void> {
 }
 
 .nav-more {
-	font-size: 12px;
-	color: #5c574f;
+	flex-direction: row;
+	align-items: center;
 }
 
 .author-row {
@@ -551,11 +563,17 @@ async function onTipPaid(amount: number): Promise<void> {
 	background-color: rgba(61, 184, 154, 0.08);
 }
 
+.ai-label-row {
+	flex-direction: row;
+	align-items: center;
+	margin-bottom: 6px;
+}
+
 .ai-label {
 	font-size: 12px;
 	font-weight: 600;
 	color: #2a8f76;
-	margin-bottom: 6px;
+	margin-left: 4px;
 }
 
 .ai-body {
@@ -784,11 +802,13 @@ async function onTipPaid(amount: number): Promise<void> {
 }
 
 .ic {
-	width: 20px;
-	height: 20px;
-	border-radius: 6px;
+	width: 28px;
+	height: 28px;
+	border-radius: 8px;
 	background-color: #ebe6df;
 	margin-bottom: 2px;
+	align-items: center;
+	justify-content: center;
 }
 
 .ic-on {

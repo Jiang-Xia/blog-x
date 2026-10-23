@@ -14,7 +14,10 @@
 				</view>
 				<view v-else class="bubble bot">
 					<text class="bubble-t">{{ m.content.length > 0 ? m.content : (streaming ? '…' : '') }}</text>
-					<text v-if="m.cite.length > 0" class="cite">📎 {{ m.cite }}</text>
+					<view v-if="m.cite.length > 0" class="cite-row">
+						<x-icon name="paperclip" :size="12" color="#9a948a"></x-icon>
+						<text class="cite">{{ m.cite }}</text>
+					</view>
 				</view>
 			</view>
 		</scroll-view>
@@ -43,7 +46,8 @@
 				@confirm="onSend"
 			/>
 			<view class="send" :class="streaming ? 'send-disabled' : ''" @click="onSend">
-				<text class="send-t">{{ streaming ? '…' : '↑' }}</text>
+				<text v-if="streaming" class="send-t">…</text>
+				<x-icon v-else name="arrow-up" :size="18" color="#ffffff"></x-icon>
 			</view>
 		</view>
 	</view>
@@ -141,7 +145,7 @@ function onSend(): void {
 	if (q.length == 0 || streaming.value) return
 
 	if (!userStore.loggedIn) {
-		showXToast('🔐', '请先登录', 'AI 问答需登录')
+		showXToast('lock', '请先登录', 'AI 问答需登录')
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
 	}
@@ -197,7 +201,7 @@ function onSend(): void {
 			if (messages.value[assistantIndex].content.length == 0) {
 				messages.value[assistantIndex].content = '回答失败：' + msg
 			}
-			showXToast('❌', 'AI 失败', msg)
+			showXToast('circle-x', 'AI 失败', msg)
 			loadQuota()
 		},
 		onDone: () => {
@@ -260,10 +264,16 @@ function onSend(): void {
 	line-height: 1.45;
 }
 
+.cite-row {
+	flex-direction: row;
+	align-items: center;
+	margin-top: 6px;
+}
+
 .cite {
 	font-size: 11px;
 	color: #2a8f76;
-	margin-top: 6px;
+	margin-left: 4px;
 }
 
 .chip-row {

@@ -17,7 +17,7 @@
 				<text class="x-meta">加载中…</text>
 			</view>
 			<view v-else-if="list.length == 0">
-				<x-empty emoji="⭐" text="还没有收藏，去首页逛逛吧" action-text="去首页" @action="goHome"></x-empty>
+				<x-empty icon="star" text="还没有收藏，去首页逛逛吧" action-text="去首页" @action="goHome"></x-empty>
 			</view>
 			<x-article-card
 				v-for="item in list"
@@ -27,7 +27,7 @@
 				:category-name="item.categoryName"
 				:time-label="item.timeLabel"
 				:cover-url="item.coverUrl"
-				:cover-emoji="item.coverEmoji"
+				:cover-icon="item.coverIcon"
 				:cover-c1="item.coverC1"
 				:like-count="item.likeCount"
 				:comment-count="item.commentCount"

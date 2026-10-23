@@ -297,7 +297,7 @@ function tryRestoreDraft(): void {
 			cover.value.length > 0 ||
 			selectedTagIds.value.length > 0
 		) {
-			showXToast('📝', '已恢复草稿', '')
+			showXToast('pencil', '已恢复草稿', '')
 		}
 	} catch (_) {}
 }
@@ -449,11 +449,11 @@ async function doUploadCover(path: string): Promise<void> {
 	uni.showLoading({ title: '上传中' })
 	try {
 		cover.value = await uploadCover(path)
-		showXToast('🖼', '封面上传成功', '')
+		showXToast('photo', '封面上传成功', '')
 		saveLocalDraft()
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : '上传失败'
-		showXToast('⚠️', msg, '')
+		showXToast('alert-triangle', msg, '')
 	} finally {
 		uni.hideLoading()
 		uploading.value = false
@@ -497,11 +497,11 @@ async function doInsertImage(path: string): Promise<void> {
 		const url = resolveStaticUrl(rel)
 		const md = '![](' + url + ')'
 		content.value = content.value.length > 0 ? content.value + '\n' + md : md
-		showXToast('🖼', '图片已插入', '')
+		showXToast('photo', '图片已插入', '')
 		saveLocalDraft()
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : '上传失败'
-		showXToast('⚠️', msg, '')
+		showXToast('alert-triangle', msg, '')
 	} finally {
 		uni.hideLoading()
 		uploading.value = false
@@ -523,19 +523,19 @@ function buildScheduledAt(): string {
 async function onSubmit(submitStatus: string): Promise<void> {
 	const t = title.value.trim()
 	if (t.length == 0) {
-		showXToast('⚠️', '请填写标题', '')
+		showXToast('alert-triangle', '请填写标题', '')
 		return
 	}
 	if (categoryId.value.length == 0) {
-		showXToast('⚠️', '请选择分类', '')
+		showXToast('alert-triangle', '请选择分类', '')
 		return
 	}
 	if (selectedTagIds.value.length == 0) {
-		showXToast('⚠️', '请至少选择一个标签', '')
+		showXToast('alert-triangle', '请至少选择一个标签', '')
 		return
 	}
 	if (submitStatus == 'scheduled' && schedDate.value.length == 0) {
-		showXToast('⚠️', '请选择定时发布日期', '')
+		showXToast('alert-triangle', '请选择定时发布日期', '')
 		return
 	}
 	if (submitting.value) return
@@ -557,7 +557,7 @@ async function onSubmit(submitStatus: string): Promise<void> {
 			scheduledPublishAt: submitStatus == 'scheduled' ? buildScheduledAt() : '',
 		})
 		clearLocalDraft()
-		showXToast('✍️', okMsg, '')
+		showXToast('writing', okMsg, '')
 		if (id.length > 0 && submitStatus == 'publish') {
 			uni.redirectTo({ url: '/pages/detail/detail?id=' + id })
 		} else {

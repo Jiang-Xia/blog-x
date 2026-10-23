@@ -3,6 +3,7 @@
  * 数据来源：blog-server /rpg/*（形状对齐 blog-home-nuxt）
  */
 import type { LotteryCell, RankRow, RpgHero, RpgQuest } from '../../types/rpg'
+import { toIconName } from '../../utils/icon-name'
 import { resolveStaticUrl } from '../../utils/static-url'
 
 /**
@@ -19,7 +20,7 @@ export function mapRpgHero(status: any, weather: any = null): RpgHero {
 			? '' + weather.label
 			: weather != null && weather.name != null
 				? '' + weather.name
-				: '🎈 天气Buff'
+				: '天气 Buff'
 	return {
 		travelerName: status != null && status.nickname != null ? '' + status.nickname : '旅行者',
 		level,
@@ -61,7 +62,7 @@ function mapOneQuest(q: any, index: number): RpgQuest {
 				: q.description != null
 					? '' + q.description
 					: '',
-		icon: q.icon != null ? '' + q.icon : '📌',
+		icon: toIconName(q.icon != null ? '' + q.icon : 'pin', 'pin'),
 		kind,
 		done: claimed,
 		claimable: completed && !claimed,
@@ -100,7 +101,7 @@ export function mapLotteryCells(raw: any): LotteryCell[] {
 		const p = arr[i]
 		list.push({
 			index: i,
-			emoji: p.icon != null ? '' + p.icon : '✨',
+			icon: toIconName(p.icon != null ? '' + p.icon : 'sparkles', 'sparkles'),
 			label: p.name != null ? '' + p.name : '奖品',
 		})
 	}
@@ -120,7 +121,7 @@ export function mapRankRows(raw: any, myUid: number = 0): RankRow[] {
 		list.push({
 			rank: r.rank != null ? Number(r.rank) : i + 1,
 			name: r.nickname != null ? '' + r.nickname : '用户',
-			emoji: '🦊',
+			icon: 'paw',
 			avatarUrl: avatarRaw.length > 0 ? resolveStaticUrl(avatarRaw) : '',
 			level: r.level != null ? Number(r.level) : 1,
 			score: r.score != null ? Number(r.score) : 0,

@@ -2,7 +2,7 @@
 	<!-- 二级页顶栏：返回 + 标题 + 右侧插槽区 -->
 	<view class="x-navbar">
 		<view class="x-navbar-back" @click="onBack">
-			<text class="x-navbar-back-icon">‹</text>
+			<x-icon name="chevron-left" :size="20" color="#5c574f"></x-icon>
 		</view>
 		<text class="x-navbar-title">{{ title }}</text>
 		<view class="x-navbar-right">
@@ -53,13 +53,6 @@ function onBack(): void {
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;
-}
-
-.x-navbar-back-icon {
-	font-size: 22px;
-	color: #5c574f;
-	line-height: 36px;
-	text-align: center;
 }
 
 .x-navbar-title {

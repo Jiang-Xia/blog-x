@@ -3,7 +3,9 @@
 	<view class="x-page">
 		<x-navbar title="登录"></x-navbar>
 		<view class="brand">
-			<text class="brand-em">🦊</text>
+			<view class="brand-em">
+				<x-icon name="paw" :size="36" color="#1c1a17"></x-icon>
+			</view>
 			<text class="brand-name">江夏的博客</text>
 			<text class="brand-sub">账号登录或微信一键登录</text>
 		</view>
@@ -180,7 +182,7 @@ function leaveLogin(toast: boolean): void {
 	uni.setStorageSync(LEAVE_GUARD_KEY, now)
 
 	if (toast) {
-		showXToast('✅', '登录成功', '欢迎回来')
+		showXToast('circle-check', '登录成功', '欢迎回来')
 	}
 	setTimeout(() => {
 		goTab(TAB_ME)
@@ -196,11 +198,11 @@ async function onAccountLogin(): Promise<void> {
 	const p = password.value
 	const code = authCode.value.trim()
 	if (u.length == 0 || p.length == 0 || code.length == 0) {
-		showXToast('⚠️', '请填写完整', '用户名、密码与验证码')
+		showXToast('alert-triangle', '请填写完整', '用户名、密码与验证码')
 		return
 	}
 	if (captchaId.value.length == 0) {
-		showXToast('⚠️', '验证码失效', '请点击验证码刷新')
+		showXToast('alert-triangle', '验证码失效', '请点击验证码刷新')
 		await loadCaptcha()
 		return
 	}
@@ -215,7 +217,7 @@ async function onAccountLogin(): Promise<void> {
 	} catch (_) {
 		authCode.value = ''
 		await loadCaptcha()
-		showXToast('⚠️', '登录失败', '请检查账号或验证码')
+		showXToast('alert-triangle', '登录失败', '请检查账号或验证码')
 	}
 }
 
@@ -228,7 +230,7 @@ async function onWxLogin(): Promise<void> {
 		const ok = await userStore.loginByWeixin()
 		if (ok) leaveLogin(true)
 	} catch (_) {
-		showXToast('⚠️', '登录失败', '请确认微信登录配置或改用账号登录')
+		showXToast('alert-triangle', '登录失败', '请确认微信登录配置或改用账号登录')
 	}
 }
 
@@ -252,8 +254,9 @@ onLoad(() => {
 }
 
 .brand-em {
-	font-size: 48px;
 	margin-bottom: 12px;
+	align-items: center;
+	justify-content: center;
 }
 
 .brand-name {

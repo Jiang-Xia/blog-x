@@ -26,11 +26,11 @@ export type ArticleSummary = {
 	/** 评论数 */
 	commentCount: number
 	/**
-	 * 封面完整 URL（resolveStaticUrl(cover)）；空则用 coverEmoji 占位
+	 * 封面完整 URL（resolveStaticUrl(cover)）；空则用 coverIcon 占位
 	 */
 	coverUrl: string
-	/** 无封面时的占位 emoji */
-	coverEmoji: string
+	/** 无封面时的 Tabler 占位图标名 */
+	coverIcon: string
 	/** 无封面时渐变色 1 */
 	coverC1: string
 	/** 无封面时渐变色 2 */
@@ -47,10 +47,10 @@ export type ArticleDetail = ArticleSummary & {
 	authorUid: number
 	/** 作者昵称 */
 	authorName: string
-	/** 作者头像 URL；空则用 authorEmoji */
+	/** 作者头像 URL；空则用 authorIcon */
 	authorAvatarUrl: string
-	/** 作者头像 emoji 兜底 */
-	authorEmoji: string
+	/** 作者头像 Tabler 图标兜底 */
+	authorIcon: string
 	/** 阅读量文案 */
 	readLabel: string
 	/** AI 摘要 / 简介短文 */

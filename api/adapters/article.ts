@@ -7,10 +7,10 @@ import type { ArchiveArticle, ArchiveMonth, ArchiveYear } from '../../types/noti
 import { resolveStaticUrl } from '../../utils/static-url'
 
 const COVER_PALETTE = [
-	{ c1: '#c8efe4', c2: '#b8e0f0', emoji: '📗' },
-	{ c1: '#ffe8d6', c2: '#f6d9a8', emoji: '💰' },
-	{ c1: '#e8dff8', c2: '#d6e8ff', emoji: '🧩' },
-	{ c1: '#fde2e2', c2: '#f5d0d0', emoji: '📝' },
+	{ c1: '#c8efe4', c2: '#b8e0f0', icon: 'book' },
+	{ c1: '#ffe8d6', c2: '#f6d9a8', icon: 'coin' },
+	{ c1: '#e8dff8', c2: '#d6e8ff', icon: 'puzzle' },
+	{ c1: '#fde2e2', c2: '#f5d0d0', icon: 'pencil' },
 ]
 
 /**
@@ -95,7 +95,7 @@ export function mapArticleSummary(raw: any): ArticleSummary {
 		likeCount: likes,
 		commentCount: comments,
 		coverUrl: coverUrlOf(raw),
-		coverEmoji: palette.emoji,
+		coverIcon: palette.icon,
 		coverC1: palette.c1,
 		coverC2: palette.c2,
 		pinned: pinned,
@@ -129,14 +129,14 @@ export function mapArticleDetail(raw: any): ArticleDetail {
 		likeCount: base.likeCount,
 		commentCount: base.commentCount,
 		coverUrl: base.coverUrl,
-		coverEmoji: base.coverEmoji,
+		coverIcon: base.coverIcon,
 		coverC1: base.coverC1,
 		coverC2: base.coverC2,
 		pinned: base.pinned,
 		authorUid: isNaN(uidRaw) ? 0 : uidRaw,
 		authorName: user != null && user.nickname != null ? '' + user.nickname : '作者',
 		authorAvatarUrl: avatarUrlOf(user),
-		authorEmoji: '🦊',
+		authorIcon: 'paw',
 		readLabel: views > 0 ? views + ' 阅读' : '',
 		aiSummary: ai,
 		content: raw != null && raw.content != null ? '' + raw.content : '',

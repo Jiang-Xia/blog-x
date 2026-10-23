@@ -31,7 +31,9 @@
 		>
 			<view v-for="item in filtered" :key="item.id" class="msg">
 				<view class="msg-row">
-					<text class="msg-em">{{ item.emoji }}</text>
+					<view class="msg-em">
+						<x-icon :name="item.icon" :size="22" color="#1c1a17"></x-icon>
+					</view>
 					<view class="msg-body">
 						<text class="msg-title">{{ item.title }}</text>
 						<text class="msg-desc">{{ item.desc }}</text>
@@ -142,7 +144,7 @@ async function onReadAll(): Promise<void> {
 	try {
 		await markNotificationsRead()
 	} catch (_) {}
-	showXToast('✓', '全部已读', '角标已清')
+	showXToast('check', '全部已读', '角标已清')
 }
 </script>
 
@@ -167,8 +169,9 @@ async function onReadAll(): Promise<void> {
 }
 
 .msg-em {
-	font-size: 22px;
 	margin-right: 10px;
+	align-items: center;
+	justify-content: center;
 }
 
 .msg-body {

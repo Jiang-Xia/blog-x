@@ -29,12 +29,30 @@ Tabler Icons 字体图标方案，跨端（Android / iOS / 鸿蒙 / Web）渲染
 
 | 路径 | 说明 |
 | --- | --- |
-| `static/fonts/tabler-icons.ttf` | 线性字体（5247 图标） |
-| `static/fonts/tabler-icons-filled.ttf` | 面性字体（1057 图标） |
+| `static/fonts/tabler-icons.ttf` | 线性字体（5247 图标；App/Web 本地） |
+| `static/fonts/tabler-icons-filled.ttf` | 面性字体（1057 图标；App/Web 本地） |
 | `components/x-icon/x-icon.uvue` | 图标组件 |
 | `components/x-icon/icons.ts` | 名称→字形映射（自动生成，勿手改） |
-| `styles/x-base.css` | `@font-face` 全局注册 |
+| `styles/x-base.css` | App/Web `@font-face`（小程序条件编译排除） |
+| `utils/load-tabler-fonts.ts` | 微信小程序 `uni.loadFontFace`（自建 HTTPS，勿用国外 CDN） |
+| `utils/icon-name.ts` | 历史 emoji / 任意字符串 → Tabler 名（联调兜底） |
 | `scripts/gen-tabler-icons.py` | 映射表生成脚本 |
+
+业务字段约定：`coverIcon` / `authorIcon` / `avatarIcon` / 通知与抽奖的 `icon` 均为 Tabler 名；接口若仍返回 emoji，经 `toIconName` 后再交给 `x-icon`。
+
+## 微信小程序
+
+小程序 **不支持** WXSS 引用包内 `/static/fonts/*.ttf`，须在 `App.onLaunch` 用 `uni.loadFontFace` 拉 **自建 HTTPS** 字体。
+
+当前线性字体：
+
+`https://jiang-xia.top/x-api/blog-server/static/uploads/2026-10/28193d11434442f9b0a696ff9a29fa4c-tabler-icons.ttf`
+
+1. 开发工具：`manifest.json` → `mp-weixin.setting.urlCheck: false` 时可先不配域名
+2. **正式版 / 体验版**：微信公众平台 → **downloadFile 合法域名** 增加 `jiang-xia.top`
+3. 重新编译后控制台应出现 `[tabler-font] loaded tabler-icons`
+4. 面性字体：上传 `tabler-icons-filled.ttf` 后，把完整 URL 填进 `TABLER_ICONS_FILLED_URL`
+5. 若真机加载失败，检查响应 `Content-Type` 是否为 `font/ttf`（当前多为 `application/octet-stream`，必要时在 Nginx 补 MIME）
 
 ## 升级图标库
 

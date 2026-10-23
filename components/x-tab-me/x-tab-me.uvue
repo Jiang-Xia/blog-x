@@ -14,7 +14,13 @@
 			<view class="status-pad"></view>
 			<view class="profile-top" @click="onProfileTap">
 				<view class="big-avatar">
-					<text class="big-em">{{ profile.avatarEmoji }}</text>
+					<image
+						v-if="profile.avatarUrl != null && profile.avatarUrl.length > 0"
+						class="big-avatar-img"
+						:src="profile.avatarUrl"
+						mode="aspectFill"
+					></image>
+					<x-icon v-else :name="profile.avatarIcon" :size="30" color="#1c1a17"></x-icon>
 				</view>
 				<text class="name">{{ profile.nickname }}</text>
 				<text class="bio">{{ profile.bio }}</text>
@@ -37,45 +43,45 @@
 
 			<view class="x-card menu">
 				<view class="mrow" @click="goFavorites">
-					<view class="m-ico"><text>⭐</text></view>
+					<view class="m-ico"><x-icon name="star" :size="16" color="#1c1a17"></x-icon></view>
 					<text class="m-label">我的收藏</text>
-					<text class="chev">›</text>
+					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
 				</view>
 				<view class="mrow" @click="goInbox">
-					<view class="m-ico"><text>📥</text></view>
+					<view class="m-ico"><x-icon name="inbox" :size="16" color="#1c1a17"></x-icon></view>
 					<text class="m-label">评论收件箱</text>
 					<view v-if="inboxBadge > 0" class="badge">
 						<text class="badge-t">{{ inboxBadge }}</text>
 					</view>
-					<text class="chev">›</text>
+					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
 				</view>
 				<view class="mrow" @click="goProfile">
-					<view class="m-ico"><text>👤</text></view>
+					<view class="m-ico"><x-icon name="user" :size="16" color="#1c1a17"></x-icon></view>
 					<text class="m-label">公开主页</text>
-					<text class="chev">›</text>
+					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
 				</view>
 				<view class="mrow" @click="goAudit">
-					<view class="m-ico"><text>🛡️</text></view>
+					<view class="m-ico"><x-icon name="shield" :size="16" color="#1c1a17"></x-icon></view>
 					<view class="m-col">
 						<text class="m-label">切换管理模式</text>
 						<text class="m-sub">审核 / 订单</text>
 					</view>
-					<text class="chev">›</text>
+					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
 				</view>
 				<view v-if="!loggedIn" class="mrow" @click="goLogin">
-					<view class="m-ico"><text>💬</text></view>
+					<view class="m-ico"><x-icon name="message" :size="16" color="#1c1a17"></x-icon></view>
 					<text class="m-label">登录 / 绑定</text>
-					<text class="chev">›</text>
+					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
 				</view>
 				<view v-else class="mrow" @click="onLogout">
-					<view class="m-ico"><text>🚪</text></view>
+					<view class="m-ico"><x-icon name="logout" :size="16" color="#1c1a17"></x-icon></view>
 					<text class="m-label">退出登录</text>
-					<text class="chev">›</text>
+					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
 				</view>
 				<view class="mrow last" @click="goNotify">
-					<view class="m-ico"><text>🔔</text></view>
+					<view class="m-ico"><x-icon name="bell" :size="16" color="#1c1a17"></x-icon></view>
 					<text class="m-label">站内通知</text>
-					<text class="chev">›</text>
+					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
 				</view>
 			</view>
 	</x-scroll-page>
@@ -84,7 +90,8 @@
 <script setup lang="ts">
 /**
  * 我的 Tab 面板：对齐原型 me
- * 数据来源：Pinia useUserStore（冷启动自动登录后已有资料）；角标来自收件箱
+ * 数据来源：Pinia useUserStore.profile（GET /user/info → mapUserProfile：nickname / avatar / intro）
+ * 头像优先 avatarUrl，无则回退 avatarIcon；角标来自收件箱
  * 滚动：x-scroll-page 下拉刷新
  */
 import { storeToRefs } from 'pinia'
@@ -194,7 +201,7 @@ function goLogin(): void {
  */
 function onLogout(): void {
 	userStore.logout()
-	showXToast('👋', '已退出', '可随时重新登录')
+	showXToast('hand-stop', '已退出', '可随时重新登录')
 }
 
 function goNotify(): void {
@@ -225,10 +232,12 @@ function goNotify(): void {
 	align-items: center;
 	justify-content: center;
 	margin-bottom: 10px;
+	overflow: hidden;
 }
 
-.big-em {
-	font-size: 30px;
+.big-avatar-img {
+	width: 72px;
+	height: 72px;
 }
 
 .name {
@@ -312,12 +321,6 @@ function goNotify(): void {
 .m-sub {
 	font-size: 10px;
 	color: #9a948a;
-}
-
-.chev {
-	font-size: 16px;
-	color: #9a948a;
-	margin-left: 6px;
 }
 
 .badge {

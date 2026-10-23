@@ -123,7 +123,7 @@ onMounted(() => {
 async function onPublish(): Promise<void> {
 	try {
 		await postMsgboard({ name: '访客', comment: '来自 blog-x 的留言' })
-		showXToast('💬', '已发布', '')
+		showXToast('message', '已发布', '')
 		await onRefresh()
 	} catch (_) {}
 }

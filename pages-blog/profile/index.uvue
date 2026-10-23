@@ -15,7 +15,13 @@
 		>
 			<view class="top">
 				<view class="big-avatar">
-					<text class="em">🦊</text>
+					<image
+						v-if="avatarUrl.length > 0"
+						class="big-avatar-img"
+						:src="avatarUrl"
+						mode="aspectFill"
+					></image>
+					<x-icon v-else name="paw" :size="30" color="#1c1a17"></x-icon>
 				</view>
 				<text class="name">{{ nickname }}</text>
 				<text class="bio">{{ bio }}</text>
@@ -39,7 +45,7 @@
 				:category-name="art.categoryName"
 				:time-label="art.timeLabel"
 				:cover-url="art.coverUrl"
-				:cover-emoji="art.coverEmoji"
+				:cover-icon="art.coverIcon"
 				:cover-c1="art.coverC1"
 				:like-count="art.likeCount"
 				:comment-count="art.commentCount"
@@ -62,6 +68,7 @@ import { get } from '../../api/request'
 import { mapArticleSummary } from '../../api/adapters/article'
 import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
+import { resolveStaticUrl } from '../../utils/static-url'
 
 const emptyPublicRpg: PublicRpgCard = {
 	titleName: '',
@@ -74,6 +81,8 @@ const emptyPublicRpg: PublicRpgCard = {
 const userStore = useUserStore()
 const nickname = ref('')
 const bio = ref('')
+/** 公开主页头像（优先公开资料 avatar，其次本人 Pinia） */
+const avatarUrl = ref('')
 const rpg = ref(emptyPublicRpg)
 const articleList = ref([] as ArticleSummary[])
 const uid = ref(0)
@@ -103,12 +112,15 @@ async function resolveUid(): Promise<void> {
 		uid.value = userStore.profile.id
 		nickname.value = userStore.profile.nickname
 		bio.value = userStore.profile.bio
+		avatarUrl.value =
+			userStore.profile.avatarUrl != null ? '' + userStore.profile.avatarUrl : ''
 		return
 	}
 	try {
 		const me = await userStore.refreshProfile()
 		nickname.value = me.nickname
 		bio.value = me.bio
+		avatarUrl.value = me.avatarUrl != null ? '' + me.avatarUrl : ''
 		uid.value = me.id
 	} catch (_) {}
 }
@@ -157,6 +169,8 @@ async function onRefresh(): Promise<void> {
 			if (pub != null) {
 				if (pub.nickname != null) nickname.value = '' + pub.nickname
 				if (pub.intro != null) bio.value = '' + pub.intro
+				const av = pub.avatar != null ? ('' + pub.avatar).trim() : ''
+				if (av.length > 0) avatarUrl.value = resolveStaticUrl(av)
 			}
 		} catch (_) {}
 		try {
@@ -210,6 +224,12 @@ function goDetail(id: string): void {
 	align-items: center;
 	justify-content: center;
 	margin-bottom: 10px;
+	overflow: hidden;
+}
+
+.big-avatar-img {
+	width: 72px;
+	height: 72px;
 }
 
 .em {

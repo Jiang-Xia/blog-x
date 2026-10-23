@@ -54,7 +54,7 @@
 				:category-name="item.categoryName"
 				:time-label="item.timeLabel"
 				:cover-url="item.coverUrl"
-				:cover-emoji="item.coverEmoji"
+				:cover-icon="item.coverIcon"
 				:cover-c1="item.coverC1"
 				:like-count="item.likeCount"
 				:comment-count="item.commentCount"
@@ -196,13 +196,13 @@ function onClear(): void {
 	results.value = []
 	searched.value = false
 	resetPaging()
-	showXToast('⌫', '已清除', '')
+	showXToast('eraser', '已清除', '')
 }
 
 function onClearHistory(): void {
 	clearSearchHistory()
 	history.value = []
-	showXToast('⌫', '已清空历史', '')
+	showXToast('eraser', '已清空历史', '')
 }
 
 function goDetail(id: string): void {

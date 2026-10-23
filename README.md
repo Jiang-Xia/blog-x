@@ -62,11 +62,10 @@ blog-x/
 浏览器跑在 `http://localhost:3008`，直连线上/异端口 Nest 会触发 CORS。做法与 uni-app x 官方一致：
 
 1. `WEB_DEV_PROXY=true`（`api/config.ts`）时，Web + `development` 下 `getBaseUrl()` 返回同源前缀 `/x-api`
-2. [`vite.config.js`](vite.config.js) 把 `/x-api` 转发到 `API_ORIGIN + API_PREFIX`，并把 `/static` 转到 `API_ORIGIN`
-3. App / 小程序仍直连完整 `API_ORIGIN`，不受代理影响
-4. 改完 `dev-target.js` 后需**重新运行到浏览器**（Vite 才会读到新代理目标）
-
-线上 Nest 静态资源若挂在 `/x-api/blog-server`，可在 `vite.config.js` 的 `/static` 代理里加 `rewrite`（按需）。
+2. [`vite.config.js`](vite.config.js) 把 `/x-api` 转发到 `API_ORIGIN + API_PREFIX`
+3. **不要**代理整个 `/static`：会抢走本地 `static/fonts`（Tabler 图标字体）等项目资源；上传图用 `resolveStaticUrl` 直连 `API_ORIGIN`
+4. App / 小程序仍直连完整 `API_ORIGIN`，不受代理影响
+5. 改完 `dev-target.js` 后需**重新运行到浏览器**（Vite 才会读到新代理目标）
 
 ### 鉴权头 / 加密 / 开发日志（对齐 Nuxt）
 

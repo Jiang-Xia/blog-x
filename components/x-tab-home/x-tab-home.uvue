@@ -14,7 +14,9 @@
 	>
 		<view class="status-pad"></view>
 		<view class="search-bar" @click="goSearch">
-			<text class="search-ico">⌕</text>
+			<view class="search-ico">
+				<x-icon name="search" :size="14" color="#9a948a"></x-icon>
+			</view>
 			<text class="search-ph">搜索文章、标签、作者</text>
 			<view class="bell" @click.stop="goNotify">
 				<text class="bell-text">{{ notifyBadge }}</text>
@@ -37,8 +39,9 @@
 		</view>
 
 		<view class="chip-row chip-gap">
-			<view class="x-chip x-chip-dark" @click="goAi">
-				<text class="chip-t-dark">✦ AI 助手</text>
+			<view class="x-chip x-chip-dark chip-with-ico" @click="goAi">
+				<x-icon name="sparkles" :size="12" color="#ffffff"></x-icon>
+				<text class="chip-t-dark">AI 助手</text>
 			</view>
 			<view class="x-chip x-chip-plain" @click="goRpg">
 				<text class="chip-t">{{ questChip }}</text>
@@ -68,7 +71,7 @@
 			:category-name="item.categoryName"
 			:time-label="item.timeLabel"
 			:cover-url="item.coverUrl"
-			:cover-emoji="item.coverEmoji"
+			:cover-icon="item.coverIcon"
 			:cover-c1="item.coverC1"
 			:like-count="item.likeCount"
 			:comment-count="item.commentCount"
@@ -316,9 +319,18 @@ function goDetail(id: string): void {
 }
 
 .search-ico {
-	font-size: 14px;
-	color: #9a948a;
 	margin-right: 8px;
+	align-items: center;
+	justify-content: center;
+}
+
+.chip-with-ico {
+	flex-direction: row;
+	align-items: center;
+}
+
+.chip-with-ico .chip-t-dark {
+	margin-left: 4px;
 }
 
 .search-ph {

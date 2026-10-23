@@ -4,6 +4,7 @@
  */
 import type { UserProfile } from '../types/user'
 import { emitAuthCleared } from './auth-events'
+import { toIconName } from './icon-name'
 
 export const TokenKey = 'blog_x_token'
 export const RefreshTokenKey = 'blog_x_refresh_token'
@@ -79,16 +80,26 @@ export function getCachedProfile(): UserProfile | null {
 			return null
 		}
 	}
-	if (o == null || o.nickname == null) return null
-	return {
-		id: o.id != null ? Number(o.id) : 0,
-		nickname: '' + o.nickname,
-		avatarEmoji: o.avatarEmoji != null ? '' + o.avatarEmoji : '🦊',
-		bio: o.bio != null ? '' + o.bio : '',
-		articleCount: o.articleCount != null ? Number(o.articleCount) : 0,
-		favoriteCount: o.favoriteCount != null ? Number(o.favoriteCount) : 0,
-		likeReceived: o.likeReceived != null ? Number(o.likeReceived) : 0,
-	}
+		if (o == null || o.nickname == null) return null
+		const avatarUrl = o.avatarUrl != null ? ('' + o.avatarUrl).trim() : ''
+		return {
+			id: o.id != null ? Number(o.id) : 0,
+			nickname: '' + o.nickname,
+			avatarUrl,
+			// 兼容旧字段 avatarEmoji（可能仍是 emoji）
+			avatarIcon: toIconName(
+				o.avatarIcon != null
+					? '' + o.avatarIcon
+					: o.avatarEmoji != null
+						? '' + o.avatarEmoji
+						: 'paw',
+				'paw',
+			),
+			bio: o.bio != null ? '' + o.bio : '',
+			articleCount: o.articleCount != null ? Number(o.articleCount) : 0,
+			favoriteCount: o.favoriteCount != null ? Number(o.favoriteCount) : 0,
+			likeReceived: o.likeReceived != null ? Number(o.likeReceived) : 0,
+		}
 }
 
 /**

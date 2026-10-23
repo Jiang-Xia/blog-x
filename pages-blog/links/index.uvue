@@ -70,7 +70,7 @@ onMounted(() => {
 async function onApply(): Promise<void> {
 	try {
 		await createLink({ title: '申请友链', url: 'https://example.com', desp: '来自 blog-x' })
-		showXToast('🔗', '已提交', '等待审核')
+		showXToast('link', '已提交', '等待审核')
 		await onRefresh()
 	} catch (_) {}
 }

@@ -35,7 +35,7 @@
 			<template v-if="isPetSeg">
 				<view v-for="pet in pets" :key="pet.id" class="x-card row">
 					<view class="ico">
-						<text class="ico-t">{{ pet.icon }}</text>
+						<x-icon :name="petIcon(pet.icon)" :size="20" color="#1c1a17"></x-icon>
 					</view>
 					<view class="body">
 						<text class="name">{{ pet.name }}</text>
@@ -57,7 +57,7 @@
 			<template v-else>
 				<view v-for="item in filtered" :key="item.id" class="x-card row">
 					<view class="ico">
-						<text class="ico-t">{{ item.icon }}</text>
+						<x-icon :name="itemIcon(item.icon)" :size="20" color="#1c1a17"></x-icon>
 					</view>
 					<view class="body">
 						<text class="name">{{ item.name }}</text>
@@ -97,7 +97,18 @@ import {
 } from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
+import { toIconName } from '../../utils/icon-name'
 import { showXToast } from '../../utils/toast'
+
+/** 背包物品图标：服务端可能仍是 emoji，规范为 Tabler 名 */
+function itemIcon(raw: string): string {
+	return toIconName(raw, 'gift')
+}
+
+/** 宠物图标兜底 */
+function petIcon(raw: string): string {
+	return toIconName(raw, 'paw')
+}
 
 const {
 	refreshing,
@@ -219,10 +230,10 @@ async function onToggle(item: BagItem): Promise<void> {
 	try {
 		if (isEquipped(item)) {
 			await unequipLoadout(slot)
-			showXToast('🎒', '已卸下', '')
+			showXToast('backpack', '已卸下', '')
 		} else {
 			await equipLoadout(slot, item.itemCode)
-			showXToast('🎒', '已穿戴', '')
+			showXToast('backpack', '已穿戴', '')
 		}
 		await loadBag()
 	} catch (_) {}
@@ -235,10 +246,10 @@ async function onTogglePet(pet: BagPet): Promise<void> {
 	try {
 		if (loadout.value.petId == pet.id) {
 			await unequipLoadout('pet')
-			showXToast('🐾', '已休息', '')
+			showXToast('paw', '已休息', '')
 		} else {
 			await equipLoadout('pet', '', pet.id)
-			showXToast('🐾', '已出战', '')
+			showXToast('paw', '已出战', '')
 		}
 		await loadBag()
 	} catch (_) {}

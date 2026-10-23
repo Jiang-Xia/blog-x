@@ -1,26 +1,14 @@
 /**
  * 静态资源 URL：上传返回 /static/...，image 组件需拼完整域名
- * 数据来源：api/config API_ORIGIN；Web 开发态走 Vite `/static` 代理（与 uniapp 同构）
+ * 数据来源：api/config API_ORIGIN（与 uniapp getStaticBaseUrl 同构）
+ * 注意：项目内字体/tabbar 走本地 /static/...，勿把整个 /static 代理到后端
  */
-import { API_ORIGIN, WEB_DEV_PROXY } from '../api/config'
+import { API_ORIGIN } from '../api/config'
 
 /**
- * 静态资源根（无尾斜杠）；/static 挂在站点 origin，不在 /api/v1 下
- * Web + 代理开启时返回空串，使 `/static/...` 走同源 Vite 代理，避免跨域图裂/鉴权问题
+ * 静态资源根（无尾斜杠）；上传文件的 /static 挂在后端 origin，不在 /api/v1 下
  */
 export function getStaticBaseUrl(): string {
-	// #ifdef WEB
-	if (WEB_DEV_PROXY) {
-		let isDev = false
-		// @ts-ignore process 仅打包工具注入
-		if (typeof process !== 'undefined' && process.env != null && process.env.NODE_ENV === 'development') {
-			isDev = true
-		}
-		if (isDev) {
-			return ''
-		}
-	}
-	// #endif
 	return API_ORIGIN.replace(/\/$/, '')
 }
 

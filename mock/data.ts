@@ -30,14 +30,14 @@ export const articles: ArticleDetail[] = [
 		likeCount: 128,
 		commentCount: 23,
 		coverUrl: '',
-		coverEmoji: '📗',
+		coverIcon: 'book',
 		coverC1: '#c8efe4',
 		coverC2: '#b8e0f0',
 		pinned: true,
 		authorUid: 1,
 		authorName: '江夏',
 		authorAvatarUrl: '',
-		authorEmoji: '🦊',
+		authorIcon: 'paw',
 		readLabel: '1.2k 阅读',
 		aiSummary: '从 Vue3 到 uts：模板约束、样式子集与分包体积是上手三大坑。',
 		content:
@@ -54,13 +54,13 @@ export const articles: ArticleDetail[] = [
 		likeCount: 86,
 		commentCount: 15,
 		coverUrl: '',
-		coverEmoji: '💰',
+		coverIcon: 'coin',
 		coverC1: '#ffe8d6',
 		coverC2: '#f6d9a8',
 		authorUid: 1,
 		authorName: '江夏',
 		authorAvatarUrl: '',
-		authorEmoji: '🦊',
+		authorIcon: 'paw',
 		readLabel: '980 阅读',
 		aiSummary: 'V3 签名、回调验签与幂等落库是支付接入的核心路径。',
 		content: 'V3 签名、回调验签与幂等落库是支付接入的核心路径。',
@@ -76,13 +76,13 @@ export const articles: ArticleDetail[] = [
 		likeCount: 64,
 		commentCount: 9,
 		coverUrl: '',
-		coverEmoji: '🧩',
+		coverIcon: 'puzzle',
 		coverC1: '#e8dff8',
 		coverC2: '#d6e8ff',
 		authorUid: 1,
 		authorName: '江夏',
 		authorAvatarUrl: '',
-		authorEmoji: '🦊',
+		authorIcon: 'paw',
 		readLabel: '640 阅读',
 		aiSummary: '主包只留 Tab 与高频页，玩法进分包，先稳微信再做 App 换皮。',
 		content: '主包只留 Tab 与高频页，玩法进分包，先稳微信再做 App 换皮。',
@@ -101,7 +101,7 @@ export const homeArticles: ArticleSummary[] = articles.map((a) => ({
 	likeCount: a.likeCount,
 	commentCount: a.commentCount,
 	coverUrl: a.coverUrl,
-	coverEmoji: a.coverEmoji,
+	coverIcon: a.coverIcon,
 	coverC1: a.coverC1,
 	coverC2: a.coverC2,
 	pinned: a.pinned,
@@ -116,7 +116,7 @@ export const hotArticle: ArticleSummary = {
 	likeCount: 1200,
 	commentCount: 40,
 	coverUrl: '',
-	coverEmoji: '💭',
+	coverIcon: 'message-circle',
 	coverC1: '#c8efe4',
 	coverC2: '#ffe8d6',
 	hotLabel: '热度 1.2k',
@@ -132,7 +132,7 @@ export const searchResults: ArticleSummary[] = [
 		likeCount: 86,
 		commentCount: 15,
 		coverUrl: '',
-		coverEmoji: '💰',
+		coverIcon: 'coin',
 		coverC1: '#ffe8d6',
 		coverC2: '#f6d9a8',
 	},
@@ -144,7 +144,7 @@ export const searchResults: ArticleSummary[] = [
 		likeCount: 40,
 		commentCount: 6,
 		coverUrl: '',
-		coverEmoji: '🧩',
+		coverIcon: 'puzzle',
 		coverC1: '#e8dff8',
 		coverC2: '#d6e8ff',
 	},
@@ -153,7 +153,8 @@ export const searchResults: ArticleSummary[] = [
 export const meProfile: UserProfile = {
 	id: 1,
 	nickname: '江夏',
-	avatarEmoji: '🦊',
+	avatarUrl: '',
+	avatarIcon: 'paw',
 	bio: 'Lv.12 像素匠 · 写字 · 写代码 · 偶尔冒险',
 	articleCount: 36,
 	favoriteCount: 128,
@@ -178,7 +179,7 @@ export const rpgHeroSeed: RpgHero = {
 	coins: 56,
 	lotteryTickets: 3,
 	streakDays: 32,
-	weatherBuff: '🎈 天气Buff',
+	weatherBuff: '天气 Buff',
 }
 
 export const rpgQuestsSeed: RpgQuest[] = [
@@ -186,7 +187,7 @@ export const rpgQuestsSeed: RpgQuest[] = [
 		id: 'daily_sign',
 		title: '每日签到',
 		desc: '签到领取经验与钻石',
-		icon: '☀️',
+		icon: 'sun',
 		kind: 'checkin',
 		done: false,
 		claimable: false,
@@ -195,7 +196,7 @@ export const rpgQuestsSeed: RpgQuest[] = [
 		id: 'daily_read',
 		title: '阅读 1 篇文章',
 		desc: '进度 0/1',
-		icon: '📖',
+		icon: 'book',
 		kind: 'read',
 		done: false,
 		claimable: false,
@@ -204,14 +205,14 @@ export const rpgQuestsSeed: RpgQuest[] = [
 ]
 
 export const lotteryCells: LotteryCell[] = [
-	{ index: 0, emoji: '💎', label: '+10' },
-	{ index: 1, emoji: '🐣', label: '宠物蛋' },
-	{ index: 2, emoji: '🪙', label: '+50' },
-	{ index: 3, emoji: '🎖️', label: '成就' },
-	{ index: 4, emoji: '🖼️', label: '头像框' },
-	{ index: 5, emoji: '💎', label: '+50' },
-	{ index: 6, emoji: '🎫', label: '再来券' },
-	{ index: 7, emoji: '✨', label: '称号' },
+	{ index: 0, icon: 'diamond', label: '+10' },
+	{ index: 1, icon: 'egg', label: '宠物蛋' },
+	{ index: 2, icon: 'coin', label: '+50' },
+	{ index: 3, icon: 'medal', label: '成就' },
+	{ index: 4, icon: 'frame', label: '头像框' },
+	{ index: 5, icon: 'diamond', label: '+50' },
+	{ index: 6, icon: 'ticket', label: '再来券' },
+	{ index: 7, icon: 'sparkles', label: '称号' },
 ]
 
 export const rechargeSkus: RechargeSku[] = [
@@ -223,10 +224,10 @@ export const rechargeSkus: RechargeSku[] = [
 
 /** 文章钻石打赏档位（amount 对齐 POST /rpg/article/tip） */
 export const tipDiamondSkus = [
-	{ id: '1', amount: 1, label: '💎 1', desc: '鼓励一下' },
-	{ id: '5', amount: 5, label: '💎 5', desc: '加油' },
-	{ id: '10', amount: 10, label: '💎 10', desc: '送花' },
-	{ id: '50', amount: 50, label: '💎 50', desc: '砸蛋礼' },
+	{ id: '1', amount: 1, label: '1 钻', desc: '鼓励一下' },
+	{ id: '5', amount: 5, label: '5 钻', desc: '加油' },
+	{ id: '10', amount: 10, label: '10 钻', desc: '送花' },
+	{ id: '50', amount: 50, label: '50 钻', desc: '砸蛋礼' },
 ]
 
 /** 站点赞赏档位（元，对齐 /site/tip/create） */
@@ -262,29 +263,29 @@ export const inboxItems: InboxItem[] = [
 ]
 
 export const rankRows: RankRow[] = [
-	{ rank: 1, name: '摸鱼会长', emoji: '🐉', level: 28, score: 4200 },
-	{ rank: 2, name: '摸鱼大师', emoji: '🐟', level: 22, score: 3100 },
-	{ rank: 18, name: '江夏', emoji: '🦊', level: 12, score: 860, isMe: true },
+	{ rank: 1, name: '摸鱼会长', icon: 'dragon', level: 28, score: 4200 },
+	{ rank: 2, name: '摸鱼大师', icon: 'fish', level: 22, score: 3100 },
+	{ rank: 18, name: '江夏', icon: 'paw', level: 12, score: 860, isMe: true },
 ]
 
 export const notifyItems: NotifyItem[] = [
 	{
 		id: 'n1',
-		emoji: '🌱',
+		icon: 'seedling',
 		title: '路过的读者 评论了你',
 		desc: '《uni-app x 上手》· 写得很清楚！',
 		kind: 'comment',
 	},
 	{
 		id: 'n2',
-		emoji: '🎉',
+		icon: 'confetti',
 		title: '升级到 Lv.12',
 		desc: '冒险中心 · 解锁新称号「像素匠」',
 		kind: 'system',
 	},
 	{
 		id: 'n3',
-		emoji: '☕',
+		icon: 'coffee',
 		title: '咖啡因 赞了你的评论',
 		desc: '《微信支付 V3》评论区',
 		kind: 'like',
@@ -362,7 +363,7 @@ export const relatedMinis: ArticleSummary[] = [
 		likeCount: 12,
 		commentCount: 2,
 		coverUrl: '',
-		coverEmoji: '🗺️',
+		coverIcon: 'map',
 		coverC1: '#e8dff8',
 		coverC2: '#d6e8ff',
 	},
@@ -374,7 +375,7 @@ export const relatedMinis: ArticleSummary[] = [
 		likeCount: 40,
 		commentCount: 6,
 		coverUrl: '',
-		coverEmoji: '🔁',
+		coverIcon: 'repeat',
 		coverC1: '#ffe8d6',
 		coverC2: '#f6d9a8',
 	},
@@ -384,14 +385,14 @@ export const relatedMinis: ArticleSummary[] = [
 export const detailComments = [
 	{
 		avatarUrl: '',
-		emoji: '🌱',
+		icon: 'seedling',
 		name: '路过的读者',
 		tag: 'Lv.8',
 		text: '写得很清楚，收藏了！',
 		replies: [
 			{
 				avatarUrl: '',
-				emoji: '↩',
+				icon: 'arrow-back',
 				name: '作者',
 				replyToName: '路过的读者',
 				text: '谢谢支持～',
@@ -400,7 +401,7 @@ export const detailComments = [
 	},
 	{
 		avatarUrl: '',
-		emoji: '☕',
+		icon: 'coffee',
 		name: '咖啡因',
 		tag: '',
 		text: 'uts 那段太真实了哈哈哈',

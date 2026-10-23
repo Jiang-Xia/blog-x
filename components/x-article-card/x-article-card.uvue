@@ -1,12 +1,17 @@
 <template>
-	<!-- 文章列表小卡：封面优先文章 coverUrl，无则 emoji 占位 -->
+	<!-- 文章列表小卡：封面优先文章 coverUrl，无则 x-icon 占位 -->
 	<view class="x-card article" @click="onOpen">
 		<view class="article-body">
 			<view v-if="showMeta" class="meta-row">
 				<text class="x-meta">{{ metaLine }}</text>
 			</view>
 			<text class="article-title">{{ title }}</text>
-			<text v-if="showStat" class="article-stat">👍 {{ likeCount }} · 💬 {{ commentCount }}</text>
+			<view v-if="showStat" class="article-stat-row">
+				<x-icon name="thumb-up" :size="11" color="#5c574f"></x-icon>
+				<text class="article-stat">{{ likeCount }}</text>
+				<x-icon name="message" :size="11" color="#5c574f"></x-icon>
+				<text class="article-stat">{{ commentCount }}</text>
+			</view>
 			<text v-else-if="statLine.length > 0" class="article-stat">{{ statLine }}</text>
 		</view>
 		<view class="cover" :style="{ backgroundColor: coverC1 }">
@@ -16,7 +21,7 @@
 				:src="coverUrl"
 				mode="aspectFill"
 			></image>
-			<text v-else class="cover-em">{{ coverEmoji }}</text>
+			<x-icon v-else :name="coverIcon" :size="26" color="#5c574f"></x-icon>
 		</view>
 	</view>
 </template>
@@ -24,7 +29,7 @@
 <script setup lang="ts">
 /**
  * 文章卡片（列表复用）
- * - 封面：文章 coverUrl（API cover 经 resolveStaticUrl）；空则 coverEmoji + coverC1
+ * - 封面：文章 coverUrl（API cover 经 resolveStaticUrl）；空则 coverIcon + coverC1
  * - 点击抛 open(id)，由父页跳转详情
  */
 const props = defineProps({
@@ -33,7 +38,8 @@ const props = defineProps({
 	categoryName: { type: String, default: '' },
 	timeLabel: { type: String, default: '' },
 	coverUrl: { type: String, default: '' },
-	coverEmoji: { type: String, default: '📗' },
+	/** 无封面时的 Tabler 占位图标名 */
+	coverIcon: { type: String, default: 'book' },
 	coverC1: { type: String, default: '#c8efe4' },
 	likeCount: { type: Number, default: 0 },
 	commentCount: { type: Number, default: 0 },
@@ -41,7 +47,7 @@ const props = defineProps({
 	hotLabel: { type: String, default: '' },
 	/** 是否展示点赞/评论 */
 	showStat: { type: Boolean, default: true },
-	/** 无 showStat 时的自定义一行（如「热度 1.2k · 💭」） */
+	/** 无 showStat 时的自定义一行（如「热度 1.2k」） */
 	statLine: { type: String, default: '' },
 	/** 是否展示 meta 行 */
 	showMeta: { type: Boolean, default: true },
@@ -95,9 +101,16 @@ function onOpen(): void {
 	text-overflow: ellipsis;
 }
 
+.article-stat-row {
+	flex-direction: row;
+	align-items: center;
+}
+
 .article-stat {
 	font-size: 11px;
 	color: #5c574f;
+	margin-left: 2px;
+	margin-right: 8px;
 }
 
 .cover {
@@ -112,9 +125,5 @@ function onOpen(): void {
 .cover-img {
 	width: 78px;
 	height: 78px;
-}
-
-.cover-em {
-	font-size: 26px;
 }
 </style>

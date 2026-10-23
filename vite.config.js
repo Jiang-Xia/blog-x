@@ -17,15 +17,11 @@ export default defineConfig({
 		port: 3008,
 		proxy: {
 			// http://localhost:3008/x-api/article/list → {origin}{apiPrefix}/article/list
+			// 注意：不要代理整个 /static —— 会抢走本地 static/fonts（Tabler 图标字体）等项目资源
 			[proxyPrefix]: {
 				target: origin,
 				changeOrigin: true,
 				rewrite: (path) => apiPrefix + path.replace(new RegExp('^' + proxyPrefix), ''),
-			},
-			// 封面/头像等 /static（本地 Nest 挂根；线上若走 /x-api/blog-server 见 README）
-			'/static': {
-				target: origin,
-				changeOrigin: true,
 			},
 		},
 	},

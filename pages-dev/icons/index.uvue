@@ -66,7 +66,7 @@ function onPick(name: string): void {
 	uni.setClipboardData({
 		data: name,
 		success: () => {
-			showXToast('📋', '已复制', name)
+			showXToast('clipboard', '已复制', name)
 		},
 	})
 }
