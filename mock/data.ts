@@ -153,9 +153,11 @@ export const searchResults: ArticleSummary[] = [
 export const meProfile: UserProfile = {
 	id: 1,
 	nickname: '江夏',
+	avatar: '',
 	avatarUrl: '',
 	avatarIcon: 'paw',
 	bio: 'Lv.12 像素匠 · 写字 · 写代码 · 偶尔冒险',
+	homepage: 'https://jiang-xia.top',
 	articleCount: 36,
 	favoriteCount: 128,
 	likeReceived: 562,

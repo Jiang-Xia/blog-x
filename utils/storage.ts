@@ -81,10 +81,12 @@ export function getCachedProfile(): UserProfile | null {
 		}
 	}
 		if (o == null || o.nickname == null) return null
+		const avatar = o.avatar != null ? ('' + o.avatar).trim() : ''
 		const avatarUrl = o.avatarUrl != null ? ('' + o.avatarUrl).trim() : ''
 		return {
 			id: o.id != null ? Number(o.id) : 0,
 			nickname: '' + o.nickname,
+			avatar,
 			avatarUrl,
 			// 兼容旧字段 avatarEmoji（可能仍是 emoji）
 			avatarIcon: toIconName(
@@ -96,6 +98,7 @@ export function getCachedProfile(): UserProfile | null {
 				'paw',
 			),
 			bio: o.bio != null ? '' + o.bio : '',
+			homepage: o.homepage != null ? '' + o.homepage : '',
 			articleCount: o.articleCount != null ? Number(o.articleCount) : 0,
 			favoriteCount: o.favoriteCount != null ? Number(o.favoriteCount) : 0,
 			likeReceived: o.likeReceived != null ? Number(o.likeReceived) : 0,

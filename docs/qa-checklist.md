@@ -9,12 +9,14 @@
 - [ ] 冒险 Tab 展示冒险中心（Hero、签到、瓦片），底栏仍在
 - [ ] 首页：搜索、铃铛、AI、今日任务进度、全部、文章卡片可跳转；写文章进创作页
 - [ ] 发现：归档 / 留言 / 友链 / 热门 / 标签墙可进
-- [ ] 我的：收藏 / 收件箱 / 主页 / 审核 / 登录 / 通知可进
+- [ ] 我的：编辑资料 / 收藏 / 收件箱 / 主页 / 审核 / 登录 / 通知可进
+- [ ] 编辑资料：可改头像（upload-media avatar）、昵称、简介、个人主页；保存后「我的」即时刷新
 - [ ] 详情：赞 / 藏 Toast；赏打开 Sheet；支付关闭并 Toast；AI 卡进助手
 - [ ] 签到成功后按钮变「已签」、钻石/连续天数变化；首页今日文案同步
 - [ ] 抽奖：中心「抽一次」高亮轮转后 Toast
 - [ ] 充值：选档支付后钻石增加，回冒险中心可见
 - [ ] 登录：账号登录（验证码）与微信一键登录均可；成功后回「我的」可见资料
+- [ ] 资料编辑：`PATCH /user/edit` 成功；头像走 `upload-media?category=avatar`；回「我的」见新昵称/头像/简介/主页
 - [ ] 杀进程重进：有 token 缓存时自动登录，无需再点登录
 - [ ] 二级页左上角返回正常
 
@@ -73,6 +75,7 @@
 | favorites | `/pages-blog/favorites/index` | |
 | inbox | `/pages-blog/inbox/index` | 列表 + 回复联调 |
 | profile | `/pages-blog/profile/index` | |
+| profile-edit | `/pages-blog/profile-edit/index` | 头像 + 昵称 + 简介 + 主页 → PATCH /user/edit |
 | audit | `/pages-blog/audit/index` | hit 列表 + approve/reject |
 | ai | `/pages-blog/ai/index` | 配额 + query-stream |
 | tags | `/pages-blog/tags/index` | GET /tag |

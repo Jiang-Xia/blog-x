@@ -29,30 +29,43 @@ Tabler Icons 字体图标方案，跨端（Android / iOS / 鸿蒙 / Web）渲染
 
 | 路径 | 说明 |
 | --- | --- |
-| `static/fonts/tabler-icons.ttf` | 线性字体（5247 图标；App/Web 本地） |
-| `static/fonts/tabler-icons-filled.ttf` | 面性字体（1057 图标；App/Web 本地） |
+| `static/fonts/tabler-icons.ttf` | 线性字体全量（5247 图标；App/Web 本地） |
+| `static/fonts/tabler-icons-filled.ttf` | 面性字体全量（1057 图标；App/Web 本地） |
+| `static/fonts/*-subset.ttf` | 子集字体（脚本生成，小程序 CDN 备用素材） |
 | `components/x-icon/x-icon.uvue` | 图标组件 |
-| `components/x-icon/icons.ts` | 名称→字形映射（自动生成，勿手改） |
-| `styles/x-base.css` | App/Web `@font-face`（小程序条件编译排除） |
-| `utils/load-tabler-fonts.ts` | 微信小程序 `uni.loadFontFace`（自建 HTTPS，勿用国外 CDN） |
+| `components/x-icon/icons.ts` | 子集映射，线上各端引用（脚本生成，勿手改） |
+| `components/x-icon/icons-full.ts` | 全量映射（预览页/开发用，脚本生成） |
+| `styles/x-base.css` | `@font-face`：App/Web 本地 ttf；MP 条件编译引入 tabler-mp.css |
+| `styles/tabler-mp.css` | 小程序 base64 内联子集字体（脚本生成，勿手改） |
+| `utils/load-tabler-fonts.ts` | MP 备选：loadFontFace 拉 CDN 全量（默认关闭） |
 | `utils/icon-name.ts` | 历史 emoji / 任意字符串 → Tabler 名（联调兜底） |
-| `scripts/gen-tabler-icons.py` | 映射表生成脚本 |
+| `scripts/gen-tabler-icons.py` | 全量映射生成脚本（升级字体库时用） |
+| `scripts/subset-icons.py` | 子集化脚本（**新增/改动图标引用后必须重跑**） |
+| `scripts/icon-whitelist.txt` | 动态图标名白名单 |
 
 业务字段约定：`coverIcon` / `authorIcon` / `avatarIcon` / 通知与抽奖的 `icon` 均为 Tabler 名；接口若仍返回 emoji，经 `toIconName` 后再交给 `x-icon`。
 
-## 微信小程序
+## 微信小程序（字体子集化）
 
-小程序 **不支持** WXSS 引用包内 `/static/fonts/*.ttf`，须在 `App.onLaunch` 用 `uni.loadFontFace` 拉 **自建 HTTPS** 字体。
+小程序 **不支持** WXSS 引用包内 `/static/fonts/*.ttf`，且全量字体 1.8MB 无法接受。
 
-当前线性字体：
+**当前方案：base64 内联子集**（零网络依赖、零域名配置、无 CDN 版本差）：
 
-`https://jiang-xia.top/x-api/blog-server/static/uploads/2026-10/28193d11434442f9b0a696ff9a29fa4c-tabler-icons.ttf`
+- `scripts/subset-icons.py` 扫描代码里实际引用的图标名 → fonttools 裁剪出子集 woff2（约 16KB）→ base64 写入 `styles/tabler-mp.css`
+- `x-base.css` 通过 `#ifdef MP-WEIXIN` 条件编译引入
+- 实测：48 个图标，字体 1.83MB → 14KB（ttf）/ 16KB（base64 css）
 
-1. 开发工具：`manifest.json` → `mp-weixin.setting.urlCheck: false` 时可先不配域名
-2. **正式版 / 体验版**：微信公众平台 → **downloadFile 合法域名** 增加 `jiang-xia.top`
-3. 重新编译后控制台应出现 `[tabler-font] loaded tabler-icons`
-4. 面性字体：上传 `tabler-icons-filled.ttf` 后，把完整 URL 填进 `TABLER_ICONS_FILLED_URL`
-5. 若真机加载失败，检查响应 `Content-Type` 是否为 `font/ttf`（当前多为 `application/octet-stream`，必要时在 Nginx 补 MIME）
+**工作流：页面里新增 `<x-icon name="xxx" />` 后，重跑一次：**
+
+```bash
+C:/Users/96379/.workbuddy/binaries/python/envs/default/Scripts/python.exe scripts/subset-icons.py
+```
+
+- 脚本自动扫描 `name="x"` / `:name="'x'"` / `name: 'x'` / `icon: 'x'` 四种写法
+- **动态拼接的图标名**（如接口下发再映射的）必须加进 `scripts/icon-whitelist.txt`，否则真机会渲染为空白
+- 拼写错误会打印 WARN，别忽略
+
+**备选方案**（`utils/load-tabler-fonts.ts` 中 `USE_CDN_FALLBACK = true`）：`uni.loadFontFace` 拉 HTTPS 全量字体——需配 downloadFile 合法域名 + CORS，且 BootCDN 为 3.44.0 与映射表有版本差；仅当 base64 方案在某些机型异常时再启用。
 
 ## 升级图标库
 
@@ -62,8 +75,10 @@ curl -L <tarball地址> -o tabler.tgz && tar -xzf tabler.tgz
 # 2. 覆盖字体文件
 cp package/dist/fonts/tabler-icons.ttf  static/fonts/
 cp package/dist/fonts/tabler-icons-filled.ttf static/fonts/
-# 3. 重新生成映射表
+# 3. 重新生成全量映射表
 python scripts/gen-tabler-icons.py package/dist
+# 4. 重新子集化
+C:/Users/96379/.workbuddy/binaries/python/envs/default/Scripts/python.exe scripts/subset-icons.py
 ```
 
 ## 彩色图标 / 游戏资产约定

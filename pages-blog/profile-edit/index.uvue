@@ -1,0 +1,270 @@
+<template>
+	<!-- 编辑资料：头像 / 昵称 / 简介 / 个人主页（对齐 nuxt profile-edit-form） -->
+	<view class="x-page-flex">
+		<x-navbar title="编辑资料"></x-navbar>
+		<!-- 表单页仅纵向滚动，关闭刷新/触底 -->
+		<x-scroll-page
+			:enable-refresh="false"
+			:enable-load-more="false"
+			:show-footer="false"
+		>
+			<view class="avatar-row">
+				<view class="avatar-wrap">
+					<image
+						v-if="previewUrl.length > 0"
+						class="avatar-img"
+						:src="previewUrl"
+						mode="aspectFill"
+					></image>
+					<x-icon v-else name="paw" :size="28" color="#1c1a17"></x-icon>
+				</view>
+				<view
+					class="change-btn"
+					:class="avatarUploading ? 'btn-disabled' : ''"
+					@click="chooseAvatar"
+				>
+					<text class="change-t">{{ avatarUploading ? '上传中…' : '更换头像' }}</text>
+				</view>
+			</view>
+
+			<text class="label">昵称</text>
+			<input
+				class="field"
+				type="text"
+				maxlength="6"
+				v-model="nickname"
+				placeholder="昵称（最多6字）"
+				placeholder-class="ph"
+			/>
+
+			<text class="label">个人简介</text>
+			<textarea
+				class="area"
+				maxlength="120"
+				v-model="intro"
+				placeholder="一句话介绍自己（选填）"
+				placeholder-class="ph"
+			></textarea>
+
+			<text class="label">个人主页</text>
+			<input
+				class="field"
+				type="text"
+				maxlength="200"
+				v-model="homepage"
+				placeholder="https://example.com（选填）"
+				placeholder-class="ph"
+			/>
+
+			<view
+				class="submit-btn"
+				:class="submitting || avatarUploading ? 'btn-disabled' : ''"
+				@click="onSubmit"
+			>
+				<text class="submit-t">{{ submitting ? '保存中…' : '保存资料' }}</text>
+			</view>
+		</x-scroll-page>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 个人资料编辑：对齐 blog-home-nuxt / uniapp profile-edit-form
+ * 数据来源：Pinia profile；上传 POST /resources/upload-media?category=avatar；
+ * 保存 PATCH /user/edit → 再拉 /user/info
+ * 滚动：x-page-flex + x-scroll-page（仅纵向，关闭刷新/触底）
+ */
+import { useUserStore } from '../../store/user'
+import { uploadAvatar } from '../../api/modules/resources'
+import { resolveStaticUrl } from '../../utils/static-url'
+import { showXToast } from '../../utils/toast'
+
+const userStore = useUserStore()
+
+const nickname = ref('')
+const intro = ref('')
+/** 提交给接口的相对/原始头像路径 */
+const avatar = ref('')
+const homepage = ref('')
+const avatarUploading = ref(false)
+const submitting = ref(false)
+
+/** 预览用完整 URL */
+const previewUrl = computed((): string => {
+	const a = avatar.value
+	if (a.length == 0) return ''
+	return resolveStaticUrl(a)
+})
+
+/**
+ * 用当前 Pinia 资料填表
+ */
+function syncFromStore(): void {
+	const p = userStore.profile
+	nickname.value = p.nickname != null ? '' + p.nickname : ''
+	intro.value = p.bio != null ? '' + p.bio : ''
+	homepage.value = p.homepage != null ? '' + p.homepage : ''
+	avatar.value = p.avatar != null && p.avatar.length > 0 ? '' + p.avatar : ''
+}
+
+/**
+ * 选图并上传头像
+ */
+function chooseAvatar(): void {
+	if (avatarUploading.value || submitting.value) return
+	uni.chooseImage({
+		count: 1,
+		sizeType: ['compressed'],
+		sourceType: ['album', 'camera'],
+		success: async (res) => {
+			const paths = res.tempFilePaths
+			if (paths == null || paths.length == 0) return
+			const path = '' + paths[0]
+			if (path.length == 0) return
+			avatarUploading.value = true
+			try {
+				const rel = await uploadAvatar(path)
+				avatar.value = rel
+				showXToast('photo', '头像已上传', '记得点保存')
+			} catch (_) {
+				showXToast('alert-triangle', '上传失败', '请重试')
+			} finally {
+				avatarUploading.value = false
+			}
+		},
+	})
+}
+
+/**
+ * 提交资料
+ */
+async function onSubmit(): Promise<void> {
+	if (submitting.value || avatarUploading.value) return
+	if (!userStore.loggedIn || userStore.profile.id <= 0) {
+		showXToast('alert-triangle', '请先登录', '')
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	const name = nickname.value.trim()
+	if (name.length == 0) {
+		showXToast('alert-triangle', '请填写昵称', '')
+		return
+	}
+	submitting.value = true
+	try {
+		await userStore.saveProfile({
+			nickname: name,
+			intro: intro.value.trim(),
+			homepage: homepage.value.trim(),
+			avatar: avatar.value,
+		})
+		showXToast('check', '资料已保存', '')
+		uni.navigateBack()
+	} catch (_) {
+		showXToast('alert-triangle', '保存失败', '请稍后重试')
+	} finally {
+		submitting.value = false
+	}
+}
+
+onShow(() => {
+	if (!userStore.loggedIn) {
+		uni.redirectTo({ url: '/pages/login/login' })
+		return
+	}
+	syncFromStore()
+	if (userStore.profile.id <= 0) {
+		userStore.refreshProfile().then(() => syncFromStore()).catch(() => {})
+	}
+})
+</script>
+
+<style>
+@import '../../styles/x-base.css';
+
+.avatar-row {
+	flex-direction: row;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.avatar-wrap {
+	width: 72px;
+	height: 72px;
+	border-radius: 36px;
+	background-color: #ffe8d6;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	margin-right: 14px;
+}
+
+.avatar-img {
+	width: 72px;
+	height: 72px;
+}
+
+.change-btn {
+	padding: 8px 14px;
+	border-radius: 999px;
+	background-color: #ebe6df;
+}
+
+.change-t {
+	font-size: 13px;
+	font-weight: 600;
+	color: #1c1a17;
+}
+
+.label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #5c574f;
+	margin-bottom: 6px;
+	margin-top: 4px;
+}
+
+.field {
+	height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	background-color: #ffffff;
+	font-size: 14px;
+	color: #1c1a17;
+	margin-bottom: 14px;
+}
+
+.area {
+	min-height: 88px;
+	padding: 10px 12px;
+	border-radius: 12px;
+	background-color: #ffffff;
+	font-size: 14px;
+	color: #1c1a17;
+	margin-bottom: 14px;
+	width: 100%;
+}
+
+.ph {
+	color: #9a948a;
+}
+
+.submit-btn {
+	margin-top: 8px;
+	height: 46px;
+	border-radius: 14px;
+	background-color: #1c1a17;
+	align-items: center;
+	justify-content: center;
+}
+
+.submit-t {
+	font-size: 15px;
+	font-weight: 700;
+	color: #ffffff;
+}
+
+.btn-disabled {
+	opacity: 0.55;
+}
+</style>

@@ -79,6 +79,14 @@ export function uploadCover(filePath: string): Promise<string> {
 }
 
 /**
+ * 上传用户头像（需登录）
+ * @returns /static 相对路径
+ */
+export function uploadAvatar(filePath: string): Promise<string> {
+	return uploadMedia(filePath, 'avatar')
+}
+
+/**
  * 上传正文插图
  */
 export function uploadArticleImage(filePath: string): Promise<string> {

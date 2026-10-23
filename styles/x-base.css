@@ -20,6 +20,12 @@
 }
 /* #endif */
 
+/* 小程序：base64 内联子集字体（wxss 不支持本地字体路径，全量 CDN 又大又依赖外网）
+   由 scripts/subset-icons.py 生成，新增图标后重跑即可 */
+/* #ifdef MP-WEIXIN */
+@import './tabler-mp.css';
+/* #endif */
+
 .uni-row {
 	flex-direction: row;
 }

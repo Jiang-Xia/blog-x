@@ -34,6 +34,7 @@ blog-x/
 - 双 token 仍落在 `utils/storage.ts`；资料缓存 `UserProfileKey` 供冷启动瞬时展示。
 - `App.uvue` `onLaunch` 调用 `tryAutoLogin()`：有缓存 token 则自动恢复并拉 `/user/info`。
 - 登录页：`/pages/login/login`；「我的」未登录引导登录，已登录可退出。
+- 编辑资料：`/pages-blog/profile-edit/index`（头像上传 + `PATCH /user/edit` 昵称/简介/主页）；入口在「我的」头像区或「编辑资料」菜单。
 
 ## API 联调
 

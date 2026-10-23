@@ -40,16 +40,21 @@
 				"navigationBarTitleText": "消息中心",
 				"disableScroll": true
 			}
-		},
-		{
-			"path": "pages-dev/icons/index",
-			"style": {
-				"navigationBarTitleText": "图标库",
-				"disableScroll": true
-			}
 		}
 	],
 	"subPackages": [
+		{
+			"root": "pages-dev",
+			"pages": [
+				{
+					"path": "icons/index",
+					"style": {
+						"navigationBarTitleText": "图标库",
+						"disableScroll": true
+					}
+				}
+			]
+		},
 		{
 			"root": "pages-blog",
 			"pages": [
@@ -98,6 +103,13 @@
 					"path": "profile/index",
 					"style": {
 						"navigationBarTitleText": "公开主页",
+						"disableScroll": true
+					}
+				},
+				{
+					"path": "profile-edit/index",
+					"style": {
+						"navigationBarTitleText": "编辑资料",
 						"disableScroll": true
 					}
 				},

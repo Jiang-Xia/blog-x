@@ -48,6 +48,7 @@
 | 四 Tab 主壳 | `pages/index/index`（`?tab=0` 首页 / `1` 发现 / `2` 冒险 / `3` 我的） |
 | 文章详情 | `pages/detail/detail` |
 | 归档 | `pages-blog/archives/index` |
+| 编辑资料 | `pages-blog/profile-edit/index`（头像/昵称/简介/主页） |
 | 幸运抽奖 | `pages-rpg/lottery/index` |
 
 页面优先走 `api/modules/*`；失败或 `USE_MOCK` 时回落 `mock/data.ts`（见 `x-07`）。验收见 `docs/qa-checklist.md`。

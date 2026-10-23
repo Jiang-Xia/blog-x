@@ -38,8 +38,8 @@
  * 开发辅助页：Tabler 图标检索
  * 用途：挑图标 → 点按复制名称 → 粘贴到 <x-icon name="..." />
  */
-import type { IconGlyph } from '../../components/x-icon/icons'
-import { ICON_OUTLINE, ICON_FILLED } from '../../components/x-icon/icons'
+import type { IconGlyph } from '../../components/x-icon/icons-full'
+import { ICON_OUTLINE, ICON_FILLED } from '../../components/x-icon/icons-full'
 import { showXToast } from '../../utils/toast'
 
 const keyword = ref('')

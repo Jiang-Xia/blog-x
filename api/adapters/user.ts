@@ -12,7 +12,7 @@ import type {
 import { resolveStaticUrl } from '../../utils/static-url'
 
 	/**
-	 * /user/info → UserProfile（头像取 avatar，简介取 intro；勿本地 dict 回显）
+	 * /user/info → UserProfile（avatar / intro / homepage 直出；勿本地 dict 回显）
 	 */
 	export function mapUserProfile(raw: any, extras: Record<string, number> = {}): UserProfile {
 		const idRaw = raw != null && raw.id != null ? Number(raw.id) : 0
@@ -21,9 +21,11 @@ import { resolveStaticUrl } from '../../utils/static-url'
 		return {
 			id: isNaN(idRaw) ? 0 : idRaw,
 			nickname: raw != null && raw.nickname != null ? '' + raw.nickname : '游客',
+			avatar: avatarRaw,
 			avatarUrl: avatarRaw.length > 0 ? resolveStaticUrl(avatarRaw) : '',
 			avatarIcon: 'paw',
 			bio: raw != null && raw.intro != null ? '' + raw.intro : '',
+			homepage: raw != null && raw.homepage != null ? '' + raw.homepage : '',
 			articleCount: extras.articleCount != null ? extras.articleCount : 0,
 			favoriteCount: extras.favoriteCount != null ? extras.favoriteCount : 0,
 			likeReceived: extras.likeReceived != null ? extras.likeReceived : 0,

@@ -5,13 +5,14 @@
  */
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import {
-	fetchUserInfo,
-	loginByAccount as apiLoginByAccount,
-	loginByWeixin as apiLoginByWeixin,
-	logoutLocal,
-} from '../api/modules/auth'
-import type { UserProfile } from '../types/user'
+	import {
+		fetchUserInfo,
+		loginByAccount as apiLoginByAccount,
+		loginByWeixin as apiLoginByWeixin,
+		logoutLocal,
+		updateUserProfile as apiUpdateUserProfile,
+	} from '../api/modules/auth'
+	import type { UpdateUserProfileParams, UserProfile } from '../types/user'
 import {
 	clearToken,
 	getCachedProfile,
@@ -24,9 +25,11 @@ import {
 		return {
 			id: 0,
 			nickname: '未登录',
+			avatar: '',
 			avatarUrl: '',
 			avatarIcon: 'paw',
 			bio: '登录后同步收藏与冒险进度',
+			homepage: '',
 			articleCount: 0,
 			favoriteCount: 0,
 			likeReceived: 0,
@@ -64,9 +67,11 @@ export const useUserStore = defineStore('user', () => {
 				profile.value = {
 					id: 0,
 					nickname: '已登录',
+					avatar: '',
 					avatarUrl: '',
 					avatarIcon: 'paw',
 					bio: '正在同步资料…',
+					homepage: '',
 					articleCount: 0,
 					favoriteCount: 0,
 					likeReceived: 0,
@@ -84,15 +89,40 @@ export const useUserStore = defineStore('user', () => {
 		}
 	}
 
-	/**
-	 * 拉取 /user/info 并更新 store
-	 */
-	async function refreshProfile(): Promise<UserProfile> {
-		const info = await fetchUserInfo()
-		setProfile(info)
-		loggedIn.value = true
-		return info
-	}
+		/**
+		 * 拉取 /user/info 并更新 store
+		 */
+		async function refreshProfile(): Promise<UserProfile> {
+			const info = await fetchUserInfo()
+			setProfile(info)
+			loggedIn.value = true
+			return info
+		}
+
+		/**
+		 * 保存资料：PATCH /user/edit 后刷新 /user/info
+		 * @returns 更新后的资料
+		 */
+		async function saveProfile(params: {
+			nickname: string
+			intro?: string
+			homepage?: string
+			avatar?: string
+		}): Promise<UserProfile> {
+			const id = profile.value.id
+			if (id <= 0) {
+				throw new Error('请先登录')
+			}
+			const body: UpdateUserProfileParams = {
+				id,
+				nickname: params.nickname,
+				intro: params.intro,
+				homepage: params.homepage,
+				avatar: params.avatar,
+			}
+			await apiUpdateUserProfile(body)
+			return await refreshProfile()
+		}
 
 	/**
 	 * 登录成功后的公共收尾：标记已登录并拉资料
@@ -177,18 +207,19 @@ export const useUserStore = defineStore('user', () => {
 		bootstrapped.value = true
 	}
 
-	return {
-		loggedIn,
-		bootstrapped,
-		profile,
-		submitting,
-		isLoggedIn,
-		hydrateFromStorage,
-		setProfile,
-		refreshProfile,
-		loginByAccount,
-		loginByWeixin,
-		logout,
-		tryAutoLogin,
-	}
+		return {
+			loggedIn,
+			bootstrapped,
+			profile,
+			submitting,
+			isLoggedIn,
+			hydrateFromStorage,
+			setProfile,
+			refreshProfile,
+			saveProfile,
+			loginByAccount,
+			loginByWeixin,
+			logout,
+			tryAutoLogin,
+		}
 })

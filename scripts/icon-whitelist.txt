@@ -1,0 +1,6 @@
+# 图标白名单（subset-icons.py 扫描源码之外的补充名单）
+# 适用：动态拼接的 name、接口下发后前端映射的图标名。
+# 每行一个 Tabler 图标名，# 开头为注释。改完重跑 subset-icons.py 即可。
+# 示例：
+# diamond
+# sword

@@ -42,6 +42,7 @@ const AUTH_ROWS: ApiRow[] = [
 	{ name: 'wxMiniprogramLogin', label: '微信小程序登录', method: 'POST', path: '/user/auth/wechat/miniprogram' },
 	{ name: 'refreshToken', label: '刷新令牌', method: 'GET', path: '/user/refresh' },
 	{ name: 'getUserInfo', label: '当前用户信息', method: 'GET', path: '/user/info' },
+	{ name: 'patchUserEdit', label: '修改用户资料', method: 'PATCH', path: '/user/edit' },
 	{ name: 'getPublicProfile', label: '公开主页', method: 'GET', path: '/user/public/:uid' },
 	{ name: 'getPublicArticles', label: '公开主页文章', method: 'GET', path: '/user/public/:uid/articles' },
 	{ name: 'getPublicCollects', label: '公开主页收藏', method: 'GET', path: '/user/public/:uid/collects' },

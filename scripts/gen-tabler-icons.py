@@ -13,8 +13,9 @@ import re
 import sys
 import io
 
-# 输出按名称排序写入
-OUT_PATH = r"D:/study/myGithub/blog-x/components/x-icon/icons.ts"
+# 输出按名称排序写入。全量映射存 icons-full.ts（开发/预览页用），
+# 线上使用的 icons.ts（子集）由 scripts/subset-icons.py 从本文件裁剪生成。
+OUT_PATH = r"D:/study/myGithub/blog-x/components/x-icon/icons-full.ts"
 
 HEADER = """/**
  * Tabler Icons 字形映射表 —— 由 scripts/gen-tabler-icons.py 自动生成，请勿手改。

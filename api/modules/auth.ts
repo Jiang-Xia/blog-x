@@ -2,11 +2,11 @@
  * 认证 / 用户 API（对齐 blog-home-nuxt：密码 RSA 加密后提交）
  * 登录 data 形状：{ info: { accessToken, refreshToken, ... } }（blog-server）
  */
-import { get, post } from '../request'
-import { encryptLoginPassword } from '../../utils/gateway-crypto'
-import { clearToken, setAuthTokens } from '../../utils/storage'
-import { mapPublicRpg, mapUserProfile } from '../adapters/user'
-import type { PublicRpgCard, UserProfile } from '../../types/user'
+	import { get, patch, post } from '../request'
+	import { encryptLoginPassword } from '../../utils/gateway-crypto'
+	import { clearToken, setAuthTokens } from '../../utils/storage'
+	import { mapPublicRpg, mapUserProfile } from '../adapters/user'
+	import type { PublicRpgCard, UpdateUserProfileParams, UserProfile } from '../../types/user'
 
 /**
  * 从登录响应取出双 token 并落盘（仅认 Nest login 的 info 包装）
@@ -84,13 +84,27 @@ export function loginByWeixin(): Promise<any> {
 	})
 }
 
-/**
- * 当前用户信息
- */
-export async function fetchUserInfo(): Promise<UserProfile> {
-	const raw = await get('/user/info')
-	return mapUserProfile(raw)
-}
+	/**
+	 * 当前用户信息
+	 */
+	export async function fetchUserInfo(): Promise<UserProfile> {
+		const raw = await get('/user/info')
+		return mapUserProfile(raw)
+	}
+
+	/**
+	 * 更新当前用户资料（昵称、头像、简介、主页）
+	 * 对齐 blog-home-nuxt updateUserProfile → PATCH /user/edit
+	 */
+	export function updateUserProfile(params: UpdateUserProfileParams): Promise<any> {
+		return patch('/user/edit', {
+			id: params.id,
+			nickname: params.nickname,
+			intro: params.intro != null ? params.intro : '',
+			homepage: params.homepage != null ? params.homepage : '',
+			avatar: params.avatar != null ? params.avatar : '',
+		})
+	}
 
 /**
  * 公开主页

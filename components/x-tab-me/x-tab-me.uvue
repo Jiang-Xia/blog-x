@@ -23,7 +23,8 @@
 					<x-icon v-else :name="profile.avatarIcon" :size="30" color="#1c1a17"></x-icon>
 				</view>
 				<text class="name">{{ profile.nickname }}</text>
-				<text class="bio">{{ profile.bio }}</text>
+				<text class="bio">{{ profile.bio.length > 0 ? profile.bio : '点击完善个人简介' }}</text>
+				<text v-if="homepageLabel.length > 0" class="homepage">{{ homepageLabel }}</text>
 			</view>
 
 			<view class="stat-row">
@@ -42,6 +43,11 @@
 			</view>
 
 			<view class="x-card menu">
+				<view v-if="loggedIn" class="mrow" @click="goEditProfile">
+					<view class="m-ico"><x-icon name="pencil" :size="16" color="#1c1a17"></x-icon></view>
+					<text class="m-label">编辑资料</text>
+					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
+				</view>
 				<view class="mrow" @click="goFavorites">
 					<view class="m-ico"><x-icon name="star" :size="16" color="#1c1a17"></x-icon></view>
 					<text class="m-label">我的收藏</text>
@@ -90,8 +96,8 @@
 <script setup lang="ts">
 /**
  * 我的 Tab 面板：对齐原型 me
- * 数据来源：Pinia useUserStore.profile（GET /user/info → mapUserProfile：nickname / avatar / intro）
- * 头像优先 avatarUrl，无则回退 avatarIcon；角标来自收件箱
+ * 数据来源：Pinia useUserStore.profile（GET /user/info → nickname / avatar / intro / homepage）
+ * 编辑：/pages-blog/profile-edit；头像优先 avatarUrl；角标来自收件箱
  * 滚动：x-scroll-page 下拉刷新
  */
 import { storeToRefs } from 'pinia'
@@ -105,6 +111,27 @@ const userStore = useUserStore()
 const { profile, loggedIn } = storeToRefs(userStore)
 const store = useMockStore()
 const inboxBadge = store.inboxBadge
+
+/**
+ * 个人主页展示文案（不依赖 URL 构造，兼容 App / 小程序）
+ * 形如 https://www.a.com/path → a.com
+ */
+const homepageLabel = computed((): string => {
+	const url = profile.value.homepage != null ? ('' + profile.value.homepage).trim() : ''
+	if (url.length == 0) return ''
+	let rest = url
+	const scheme = rest.indexOf('://')
+	if (scheme >= 0) rest = rest.substring(scheme + 3)
+	const slash = rest.indexOf('/')
+	if (slash >= 0) rest = rest.substring(0, slash)
+	const q = rest.indexOf('?')
+	if (q >= 0) rest = rest.substring(0, q)
+	if (rest.indexOf('www.') == 0) rest = rest.substring(4)
+	if (rest.length == 0) {
+		return url.length > 32 ? url.substring(0, 32) + '…' : url
+	}
+	return rest
+})
 
 const {
 	refreshing,
@@ -156,12 +183,25 @@ watch(loggedIn, (v: boolean) => {
 })
 
 /**
- * 点头像区：未登录去登录
+ * 点头像区：未登录去登录；已登录进编辑资料
  */
 function onProfileTap(): void {
 	if (!userStore.loggedIn) {
 		goLogin()
+		return
 	}
+	goEditProfile()
+}
+
+/**
+ * 编辑头像 / 昵称 / 简介 / 个人主页
+ */
+function goEditProfile(): void {
+	if (!userStore.loggedIn) {
+		goLogin()
+		return
+	}
+	uni.navigateTo({ url: '/pages-blog/profile-edit/index' })
 }
 
 function goFavorites(): void {
@@ -250,6 +290,13 @@ function goNotify(): void {
 .bio {
 	font-size: 12px;
 	color: #5c574f;
+	text-align: center;
+}
+
+.homepage {
+	font-size: 11px;
+	color: #7a9e8e;
+	margin-top: 4px;
 	text-align: center;
 }
 
