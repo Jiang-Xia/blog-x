@@ -145,9 +145,13 @@ async function loadRpg(): Promise<void> {
 	const sign = await apiOrMock(() => fetchSignInfo(), {
 		signedToday: store.checkedInToday.value,
 		streakDays: store.streakDays.value,
+		totalSignDays: store.streakDays.value,
+		lastSignDate: '',
 	})
 	store.checkedInToday.value = sign.signedToday
 	if (sign.streakDays > 0) store.streakDays.value = sign.streakDays
+	store.homeTodayTitle.value = sign.signedToday ? '今日已签到' : '今日待签到'
+	store.homeStreakLabel.value = '连续 ' + store.streakDays.value + ' 天'
 	quests.value = await apiOrMock(() => fetchMyQuests(), rpgQuestsSeed)
 }
 
@@ -218,8 +222,9 @@ function goRecharge(): void {
 	uni.navigateTo({ url: '/pages-rpg/recharge/index' })
 }
 
+/** 进背包装扮页 */
 function onBag(): void {
-	showXToast('🎒', '背包', '称号 / 头像框 · 示意')
+	uni.navigateTo({ url: '/pages-rpg/backpack/index' })
 }
 </script>
 

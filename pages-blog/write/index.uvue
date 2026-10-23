@@ -1,0 +1,202 @@
+<template>
+	<!-- 写文章：精简创作（标题/摘要/正文）→ POST /article/create -->
+	<view class="x-page">
+		<x-navbar title="写文章">
+			<template v-slot:right>
+				<text class="nav-act" @click="onSubmit('draft')">存草稿</text>
+			</template>
+		</x-navbar>
+
+		<view class="x-card field">
+			<input
+				class="inp"
+				type="text"
+				v-model="title"
+				placeholder="文章标题"
+				placeholder-class="ph"
+				maxlength="80"
+			/>
+		</view>
+		<view class="x-card field">
+			<input
+				class="inp"
+				type="text"
+				v-model="description"
+				placeholder="一句话摘要（可选）"
+				placeholder-class="ph"
+				maxlength="120"
+			/>
+		</view>
+		<view class="x-card field body">
+			<textarea
+				class="ta"
+				v-model="content"
+				placeholder="正文（支持 Markdown）"
+				placeholder-class="ph"
+				maxlength="20000"
+			/>
+		</view>
+
+		<view class="actions">
+			<view class="x-btn x-btn-ghost flex1" @click="onSubmit('draft')">
+				<text class="x-btn-ghost-text">存草稿</text>
+			</view>
+			<view class="x-btn flex1" @click="onSubmit('publish')">
+				<text class="x-btn-text">发布</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 写文章页：联调 POST /article/create
+ * 精简表单（无封面上传/分类选择）；本地草稿 key=draft:new
+ */
+import { createArticle } from '../../api/modules/article'
+import { USE_MOCK } from '../../api/config'
+import { useUserStore } from '../../store/user'
+import { showXToast } from '../../utils/toast'
+
+const DRAFT_KEY = 'draft:new'
+const userStore = useUserStore()
+const title = ref('')
+const description = ref('')
+const content = ref('')
+const submitting = ref(false)
+
+/**
+ * 尝试恢复本地草稿
+ */
+function tryRestoreDraft(): void {
+	try {
+		const raw = uni.getStorageSync(DRAFT_KEY)
+		if (raw == null || raw === '') return
+		const draft = typeof raw === 'string' ? JSON.parse(raw as string) : raw
+		if (draft == null) return
+		if (draft.title != null) title.value = '' + draft.title
+		if (draft.description != null) description.value = '' + draft.description
+		if (draft.content != null) content.value = '' + draft.content
+		if (title.value.length > 0 || content.value.length > 0) {
+			showXToast('📝', '已恢复草稿', '')
+		}
+	} catch (_) {}
+}
+
+/**
+ * 写入本地草稿
+ */
+function saveLocalDraft(): void {
+	uni.setStorageSync(
+		DRAFT_KEY,
+		JSON.stringify({
+			title: title.value,
+			description: description.value,
+			content: content.value,
+			savedAt: Date.now(),
+		}),
+	)
+}
+
+/**
+ * 清除本地草稿
+ */
+function clearLocalDraft(): void {
+	try {
+		uni.removeStorageSync(DRAFT_KEY)
+	} catch (_) {}
+}
+
+onMounted(() => {
+	if (!USE_MOCK && !userStore.loggedIn) {
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	tryRestoreDraft()
+})
+
+/**
+ * 提交：status = publish | draft
+ */
+async function onSubmit(status: string): Promise<void> {
+	const t = title.value.trim()
+	if (t.length == 0) {
+		showXToast('⚠️', '请填写标题', '')
+		return
+	}
+	if (submitting.value) return
+	submitting.value = true
+	saveLocalDraft()
+
+	if (USE_MOCK) {
+		showXToast('✍️', status == 'draft' ? '草稿已存' : '已发布', 'mock')
+		clearLocalDraft()
+		submitting.value = false
+		return
+	}
+
+	try {
+		const id = await createArticle({
+			title: t,
+			description: description.value.trim(),
+			content: content.value,
+			status,
+		})
+		clearLocalDraft()
+		showXToast('✍️', status == 'draft' ? '草稿已存' : '发布成功', '')
+		if (id.length > 0 && status == 'publish') {
+			uni.redirectTo({ url: '/pages/detail/detail?id=' + id })
+		} else {
+			uni.navigateBack()
+		}
+	} catch (_) {
+	} finally {
+		submitting.value = false
+	}
+}
+</script>
+
+<style>
+.nav-act {
+	font-size: 12px;
+	color: #3db89a;
+	font-weight: 600;
+}
+
+.field {
+	padding: 12px 14px;
+	margin-bottom: 10px;
+}
+
+.body {
+	min-height: 220px;
+}
+
+.inp {
+	font-size: 15px;
+	color: #1c1a17;
+	height: 28px;
+}
+
+.ta {
+	width: 100%;
+	min-height: 200px;
+	font-size: 14px;
+	color: #1c1a17;
+	line-height: 1.5;
+}
+
+.ph {
+	color: #9a948a;
+}
+
+.actions {
+	flex-direction: row;
+	margin-top: 8px;
+}
+
+.flex1 {
+	flex: 1;
+	margin-right: 8px;
+}
+</style>

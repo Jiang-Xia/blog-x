@@ -58,6 +58,39 @@ export function reportArticleViews(id: string | number): Promise<any> {
 	return post('/article/views', { id }, { silent: true })
 }
 
+/** 创建文章入参（对齐 Nest create；tags/cover 可空） */
+export type CreateArticleBody = {
+	title: string
+	description: string
+	content: string
+	/** publish | draft */
+	status: string
+	category?: string
+	cover?: string
+	tags?: number[]
+}
+
+/**
+ * 创建文章：POST /article/create（需登录）
+ * @returns 新建 id（兼容 data.id / data.info.id）
+ */
+export async function createArticle(body: CreateArticleBody): Promise<string> {
+	const res = await post('/article/create', {
+		title: body.title,
+		description: body.description,
+		content: body.content,
+		contentHtml: '',
+		status: body.status,
+		category: body.category != null ? body.category : '',
+		cover: body.cover != null ? body.cover : '',
+		tags: body.tags != null ? body.tags : [],
+	})
+	if (res == null) return ''
+	if (res.id != null) return '' + res.id
+	if (res.info != null && res.info.id != null) return '' + res.info.id
+	return ''
+}
+
 /**
  * 归档
  */

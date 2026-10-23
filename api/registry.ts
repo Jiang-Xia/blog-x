@@ -15,11 +15,12 @@ export type ApiRow = {
 	path: string
 }
 
-/** 文章公开读 */
+/** 文章公开读 / 创作 */
 const ARTICLE_ROWS: ApiRow[] = [
 	{ name: 'getArticleList', label: '文章列表', method: 'POST', path: '/article/list' },
 	{ name: 'getArticleInfo', label: '文章详情', method: 'GET', path: '/article/info' },
 	{ name: 'postArticleViews', label: '文章浏览量', method: 'POST', path: '/article/views' },
+	{ name: 'createArticle', label: '创建文章', method: 'POST', path: '/article/create' },
 	{ name: 'getArchives', label: '文章归档', method: 'GET', path: '/article/archives' },
 	{ name: 'getRelatedArticles', label: '相关文章', method: 'GET', path: '/article/related' },
 	{ name: 'getAllCategory', label: '全部分类', method: 'GET', path: '/category' },
@@ -78,6 +79,10 @@ const RPG_ROWS: ApiRow[] = [
 	{ name: 'getRpgLeaderboard', label: '排行榜', method: 'GET', path: '/rpg/leaderboard' },
 	{ name: 'createRpgRecharge', label: '充值下单', method: 'POST', path: '/rpg/recharge/create' },
 	{ name: 'getRpgRechargeStatus', label: '充值状态', method: 'GET', path: '/rpg/recharge/status' },
+	{ name: 'getRpgInventory', label: '背包物品', method: 'GET', path: '/rpg/inventory' },
+	{ name: 'getRpgLoadout', label: '装备栏', method: 'GET', path: '/rpg/loadout' },
+	{ name: 'equipLoadout', label: '穿戴装备', method: 'POST', path: '/rpg/loadout/equip' },
+	{ name: 'unequipLoadout', label: '卸下装备', method: 'POST', path: '/rpg/loadout/unequip' },
 ]
 
 /** 通知 / AI */

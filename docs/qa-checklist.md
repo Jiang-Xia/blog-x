@@ -7,8 +7,8 @@
 - [ ] 四 Tab 可切换（毛玻璃悬浮底栏 ⌂/◎/✦/☺）：首页 / 发现 / 冒险 / 我的
 - [ ] 底栏为 tab-bar-blur 风格（圆角悬浮、半透明；选中薄荷绿 tint）
 - [ ] 冒险 Tab 展示冒险中心（Hero、签到、瓦片），底栏仍在
-- [ ] 首页：搜索、铃铛、AI、今日任务、全部、文章卡片可跳转；写文章 Toast
-- [ ] 发现：归档 / 留言 / 友链 / 热门可进；标签墙 Toast
+- [ ] 首页：搜索、铃铛、AI、今日任务进度、全部、文章卡片可跳转；写文章进创作页
+- [ ] 发现：归档 / 留言 / 友链 / 热门 / 标签墙可进
 - [ ] 我的：收藏 / 收件箱 / 主页 / 审核 / 登录 / 通知可进
 - [ ] 详情：赞 / 藏 Toast；赏打开 Sheet；支付关闭并 Toast；AI 卡进助手
 - [ ] 签到成功后按钮变「已签」、钻石/连续天数变化；首页今日文案同步
@@ -43,6 +43,11 @@
 - [ ] `OPEN_REQUEST_LOG=true`：有 `[gateway-crypto] encrypt out` / `decrypt in`（密文截断）；无明文 body / 无 `请求开始 req`
 - [ ] 401 后 refresh 成功可重放；refresh 失败跳登录
 - [ ] 冒险签到 `POST /rpg/sign`；任务领取 `POST /rpg/quest/claim`；抽奖 / 排行正常
+- [ ] 签到日历摘要来自 `GET /rpg/sign-info`；网格按连续天数回溯（非 mock hits）
+- [ ] 首页「今日进度」含签到态 + 任务 done/total（`/rpg/my-quests`）
+- [ ] 消息中心分段「评论/赞藏/系统」能过滤列表
+- [ ] 写文章 `POST /article/create`（publish/draft）；未登录跳登录
+- [ ] 背包装扮：`GET /rpg/inventory` + `/rpg/loadout`；称号/头像框穿戴卸下
 - [ ] 详情打赏：钻石档位 → `POST /rpg/article/tip`；站点赞赏 → `POST /site/tip/create` + status 轮询
 - [ ] 充值下单返回 `outTradeNo`（真支付到账需支付宝环境）
 - [ ] 通知 / 收件箱有列表或空态；AI 配额来自 `/rag/quota`；发送走 `/rag/query-stream` 有流式或整包回复
@@ -71,12 +76,16 @@
 | tags | `/pages-blog/tags/index` | GET /tag |
 | lottery | `/pages-rpg/lottery/index` | |
 | rank | `/pages-rpg/rank/index` | |
-| calendar | `/pages-rpg/calendar/index` | |
+| calendar | `/pages-rpg/calendar/index` | sign-info 推当月格子 |
+| notify 分段 | `/pages/notify/notify` | 评论/赞藏/系统前端过滤 |
+| home 今日进度 | 首页 Tab | sign-info + my-quests |
 | recharge | `/pages-rpg/recharge/index` | |
 | tipSheet | 详情内 `x-tip-sheet` | 钻石 tip + 站点赞赏 |
-| 写文章 / 背包 | Toast 示意 | |
+| write | `/pages-blog/write/index` | createArticle |
+| backpack | `/pages-rpg/backpack/index` | inventory + loadout |
 
 ## 本阶段不做
 
-- 审核台真实 C 端 API、写文章 / 背包装扮独立页
+- 审核台真实 C 端 API；写文章封面/分类/富编辑器；背包宠物槽
 - 微信支付真单（站点赞赏走支付宝链接复制 + 轮询）
+- 工具箱分包 `pages-tool` 真实工具

@@ -1,5 +1,5 @@
 <template>
-	<!-- 消息中心：分段仅 UI + 全部已读 -->
+	<!-- 消息中心：分段按 kind 过滤 + 全部已读 -->
 	<view class="x-page">
 		<x-navbar title="消息中心">
 			<template v-slot:right>
@@ -12,13 +12,13 @@
 				v-for="(s, i) in segs"
 				:key="s"
 				:class="segIndex === i ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
-				@click="segIndex = i"
+				@click="setSeg(i)"
 			>
 				<text :class="segIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
 			</view>
 		</view>
 
-		<view v-for="item in items" :key="item.id" class="msg">
+		<view v-for="item in filtered" :key="item.id" class="msg">
 			<view class="msg-row">
 				<text class="msg-em">{{ item.emoji }}</text>
 				<view class="msg-body">
@@ -27,12 +27,14 @@
 				</view>
 			</view>
 		</view>
+		<x-empty v-if="filtered.length == 0" text="暂无消息"></x-empty>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 消息中心：联调 /notification/list + read；分段仅 UI
+ * 消息中心：联调 /notification/list + read
+ * 分段「全部/评论/赞藏/系统」按 NotifyItem.kind 前端过滤（后端 list 无 type 筛选参数）
  */
 import { notifyItems } from '../../mock/data'
 import type { NotifyItem } from '../../types/notify'
@@ -43,15 +45,42 @@ import { clearNotifyBadge } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 
 const segs = ['全部', '评论', '赞藏', '系统']
+/** 与 segs 下标对齐；空串 = 全部 */
+const segKinds = ['', 'comment', 'like', 'system']
 const segIndex = ref(0)
-const items = ref(notifyItems as NotifyItem[])
+const allItems = ref(notifyItems as NotifyItem[])
 
-onMounted(async () => {
-	items.value = await apiOrMock(() => fetchNotifications(1, 30), notifyItems)
+/** 当前分段过滤后的列表 */
+const filtered = computed((): NotifyItem[] => {
+	const kind = segKinds[segIndex.value]
+	if (kind.length == 0) return allItems.value
+	const list: NotifyItem[] = []
+	for (let i = 0; i < allItems.value.length; i++) {
+		if (allItems.value[i].kind == kind) list.push(allItems.value[i])
+	}
+	return list
 })
 
 /**
- * 全部已读
+ * 切换分段（uvue 避免模板内直接赋值）
+ */
+function setSeg(i: number): void {
+	segIndex.value = i
+}
+
+/**
+ * 拉取通知列表
+ */
+async function loadList(): Promise<void> {
+	allItems.value = await apiOrMock(() => fetchNotifications(1, 30), notifyItems)
+}
+
+onMounted(() => {
+	loadList()
+})
+
+/**
+ * 全部已读：清角标 + PATCH /notification/read
  */
 async function onReadAll(): Promise<void> {
 	clearNotifyBadge()

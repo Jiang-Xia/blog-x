@@ -40,19 +40,82 @@ export function mapPublicRpg(raw: any): PublicRpgCard {
 }
 
 /**
+ * 将后端 type 归入分段：comment | like | system（展示文案仍来自 payload）
+ */
+function mapNotifySegKind(type: string): string {
+	const t = type.toLowerCase()
+	if (t.indexOf('comment') >= 0 || t.indexOf('reply') >= 0) return 'comment'
+	if (t.indexOf('like') >= 0 || t.indexOf('collect') >= 0 || t.indexOf('tip') >= 0) return 'like'
+	return 'system'
+}
+
+/**
+ * 从 type + payload 拼标题（对齐 Nuxt NavNotificationBell）
+ */
+function mapNotifyTitle(type: string, payload: any): string {
+	const art =
+		payload != null && payload.articleTitle != null ? '' + payload.articleTitle : ''
+	if (type.indexOf('comment') >= 0 || art.length > 0) {
+		return '收到新评论 · ' + (art.length > 0 ? art : '文章')
+	}
+	if (type.indexOf('like') >= 0) return '收到新点赞'
+	if (type.indexOf('collect') >= 0) return '收到新收藏'
+	if (type.length > 0) return type
+	return '系统通知'
+}
+
+/**
+ * 从 payload 拼摘要
+ */
+function mapNotifyDesc(payload: any): string {
+	if (payload == null) return '点击查看详情'
+	if (payload.commentContent != null) {
+		const text = '' + payload.commentContent
+		return text.length > 48 ? text.substring(0, 48) + '...' : text
+	}
+	if (payload.nickname != null) {
+		return '' + payload.nickname + ' 互动了你的文章'
+	}
+	if (payload.fromNickname != null) {
+		return '' + payload.fromNickname + ' 互动了你的文章'
+	}
+	if (payload.content != null) return '' + payload.content
+	return '点击查看详情'
+}
+
+/**
  * 通知列表 → NotifyItem[]
+ * 数据来源：GET /notification/list（type + payload，勿本地 dict 回显业务名）
  */
 export function mapNotifyItems(raw: any): NotifyItem[] {
 	const list: NotifyItem[] = []
 	const arr = raw == null ? [] : Array.isArray(raw) ? raw : raw.list != null ? raw.list : []
 	for (let i = 0; i < arr.length; i++) {
 		const n = arr[i]
+		const type = n.type != null ? '' + n.type : n.kind != null ? '' + n.kind : 'system'
+		const payload = n.payload != null ? n.payload : null
+		const emoji =
+			n.emoji != null
+				? '' + n.emoji
+				: type.indexOf('comment') >= 0
+					? '💬'
+					: type.indexOf('like') >= 0
+						? '❤️'
+						: '🔔'
 		list.push({
 			id: n.id != null ? '' + n.id : '' + i,
-			emoji: n.emoji != null ? '' + n.emoji : '🔔',
-			title: n.title != null ? '' + n.title : '',
-			desc: n.content != null ? '' + n.content : n.desc != null ? '' + n.desc : '',
-			kind: n.type != null ? '' + n.type : n.kind != null ? '' + n.kind : 'system',
+			emoji,
+			title:
+				n.title != null && ('' + n.title).length > 0
+					? '' + n.title
+					: mapNotifyTitle(type, payload),
+			desc:
+				n.content != null
+					? '' + n.content
+					: n.desc != null
+						? '' + n.desc
+						: mapNotifyDesc(payload),
+			kind: mapNotifySegKind(type),
 		})
 	}
 	return list

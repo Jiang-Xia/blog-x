@@ -1,0 +1,275 @@
+<template>
+	<!-- 背包装扮：inventory + loadout，称号/头像框可穿戴 -->
+	<view class="x-page">
+		<x-navbar title="背包装扮"></x-navbar>
+
+		<view class="x-card loadout">
+			<text class="lo-label">当前装扮</text>
+			<text class="lo-line">称号 · {{ loadout.titleName.length > 0 ? loadout.titleName : '未装备' }}</text>
+			<text class="lo-line">头像框 · {{ loadout.frameName.length > 0 ? loadout.frameName : '未装备' }}</text>
+		</view>
+
+		<view class="x-seg">
+			<view
+				v-for="(s, i) in segs"
+				:key="s"
+				:class="segIndex === i ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
+				@click="setSeg(i)"
+			>
+				<text :class="segIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
+			</view>
+		</view>
+
+		<view v-for="item in filtered" :key="item.id" class="x-card row">
+			<view class="ico">
+				<text class="ico-t">{{ item.icon }}</text>
+			</view>
+			<view class="body">
+				<text class="name">{{ item.name }}</text>
+				<text class="meta">{{ item.itemTypeLabel }} · ×{{ item.quantity }}</text>
+				<text v-if="item.sourceLabel.length > 0" class="src">{{ item.sourceLabel }}</text>
+			</view>
+			<view v-if="item.equippable" :class="isEquipped(item) ? 'x-btn' : 'x-btn x-btn-ghost'" @click="onToggle(item)">
+				<text :class="isEquipped(item) ? 'x-btn-text' : 'x-btn-ghost-text'">
+					{{ isEquipped(item) ? '卸下' : '穿戴' }}
+				</text>
+			</view>
+		</view>
+		<x-empty v-if="filtered.length == 0" text="背包为空"></x-empty>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 背包装扮：联调 GET /rpg/inventory、/rpg/loadout；穿戴/卸下 loadout/equip|unequip
+ * 展示字段来自后端 enrich（name / itemTypeLabel / sourceLabel）
+ */
+import {
+	equipLoadout,
+	fetchInventory,
+	fetchLoadout,
+	unequipLoadout,
+	type BagItem,
+	type BagLoadout,
+} from '../../api/modules/rpg'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
+import { useUserStore } from '../../store/user'
+import { showXToast } from '../../utils/toast'
+
+const segs = ['全部', '称号', '头像框', '其他']
+const segTypes = ['', 'title', 'avatar_frame', '_other']
+const segIndex = ref(0)
+
+const emptyLoadout: BagLoadout = {
+	titleCode: '',
+	titleName: '',
+	frameCode: '',
+	frameName: '',
+}
+
+/** mock 背包种子（USE_MOCK / 失败回落） */
+const mockItems: BagItem[] = [
+	{
+		id: 'm1',
+		itemCode: 'title_pixel',
+		quantity: 1,
+		name: '像素匠',
+		itemType: 'title',
+		itemTypeLabel: '称号',
+		sourceLabel: '等级奖励',
+		icon: '🏷️',
+		equippable: true,
+	},
+	{
+		id: 'm2',
+		itemCode: 'frame_mint',
+		quantity: 1,
+		name: '薄荷绿框',
+		itemType: 'avatar_frame',
+		itemTypeLabel: '头像框',
+		sourceLabel: '抽奖',
+		icon: '🖼️',
+		equippable: true,
+	},
+	{
+		id: 'm3',
+		itemCode: 'currency',
+		quantity: 128,
+		name: '钻石',
+		itemType: 'currency',
+		itemTypeLabel: '货币',
+		sourceLabel: '系统',
+		icon: '💎',
+		equippable: false,
+	},
+]
+
+const items = ref(mockItems as BagItem[])
+const loadout = ref(emptyLoadout as BagLoadout)
+const userStore = useUserStore()
+
+/** 分段过滤 */
+const filtered = computed((): BagItem[] => {
+	const t = segTypes[segIndex.value]
+	if (t.length == 0) return items.value
+	const list: BagItem[] = []
+	for (let i = 0; i < items.value.length; i++) {
+		const it = items.value[i]
+		if (t == '_other') {
+			if (it.itemType != 'title' && it.itemType != 'avatar_frame') list.push(it)
+		} else if (it.itemType == t) {
+			list.push(it)
+		}
+	}
+	return list
+})
+
+/**
+ * 切换分段
+ */
+function setSeg(i: number): void {
+	segIndex.value = i
+}
+
+/**
+ * 是否已穿戴
+ */
+function isEquipped(item: BagItem): boolean {
+	if (item.itemType == 'title') return loadout.value.titleCode == item.itemCode
+	if (item.itemType == 'avatar_frame') return loadout.value.frameCode == item.itemCode
+	return false
+}
+
+/**
+ * 槽位名
+ */
+function slotOf(item: BagItem): string {
+	return item.itemType == 'title' ? 'title' : 'avatar_frame'
+}
+
+/**
+ * 拉取背包 + 装扮
+ */
+async function loadBag(): Promise<void> {
+	items.value = await apiOrMock(() => fetchInventory(), mockItems)
+	loadout.value = await apiOrMock(
+		() => fetchLoadout(),
+		{
+			titleCode: 'title_pixel',
+			titleName: '像素匠',
+			frameCode: '',
+			frameName: '',
+		} as BagLoadout,
+	)
+}
+
+onMounted(() => {
+	if (!USE_MOCK && !userStore.loggedIn) {
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	loadBag()
+})
+
+/**
+ * 穿戴 / 卸下
+ */
+async function onToggle(item: BagItem): Promise<void> {
+	const slot = slotOf(item)
+	if (USE_MOCK) {
+		if (isEquipped(item)) {
+			if (slot == 'title') {
+				loadout.value.titleCode = ''
+				loadout.value.titleName = ''
+			} else {
+				loadout.value.frameCode = ''
+				loadout.value.frameName = ''
+			}
+			showXToast('🎒', '已卸下', 'mock')
+		} else {
+			if (slot == 'title') {
+				loadout.value.titleCode = item.itemCode
+				loadout.value.titleName = item.name
+			} else {
+				loadout.value.frameCode = item.itemCode
+				loadout.value.frameName = item.name
+			}
+			showXToast('🎒', '已穿戴', 'mock')
+		}
+		return
+	}
+	try {
+		if (isEquipped(item)) {
+			await unequipLoadout(slot)
+			showXToast('🎒', '已卸下', '')
+		} else {
+			await equipLoadout(slot, item.itemCode)
+			showXToast('🎒', '已穿戴', '')
+		}
+		await loadBag()
+	} catch (_) {}
+}
+</script>
+
+<style>
+.loadout {
+	margin-bottom: 12px;
+}
+
+.lo-label {
+	font-size: 12px;
+	color: #9a948a;
+	margin-bottom: 6px;
+}
+
+.lo-line {
+	font-size: 13px;
+	color: #1c1a17;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.row {
+	flex-direction: row;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.ico {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background-color: rgba(61, 184, 154, 0.12);
+	align-items: center;
+	justify-content: center;
+	margin-right: 10px;
+}
+
+.ico-t {
+	font-size: 20px;
+}
+
+.body {
+	flex: 1;
+	margin-right: 8px;
+}
+
+.name {
+	font-size: 14px;
+	font-weight: 650;
+	color: #1c1a17;
+	margin-bottom: 2px;
+}
+
+.meta {
+	font-size: 11px;
+	color: #5c574f;
+}
+
+.src {
+	font-size: 10px;
+	color: #9a948a;
+	margin-top: 2px;
+}
+</style>

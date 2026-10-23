@@ -1,14 +1,14 @@
 <template>
-	<!-- 签到日历：十月网格 -->
+	<!-- 签到日历：当月网格 + sign-info 摘要（网格由连续天数回溯） -->
 	<view class="x-page">
 		<x-navbar title="签到日历"></x-navbar>
 		<view class="x-card summary">
 			<text class="sum-t">{{ summaryText }}</text>
 			<view class="ring">
-				<text class="ring-pct">68%</text>
+				<text class="ring-pct">{{ ringPct }}%</text>
 			</view>
 		</view>
-		<text class="month">2026 年 10 月</text>
+		<text class="month">{{ monthLabel }}</text>
 		<view class="cal">
 			<text v-for="h in weekHeads" :key="h" class="hd">{{ h }}</text>
 			<view
@@ -19,50 +19,144 @@
 				<text :class="dayTextClass(d)">{{ d.label }}</text>
 			</view>
 		</view>
+		<text class="hint">说明：后端仅提供连续签到，网格按最近连续天数回溯标注</text>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 签到日历：网格仍用 mock hits；摘要联调 sign-info 连续天数
+ * 签到日历：联调 GET /rpg/sign-info
+ * 后端无逐日明细；用 lastSignDate + consecutiveSignDays 推算本月命中格
  */
 import { calendarHits } from '../../mock/data'
-import { fetchSignInfo } from '../../api/modules/rpg'
+import { fetchSignInfo, type SignInfoSummary } from '../../api/modules/rpg'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { USE_MOCK } from '../../api/config'
 
 const weekHeads = ['日', '一', '二', '三', '四', '五', '六']
-const summaryText = ref('已签 ' + calendarHits.length + '/31 · 连续 — 天 · 本周全勤')
+const now = new Date()
+const year = now.getFullYear()
+const month = now.getMonth() // 0-based
+const todayDate = now.getDate()
+const daysInMonth = new Date(year, month + 1, 0).getDate()
 
-onMounted(async () => {
-	const sign = await apiOrMock(() => fetchSignInfo(), { signedToday: false, streakDays: 0 })
-	const streak = sign.streakDays > 0 ? sign.streakDays : 33
-	summaryText.value =
-		'已签 ' + calendarHits.length + '/31 · 连续 ' + streak + ' 天 · 本周全勤'
-})
+const monthLabel = ref(year + ' 年 ' + (month + 1) + ' 月')
+const summaryText = ref('加载中…')
+const ringPct = ref(0)
+/** 本月已签日期（1-based） */
+const hits = ref([] as number[])
+const todayOn = ref(false)
 
 type DayCell = { label: string; muted: boolean; hit: boolean; on: boolean }
 
 /**
- * 构建十月日历（1 号周四 → 前导 mute）
+ * 从 lastSignDate + consecutive 推算本月命中日
+ */
+function buildHitsFromSign(sign: SignInfoSummary): number[] {
+	const out: number[] = []
+	if (sign.streakDays <= 0 && !sign.signedToday) return out
+
+	let endDay = todayDate
+	if (sign.lastSignDate.length >= 10) {
+		const parts = sign.lastSignDate.split('-')
+		const y = parseInt(parts[0], 10)
+		const m = parseInt(parts[1], 10) - 1
+		const d = parseInt(parts[2], 10)
+		if (y == year && m == month && !isNaN(d)) {
+			endDay = d
+		} else if (y != year || m != month) {
+			// 最近签到不在本月：仅标今日（若今日已签）
+			if (sign.signedToday) out.push(todayDate)
+			return out
+		}
+	} else if (sign.signedToday) {
+		endDay = todayDate
+	}
+
+	const streak = sign.streakDays > 0 ? sign.streakDays : sign.signedToday ? 1 : 0
+	for (let i = 0; i < streak; i++) {
+		const day = endDay - i
+		if (day >= 1 && day <= daysInMonth) out.push(day)
+	}
+	return out
+}
+
+/**
+ * 拉取签到摘要并刷新网格
+ */
+async function loadCalendar(): Promise<void> {
+	const mockSign: SignInfoSummary = {
+		signedToday: true,
+		streakDays: calendarHits.length,
+		totalSignDays: calendarHits.length,
+		lastSignDate:
+			year +
+			'-' +
+			(month + 1 < 10 ? '0' : '') +
+			(month + 1) +
+			'-' +
+			(todayDate < 10 ? '0' : '') +
+			todayDate,
+	}
+	const sign = await apiOrMock(() => fetchSignInfo(), mockSign)
+	// USE_MOCK 用种子 hits；联调始终用推算结果（可为空，不再回落假数据）
+	if (USE_MOCK) {
+		hits.value = calendarHits
+	} else {
+		hits.value = buildHitsFromSign(sign)
+	}
+	todayOn.value = sign.signedToday
+	const signedCount = hits.value.length
+	const streak = sign.streakDays > 0 ? sign.streakDays : signedCount
+	const total = sign.totalSignDays > 0 ? sign.totalSignDays : signedCount
+	summaryText.value =
+		'本月约 ' +
+		signedCount +
+		'/' +
+		daysInMonth +
+		' · 连续 ' +
+		streak +
+		' 天 · 累计 ' +
+		total +
+		' 天'
+	ringPct.value = Math.min(100, Math.floor((signedCount / daysInMonth) * 100))
+}
+
+onMounted(() => {
+	loadCalendar()
+})
+
+/**
+ * 构建当月日历（含上月前导 mute）
  */
 const days = computed((): DayCell[] => {
 	const list: DayCell[] = []
-	// 前导：9 月 28–30
-	;[28, 29, 30].forEach((n) => {
-		list.push({ label: '' + n, muted: true, hit: false, on: false })
-	})
-	for (let d = 1; d <= 31; d++) {
-		const hit = calendarHits.indexOf(d) >= 0
+	const firstWeekday = new Date(year, month, 1).getDay()
+	const prevDays = new Date(year, month, 0).getDate()
+	for (let i = firstWeekday - 1; i >= 0; i--) {
+		list.push({
+			label: '' + (prevDays - i),
+			muted: true,
+			hit: false,
+			on: false,
+		})
+	}
+	for (let d = 1; d <= daysInMonth; d++) {
+		const hit = hits.value.indexOf(d) >= 0
+		const on = d === todayDate && (todayOn.value || hit)
 		list.push({
 			label: '' + d,
 			muted: false,
-			hit: hit && d !== 21,
-			on: d === 21,
+			hit: hit && !on,
+			on,
 		})
 	}
 	return list
 })
 
+/**
+ * 格子容器 class
+ */
 function dayClass(d: DayCell): string {
 	if (d.muted) return 'd muted'
 	if (d.on) return 'd on'
@@ -70,6 +164,9 @@ function dayClass(d: DayCell): string {
 	return 'd'
 }
 
+/**
+ * 格子文字 class
+ */
 function dayTextClass(d: DayCell): string {
 	if (d.on) return 'd-t on-t'
 	if (d.hit) return 'd-t hit-t'
@@ -170,5 +267,12 @@ function dayTextClass(d: DayCell): string {
 
 .muted-t {
 	color: #9a948a;
+}
+
+.hint {
+	margin-top: 12px;
+	font-size: 11px;
+	color: #9a948a;
+	line-height: 1.4;
 }
 </style>

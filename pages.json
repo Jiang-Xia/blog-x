@@ -123,6 +123,12 @@
 					"style": {
 						"navigationBarTitleText": "标签墙"
 					}
+				},
+				{
+					"path": "write/index",
+					"style": {
+						"navigationBarTitleText": "写文章"
+					}
 				}
 			]
 		},
@@ -158,6 +164,12 @@
 					"path": "recharge/index",
 					"style": {
 						"navigationBarTitleText": "钻石充值"
+					}
+				},
+				{
+					"path": "backpack/index",
+					"style": {
+						"navigationBarTitleText": "背包装扮"
 					}
 				}
 			]

@@ -34,16 +34,41 @@ export async function fetchRpgHero(): Promise<RpgHero> {
 	return hero
 }
 
+/** 签到摘要（对齐 Nest/Go getSignInfo） */
+export type SignInfoSummary = {
+	signedToday: boolean
+	/** 连续签到天数 */
+	streakDays: number
+	/** 累计签到天数 */
+	totalSignDays: number
+	/** YYYY-MM-DD，未签过为空 */
+	lastSignDate: string
+}
+
 /**
- * 签到信息（是否今日已签）
+ * 签到信息（今日是否已签、连续/累计天数、最近签到日）
  */
-export async function fetchSignInfo(): Promise<{ signedToday: boolean; streakDays: number }> {
+export async function fetchSignInfo(): Promise<SignInfoSummary> {
 	const res = await get('/rpg/sign-info', null, { silent: true })
+	const streak =
+		res != null && res.consecutiveSignDays != null
+			? Number(res.consecutiveSignDays)
+			: res != null && res.signDays != null
+				? Number(res.signDays)
+				: 0
+	const total =
+		res != null && res.totalSignDays != null
+			? Number(res.totalSignDays)
+			: streak
+	const last =
+		res != null && res.lastSignDate != null ? '' + res.lastSignDate : ''
 	return {
 		signedToday:
 			res != null &&
 			(res.signedToday === true || res.todaySigned === true || res.hasSigned === true),
-		streakDays: res != null && res.signDays != null ? Number(res.signDays) : 0,
+		streakDays: streak,
+		totalSignDays: total,
+		lastSignDate: last.length >= 10 ? last.substring(0, 10) : last,
 	}
 }
 
@@ -108,4 +133,125 @@ export function createRpgRecharge(amountYuan: number): Promise<any> {
  */
 export function getRpgRechargeStatus(outTradeNo: string): Promise<any> {
 	return get('/rpg/recharge/status', { out_trade_no: outTradeNo }, { silent: true })
+}
+
+/** 背包展示项（字段来自后端 enrich，勿本地 dict 回显） */
+export type BagItem = {
+	id: string
+	itemCode: string
+	quantity: number
+	name: string
+	itemType: string
+	itemTypeLabel: string
+	sourceLabel: string
+	icon: string
+	/** 是否可穿戴（title / avatar_frame） */
+	equippable: boolean
+}
+
+/** 当前装扮槽（code 来自 loadout 嵌套 config） */
+export type BagLoadout = {
+	titleCode: string
+	titleName: string
+	frameCode: string
+	frameName: string
+}
+
+/**
+ * 背包列表：GET /rpg/inventory
+ */
+export async function fetchInventory(itemType?: string): Promise<BagItem[]> {
+	const query = itemType != null && itemType.length > 0 ? { itemType } : null
+	const res = await get('/rpg/inventory', query)
+	const arr =
+		res == null
+			? []
+			: Array.isArray(res)
+				? res
+				: res.items != null
+					? res.items
+					: []
+	const list: BagItem[] = []
+	for (let i = 0; i < arr.length; i++) {
+		const row = arr[i]
+		const cfg = row.config != null ? row.config : null
+		const type =
+			cfg != null && cfg.itemType != null
+				? '' + cfg.itemType
+				: row.itemType != null
+					? '' + row.itemType
+					: ''
+		const equippable = type == 'title' || type == 'avatar_frame'
+		list.push({
+			id: row.id != null ? '' + row.id : '' + i,
+			itemCode: row.itemCode != null ? '' + row.itemCode : '',
+			quantity: row.quantity != null ? Number(row.quantity) : 1,
+			name:
+				cfg != null && cfg.name != null
+					? '' + cfg.name
+					: row.itemCode != null
+						? '' + row.itemCode
+						: '物品',
+			itemType: type,
+			itemTypeLabel:
+				cfg != null && cfg.itemTypeLabel != null
+					? '' + cfg.itemTypeLabel
+					: type.length > 0
+						? type
+						: '其他',
+			sourceLabel:
+				row.sourceLabel != null
+					? '' + row.sourceLabel
+					: row.source != null
+						? '' + row.source
+						: '',
+			icon:
+				cfg != null && cfg.itemTypeIcon != null
+					? '' + cfg.itemTypeIcon
+					: cfg != null && cfg.icon != null
+						? '' + cfg.icon
+						: '🎁',
+			equippable,
+		})
+	}
+	return list
+}
+
+/**
+ * 装备栏详情：GET /rpg/loadout
+ */
+export async function fetchLoadout(): Promise<BagLoadout> {
+	const res = await get('/rpg/loadout', null, { silent: true })
+	const title = res != null && res.title != null ? res.title : null
+	const frame = res != null && res.avatarFrame != null ? res.avatarFrame : null
+	return {
+		titleCode:
+			title != null && title.code != null
+				? '' + title.code
+				: res != null && res.titleCode != null
+					? '' + res.titleCode
+					: '',
+		titleName: title != null && title.name != null ? '' + title.name : '',
+		frameCode:
+			frame != null && frame.code != null
+				? '' + frame.code
+				: res != null && res.avatarFrameCode != null
+					? '' + res.avatarFrameCode
+					: '',
+		frameName: frame != null && frame.name != null ? '' + frame.name : '',
+	}
+}
+
+/**
+ * 穿戴：POST /rpg/loadout/equip
+ */
+export function equipLoadout(slot: string, itemCode: string): Promise<any> {
+	return post('/rpg/loadout/equip', { slot, itemCode })
+}
+
+/**
+ * 卸下：POST /rpg/loadout/unequip
+ */
+export function unequipLoadout(slot: string): Promise<any> {
+	return post('/rpg/loadout/unequip', { slot })
 }

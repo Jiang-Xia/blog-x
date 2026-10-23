@@ -7,7 +7,7 @@ export type NotifyItem = {
 	emoji: string
 	title: string
 	desc: string
-	/** all | comment | like | system — 原型分段仅 UI，字段预留 */
+	/** 分段过滤：comment | like | system（由 type 归类，见 mapNotifySegKind） */
 	kind: string
 }
 
