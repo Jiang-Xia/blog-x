@@ -58,16 +58,19 @@ export function reportArticleViews(id: string | number): Promise<any> {
 	return post('/article/views', { id }, { silent: true })
 }
 
-/** 创建文章入参（对齐 Nest create；tags/cover 可空） */
+/** 创建文章入参（对齐 Nest create；category/tags 为 UUID） */
 export type CreateArticleBody = {
 	title: string
 	description: string
 	content: string
-	/** publish | draft */
+	/** publish | draft | scheduled */
 	status: string
 	category?: string
 	cover?: string
-	tags?: number[]
+	/** 标签 UUID 列表 */
+	tags?: string[]
+	/** 定时发布时间，仅 status=scheduled 时生效 */
+	scheduledPublishAt?: string
 }
 
 /**
@@ -75,7 +78,7 @@ export type CreateArticleBody = {
  * @returns 新建 id（兼容 data.id / data.info.id）
  */
 export async function createArticle(body: CreateArticleBody): Promise<string> {
-	const res = await post('/article/create', {
+	const payload: Record<string, any> = {
 		title: body.title,
 		description: body.description,
 		content: body.content,
@@ -84,7 +87,11 @@ export async function createArticle(body: CreateArticleBody): Promise<string> {
 		category: body.category != null ? body.category : '',
 		cover: body.cover != null ? body.cover : '',
 		tags: body.tags != null ? body.tags : [],
-	})
+	}
+	if (body.status == 'scheduled' && body.scheduledPublishAt != null && body.scheduledPublishAt.length > 0) {
+		payload.scheduledPublishAt = body.scheduledPublishAt
+	}
+	const res = await post('/article/create', payload)
 	if (res == null) return ''
 	if (res.id != null) return '' + res.id
 	if (res.info != null && res.info.id != null) return '' + res.info.id
@@ -112,16 +119,46 @@ export async function fetchRelatedArticles(id: string | number, limit = 6): Prom
 	return list
 }
 
+/** 分类选项（创作页 picker；展示用 label，勿本地 map） */
+export type CategoryOption = {
+	id: string
+	label: string
+}
+
+/**
+ * 分类列表（含 id，供写文章选择）
+ */
+export async function fetchCategories(): Promise<CategoryOption[]> {
+	const res = await get('/category', { isDelete: true }, { silent: true })
+	const arr = Array.isArray(res) ? res : res != null && res.list != null ? res.list : []
+	const list: CategoryOption[] = []
+	for (let i = 0; i < arr.length; i++) {
+		const c = arr[i]
+		const label =
+			c.label != null
+				? '' + c.label
+				: c.name != null
+					? '' + c.name
+					: c.value != null
+						? '' + c.value
+						: ''
+		if (label.length == 0) continue
+		list.push({
+			id: c.id != null ? '' + c.id : '' + i,
+			label,
+		})
+	}
+	return list
+}
+
 /**
  * 分类名列表（用于首页 chip）
  */
 export async function fetchCategoryNames(): Promise<string[]> {
-	const res = await get('/category', { isDelete: true }, { silent: true })
-	const arr = Array.isArray(res) ? res : res != null && res.list != null ? res.list : []
+	const cats = await fetchCategories()
 	const names: string[] = ['全部']
-	for (let i = 0; i < arr.length; i++) {
-		const n = arr[i].name != null ? '' + arr[i].name : ''
-		if (n.length > 0) names.push(n)
+	for (let i = 0; i < cats.length; i++) {
+		names.push(cats[i].label)
 	}
 	return names
 }

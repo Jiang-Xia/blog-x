@@ -78,7 +78,7 @@ await apis.getAllTag()
 
 底栏：`uni_modules/uni-tab-bar` 的 **tab-bar-blur**。切 Tab 用 `utils/tabNav.goTab`，**不要**用 `uni.switchTab`。
 
-已联调：详情评论、收件箱回复、任务领奖、标签墙、钻石/站点打赏、AI 流式、签到日历网格（sign-info 推算）、消息分段过滤、首页今日进度（签到+任务）、写文章（`/article/create`）、背包装扮（inventory/loadout）。审核台仍 mock（无 C 端对等 API）；工具箱分包仍占位。
+已联调：详情评论、收件箱回复、任务领奖、标签墙、钻石/站点打赏、AI 流式、签到日历网格（sign-info 推算）、消息分段过滤、首页今日进度（签到+任务）、写文章（封面 + 分类/标签/定时 + Markdown 工具栏/插图 + `/article/create`）、背包装扮（inventory/loadout + 宠物槽 `/rpg/pets`）。审核台仍 mock（无 C 端对等 API）；工具箱分包仍占位。
 
 ## 分包约定
 

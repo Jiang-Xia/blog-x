@@ -46,8 +46,8 @@
 - [ ] 签到日历摘要来自 `GET /rpg/sign-info`；网格按连续天数回溯（非 mock hits）
 - [ ] 首页「今日进度」含签到态 + 任务 done/total（`/rpg/my-quests`）
 - [ ] 消息中心分段「评论/赞藏/系统」能过滤列表
-- [ ] 写文章 `POST /article/create`（publish/draft）；未登录跳登录
-- [ ] 背包装扮：`GET /rpg/inventory` + `/rpg/loadout`；称号/头像框穿戴卸下
+- [ ] 写文章：封面 `upload-media?category=cover`；分类 `/category`；标签 `/tag`；定时 `status=scheduled` + scheduledPublishAt；正文工具栏插图；`POST /article/create`；未登录跳登录
+- [ ] 背包装扮：`GET /rpg/inventory` + `/rpg/loadout`；称号/头像框穿戴卸下；宠物段 `GET /rpg/pets` 出战/休息
 - [ ] 详情打赏：钻石档位 → `POST /rpg/article/tip`；站点赞赏 → `POST /site/tip/create` + status 轮询
 - [ ] 充值下单返回 `outTradeNo`（真支付到账需支付宝环境）
 - [ ] 通知 / 收件箱有列表或空态；AI 配额来自 `/rag/quota`；发送走 `/rag/query-stream` 有流式或整包回复
@@ -81,11 +81,11 @@
 | home 今日进度 | 首页 Tab | sign-info + my-quests |
 | recharge | `/pages-rpg/recharge/index` | |
 | tipSheet | 详情内 `x-tip-sheet` | 钻石 tip + 站点赞赏 |
-| write | `/pages-blog/write/index` | createArticle |
-| backpack | `/pages-rpg/backpack/index` | inventory + loadout |
+| write | `/pages-blog/write/index` | 封面 + 分类/标签/定时 + MD 工具栏 + createArticle |
+| backpack | `/pages-rpg/backpack/index` | inventory + loadout + 宠物槽 |
 
 ## 本阶段不做
 
-- 审核台真实 C 端 API；写文章封面/分类/富编辑器；背包宠物槽
+- 审核台真实 C 端 API
 - 微信支付真单（站点赞赏走支付宝链接复制 + 轮询）
 - 工具箱分包 `pages-tool` 真实工具

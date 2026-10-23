@@ -1,5 +1,5 @@
 <template>
-	<!-- 背包装扮：inventory + loadout，称号/头像框可穿戴 -->
+	<!-- 背包装扮：inventory + loadout + 宠物槽 -->
 	<view class="x-page">
 		<x-navbar title="背包装扮"></x-navbar>
 
@@ -7,6 +7,7 @@
 			<text class="lo-label">当前装扮</text>
 			<text class="lo-line">称号 · {{ loadout.titleName.length > 0 ? loadout.titleName : '未装备' }}</text>
 			<text class="lo-line">头像框 · {{ loadout.frameName.length > 0 ? loadout.frameName : '未装备' }}</text>
+			<text class="lo-line">宠物 · {{ loadout.petName.length > 0 ? loadout.petName : '未出战' }}</text>
 		</view>
 
 		<view class="x-seg">
@@ -20,45 +21,76 @@
 			</view>
 		</view>
 
-		<view v-for="item in filtered" :key="item.id" class="x-card row">
-			<view class="ico">
-				<text class="ico-t">{{ item.icon }}</text>
+		<!-- 宠物分段：实例来自 GET /rpg/pets -->
+		<template v-if="isPetSeg">
+			<view v-for="pet in pets" :key="pet.id" class="x-card row">
+				<view class="ico">
+					<text class="ico-t">{{ pet.icon }}</text>
+				</view>
+				<view class="body">
+					<text class="name">{{ pet.name }}</text>
+					<text class="meta">Lv.{{ pet.level }} · {{ pet.petCode }}</text>
+				</view>
+				<view
+					:class="loadout.petId == pet.id ? 'x-btn' : 'x-btn x-btn-ghost'"
+					@click="onTogglePet(pet)"
+				>
+					<text :class="loadout.petId == pet.id ? 'x-btn-text' : 'x-btn-ghost-text'">
+						{{ loadout.petId == pet.id ? '休息' : '出战' }}
+					</text>
+				</view>
 			</view>
-			<view class="body">
-				<text class="name">{{ item.name }}</text>
-				<text class="meta">{{ item.itemTypeLabel }} · ×{{ item.quantity }}</text>
-				<text v-if="item.sourceLabel.length > 0" class="src">{{ item.sourceLabel }}</text>
+			<x-empty v-if="pets.length == 0" text="暂无宠物"></x-empty>
+		</template>
+
+		<!-- 物品分段 -->
+		<template v-else>
+			<view v-for="item in filtered" :key="item.id" class="x-card row">
+				<view class="ico">
+					<text class="ico-t">{{ item.icon }}</text>
+				</view>
+				<view class="body">
+					<text class="name">{{ item.name }}</text>
+					<text class="meta">{{ item.itemTypeLabel }} · ×{{ item.quantity }}</text>
+					<text v-if="item.sourceLabel.length > 0" class="src">{{ item.sourceLabel }}</text>
+				</view>
+				<view
+					v-if="item.equippable"
+					:class="isEquipped(item) ? 'x-btn' : 'x-btn x-btn-ghost'"
+					@click="onToggle(item)"
+				>
+					<text :class="isEquipped(item) ? 'x-btn-text' : 'x-btn-ghost-text'">
+						{{ isEquipped(item) ? '卸下' : '穿戴' }}
+					</text>
+				</view>
 			</view>
-			<view v-if="item.equippable" :class="isEquipped(item) ? 'x-btn' : 'x-btn x-btn-ghost'" @click="onToggle(item)">
-				<text :class="isEquipped(item) ? 'x-btn-text' : 'x-btn-ghost-text'">
-					{{ isEquipped(item) ? '卸下' : '穿戴' }}
-				</text>
-			</view>
-		</view>
-		<x-empty v-if="filtered.length == 0" text="背包为空"></x-empty>
+			<x-empty v-if="filtered.length == 0" text="背包为空"></x-empty>
+		</template>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 背包装扮：联调 GET /rpg/inventory、/rpg/loadout；穿戴/卸下 loadout/equip|unequip
- * 展示字段来自后端 enrich（name / itemTypeLabel / sourceLabel）
+ * 背包装扮：inventory + loadout + 宠物槽（/rpg/pets 出战/休息）
+ * 展示字段来自后端 enrich（name / itemTypeLabel / sourceLabel / pet config）
  */
 import {
 	equipLoadout,
 	fetchInventory,
 	fetchLoadout,
+	fetchMyPets,
 	unequipLoadout,
 	type BagItem,
 	type BagLoadout,
+	type BagPet,
 } from '../../api/modules/rpg'
 import { apiOrMock } from '../../composables/useApiOrMock'
 import { USE_MOCK } from '../../api/config'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
 
-const segs = ['全部', '称号', '头像框', '其他']
-const segTypes = ['', 'title', 'avatar_frame', '_other']
+const segs = ['全部', '称号', '头像框', '宠物', '其他']
+const segTypes = ['', 'title', 'avatar_frame', 'pet', '_other']
 const segIndex = ref(0)
 
 const emptyLoadout: BagLoadout = {
@@ -66,6 +98,8 @@ const emptyLoadout: BagLoadout = {
 	titleName: '',
 	frameCode: '',
 	frameName: '',
+	petId: 0,
+	petName: '',
 }
 
 /** mock 背包种子（USE_MOCK / 失败回落） */
@@ -105,11 +139,22 @@ const mockItems: BagItem[] = [
 	},
 ]
 
+const mockPets: BagPet[] = [
+	{ id: 1, petCode: 'pet_slime', name: '史莱姆', level: 3, icon: '🫧' },
+	{ id: 2, petCode: 'pet_fox', name: '灵狐', level: 5, icon: '🦊' },
+]
+
 const items = ref(mockItems as BagItem[])
+const pets = ref(mockPets as BagPet[])
 const loadout = ref(emptyLoadout as BagLoadout)
 const userStore = useUserStore()
 
-/** 分段过滤 */
+/** 是否宠物分段 */
+const isPetSeg = computed((): boolean => {
+	return segTypes[segIndex.value] == 'pet'
+})
+
+/** 物品分段过滤（排除宠物段） */
 const filtered = computed((): BagItem[] => {
 	const t = segTypes[segIndex.value]
 	if (t.length == 0) return items.value
@@ -133,7 +178,7 @@ function setSeg(i: number): void {
 }
 
 /**
- * 是否已穿戴
+ * 称号/头像框是否已穿戴
  */
 function isEquipped(item: BagItem): boolean {
 	if (item.itemType == 'title') return loadout.value.titleCode == item.itemCode
@@ -142,17 +187,18 @@ function isEquipped(item: BagItem): boolean {
 }
 
 /**
- * 槽位名
+ * 槽位名（仅称号/头像框）
  */
 function slotOf(item: BagItem): string {
 	return item.itemType == 'title' ? 'title' : 'avatar_frame'
 }
 
 /**
- * 拉取背包 + 装扮
+ * 拉取背包 + 装扮 + 宠物
  */
 async function loadBag(): Promise<void> {
 	items.value = await apiOrMock(() => fetchInventory(), mockItems)
+	pets.value = await apiOrMock(() => fetchMyPets(), mockPets)
 	loadout.value = await apiOrMock(
 		() => fetchLoadout(),
 		{
@@ -160,6 +206,8 @@ async function loadBag(): Promise<void> {
 			titleName: '像素匠',
 			frameCode: '',
 			frameName: '',
+			petId: 1,
+			petName: '史莱姆',
 		} as BagLoadout,
 	)
 }
@@ -173,7 +221,7 @@ onMounted(() => {
 })
 
 /**
- * 穿戴 / 卸下
+ * 穿戴 / 卸下称号或头像框
  */
 async function onToggle(item: BagItem): Promise<void> {
 	const slot = slotOf(item)
@@ -206,6 +254,34 @@ async function onToggle(item: BagItem): Promise<void> {
 		} else {
 			await equipLoadout(slot, item.itemCode)
 			showXToast('🎒', '已穿戴', '')
+		}
+		await loadBag()
+	} catch (_) {}
+}
+
+/**
+ * 宠物出战 / 休息
+ */
+async function onTogglePet(pet: BagPet): Promise<void> {
+	if (USE_MOCK) {
+		if (loadout.value.petId == pet.id) {
+			loadout.value.petId = 0
+			loadout.value.petName = ''
+			showXToast('🐾', '已休息', 'mock')
+		} else {
+			loadout.value.petId = pet.id
+			loadout.value.petName = pet.name
+			showXToast('🐾', '已出战', 'mock')
+		}
+		return
+	}
+	try {
+		if (loadout.value.petId == pet.id) {
+			await unequipLoadout('pet')
+			showXToast('🐾', '已休息', '')
+		} else {
+			await equipLoadout('pet', '', pet.id)
+			showXToast('🐾', '已出战', '')
 		}
 		await loadBag()
 	} catch (_) {}

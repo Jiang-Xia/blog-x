@@ -149,12 +149,24 @@ export type BagItem = {
 	equippable: boolean
 }
 
-/** 当前装扮槽（code 来自 loadout 嵌套 config） */
+/** 当前装扮槽（code / pet 来自 loadout 嵌套 config，勿本地 map） */
 export type BagLoadout = {
 	titleCode: string
 	titleName: string
 	frameCode: string
 	frameName: string
+	/** 出战宠物实例 id，0 表示未出战 */
+	petId: number
+	petName: string
+}
+
+/** 我的宠物实例（字段来自 /rpg/pets enrich） */
+export type BagPet = {
+	id: number
+	petCode: string
+	name: string
+	level: number
+	icon: string
 }
 
 /**
@@ -218,12 +230,20 @@ export async function fetchInventory(itemType?: string): Promise<BagItem[]> {
 }
 
 /**
- * 装备栏详情：GET /rpg/loadout
+ * 装备栏详情：GET /rpg/loadout（含出战宠物）
  */
 export async function fetchLoadout(): Promise<BagLoadout> {
 	const res = await get('/rpg/loadout', null, { silent: true })
 	const title = res != null && res.title != null ? res.title : null
 	const frame = res != null && res.avatarFrame != null ? res.avatarFrame : null
+	const pet = res != null && res.pet != null ? res.pet : null
+	const petCfg = pet != null && pet.config != null ? pet.config : null
+	const petIdRaw =
+		pet != null && pet.id != null
+			? Number(pet.id)
+			: res != null && res.petId != null
+				? Number(res.petId)
+				: 0
 	return {
 		titleCode:
 			title != null && title.code != null
@@ -239,14 +259,63 @@ export async function fetchLoadout(): Promise<BagLoadout> {
 					? '' + res.avatarFrameCode
 					: '',
 		frameName: frame != null && frame.name != null ? '' + frame.name : '',
+		petId: petIdRaw > 0 ? petIdRaw : 0,
+		petName:
+			pet != null && pet.nickname != null && ('' + pet.nickname).length > 0
+				? '' + pet.nickname
+				: petCfg != null && petCfg.name != null
+					? '' + petCfg.name
+					: pet != null && pet.petCode != null
+						? '' + pet.petCode
+						: '',
 	}
 }
 
 /**
- * 穿戴：POST /rpg/loadout/equip
+ * 我的宠物：GET /rpg/pets
  */
-export function equipLoadout(slot: string, itemCode: string): Promise<any> {
-	return post('/rpg/loadout/equip', { slot, itemCode })
+export async function fetchMyPets(): Promise<BagPet[]> {
+	const res = await get('/rpg/pets', null, { silent: true })
+	const arr = Array.isArray(res) ? res : res != null && res.list != null ? res.list : []
+	const list: BagPet[] = []
+	for (let i = 0; i < arr.length; i++) {
+		const row = arr[i]
+		const cfg = row.config != null ? row.config : null
+		const nick = row.nickname != null ? '' + row.nickname : ''
+		list.push({
+			id: row.id != null ? Number(row.id) : 0,
+			petCode: row.petCode != null ? '' + row.petCode : '',
+			name:
+				nick.length > 0
+					? nick
+					: cfg != null && cfg.name != null
+						? '' + cfg.name
+						: row.petCode != null
+							? '' + row.petCode
+							: '宠物',
+			level: row.level != null ? Number(row.level) : 1,
+			icon:
+				cfg != null && cfg.itemTypeIcon != null
+					? '' + cfg.itemTypeIcon
+					: cfg != null && cfg.icon != null
+						? '' + cfg.icon
+						: '🐾',
+		})
+	}
+	return list
+}
+
+/**
+ * 穿戴：POST /rpg/loadout/equip（称号/头像框传 itemCode；宠物传 petId）
+ */
+export function equipLoadout(slot: string, itemCode: string = '', petId: number = 0): Promise<any> {
+	const body: Record<string, any> = { slot }
+	if (slot == 'pet') {
+		body.petId = petId
+	} else {
+		body.itemCode = itemCode
+	}
+	return post('/rpg/loadout/equip', body)
 }
 
 /**

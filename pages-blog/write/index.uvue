@@ -1,5 +1,5 @@
 <template>
-	<!-- 写文章：精简创作（标题/摘要/正文）→ POST /article/create -->
+	<!-- 写文章：封面 + 分类/标签/定时 + Markdown 工具栏 → POST /article/create -->
 	<view class="x-page">
 		<x-navbar title="写文章">
 			<template v-slot:right>
@@ -27,22 +27,137 @@
 				maxlength="120"
 			/>
 		</view>
-		<view class="x-card field body">
+
+		<!-- 封面：chooseImage → upload-media?category=cover -->
+		<view class="x-card cover-card">
+			<text class="sec-label">封面</text>
+			<image
+				v-if="coverDisplay.length > 0"
+				class="cover-img"
+				:src="coverDisplay"
+				mode="aspectFill"
+			/>
+			<view class="cover-acts">
+				<view class="x-btn x-btn-ghost cover-btn" @click="pickCover">
+					<text class="x-btn-ghost-text">{{ cover.length > 0 ? '更换封面' : '选择封面' }}</text>
+				</view>
+				<view v-if="cover.length > 0" class="x-btn x-btn-ghost cover-btn" @click="clearCover">
+					<text class="x-btn-ghost-text">清除</text>
+				</view>
+			</view>
+		</view>
+
+		<!-- 分类：GET /category -->
+		<view class="x-card meta-card">
+			<text class="sec-label">分类</text>
+			<picker mode="selector" :range="categoryLabels" :value="categoryIndex" @change="onCategoryChange">
+				<view class="picker-row">
+					<text class="picker-t">{{ categoryLabel }}</text>
+					<text class="picker-hint">选择</text>
+				</view>
+			</picker>
+		</view>
+
+		<!-- 标签：GET /tag 多选 -->
+		<view class="x-card meta-card">
+			<text class="sec-label">标签</text>
+			<view class="tag-row">
+				<view
+					v-for="tag in tags"
+					:key="tag.id"
+					:class="isTagSelected(tag.id) ? 'tag-chip tag-chip-on' : 'tag-chip'"
+					@click="toggleTag(tag.id)"
+				>
+					<text :class="isTagSelected(tag.id) ? 'tag-chip-t tag-chip-t-on' : 'tag-chip-t'">{{ tag.label }}</text>
+				</view>
+			</view>
+			<text v-if="tags.length == 0" class="hint">暂无标签</text>
+		</view>
+
+		<!-- 状态：publish / draft / scheduled -->
+		<view class="x-card meta-card">
+			<text class="sec-label">状态</text>
+			<view class="status-row">
+				<view
+					:class="status == 'publish' ? 'st-chip st-chip-on' : 'st-chip'"
+					@click="setStatus('publish')"
+				>
+					<text :class="status == 'publish' ? 'st-t st-t-on' : 'st-t'">发布</text>
+				</view>
+				<view
+					:class="status == 'draft' ? 'st-chip st-chip-on' : 'st-chip'"
+					@click="setStatus('draft')"
+				>
+					<text :class="status == 'draft' ? 'st-t st-t-on' : 'st-t'">草稿</text>
+				</view>
+				<view
+					:class="status == 'scheduled' ? 'st-chip st-chip-on' : 'st-chip'"
+					@click="setStatus('scheduled')"
+				>
+					<text :class="status == 'scheduled' ? 'st-t st-t-on' : 'st-t'">定时</text>
+				</view>
+			</view>
+			<view v-if="status == 'scheduled'" class="sched-row">
+				<picker mode="date" :value="schedDate" @change="onSchedDateChange">
+					<view class="picker-row sched-pick">
+						<text class="picker-t">{{ schedDate.length > 0 ? schedDate : '选择日期' }}</text>
+					</view>
+				</picker>
+				<picker mode="time" :value="schedTime" @change="onSchedTimeChange">
+					<view class="picker-row sched-pick">
+						<text class="picker-t">{{ schedTime }}</text>
+					</view>
+				</picker>
+			</view>
+		</view>
+
+		<!-- Markdown 工具栏（uvue 无 md-editor，用插入语法 + 插图上传） -->
+		<view class="x-card md-wrap">
+			<view class="md-bar">
+				<view class="md-chip" @click="insertMd('**', '**', '加粗')">
+					<text class="md-chip-t">B</text>
+				</view>
+				<view class="md-chip" @click="insertMd('*', '*', '斜体')">
+					<text class="md-chip-t i">I</text>
+				</view>
+				<view class="md-chip" @click="insertMd('## ', '', '标题')">
+					<text class="md-chip-t">H</text>
+				</view>
+				<view class="md-chip" @click="insertMd('[', '](url)', '链接')">
+					<text class="md-chip-t">链</text>
+				</view>
+				<view class="md-chip" @click="pickInlineImage">
+					<text class="md-chip-t">图</text>
+				</view>
+				<view class="md-chip" @click="insertMd('> ', '', '引用')">
+					<text class="md-chip-t">引</text>
+				</view>
+				<view class="md-chip" @click="insertMd('- ', '', '列表')">
+					<text class="md-chip-t">列</text>
+				</view>
+				<view :class="previewing ? 'md-chip md-chip-on' : 'md-chip'" @click="togglePreview">
+					<text :class="previewing ? 'md-chip-t md-chip-t-on' : 'md-chip-t'">预览</text>
+				</view>
+			</view>
 			<textarea
+				v-if="!previewing"
 				class="ta"
 				v-model="content"
-				placeholder="正文（支持 Markdown）"
+				placeholder="正文（Markdown；工具栏可插入格式/图片）"
 				placeholder-class="ph"
 				maxlength="20000"
 			/>
+			<scroll-view v-else class="preview-box" scroll-y="true">
+				<text class="preview-t">{{ content.length > 0 ? content : '（暂无正文）' }}</text>
+			</scroll-view>
 		</view>
 
 		<view class="actions">
 			<view class="x-btn x-btn-ghost flex1" @click="onSubmit('draft')">
 				<text class="x-btn-ghost-text">存草稿</text>
 			</view>
-			<view class="x-btn flex1" @click="onSubmit('publish')">
-				<text class="x-btn-text">发布</text>
+			<view class="x-btn flex1" @click="onSubmit(status)">
+				<text class="x-btn-text">{{ primaryLabel }}</text>
 			</view>
 		</view>
 	</view>
@@ -50,12 +165,21 @@
 
 <script setup lang="ts">
 /**
- * 写文章页：联调 POST /article/create
- * 精简表单（无封面上传/分类选择）；本地草稿 key=draft:new
+ * 写文章页：封面 + 分类/标签/定时 + Markdown 工具栏 → POST /article/create
+ * 数据来源：GET /category、/tag；上传 /resources/upload-media；本地草稿 draft:new
  */
-import { createArticle } from '../../api/modules/article'
+import {
+	createArticle,
+	fetchCategories,
+	fetchTags,
+	type CategoryOption,
+	type TagWallItem,
+} from '../../api/modules/article'
+import { uploadArticleImage, uploadCover } from '../../api/modules/resources'
+import { apiOrMock } from '../../composables/useApiOrMock'
 import { USE_MOCK } from '../../api/config'
 import { useUserStore } from '../../store/user'
+import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
 
 const DRAFT_KEY = 'draft:new'
@@ -63,10 +187,83 @@ const userStore = useUserStore()
 const title = ref('')
 const description = ref('')
 const content = ref('')
+/** 封面 /static 相对路径（提交用） */
+const cover = ref('')
+/** 分类 UUID */
+const categoryId = ref('')
+/** 已选标签 UUID */
+const selectedTagIds = ref([] as string[])
+/** publish | draft | scheduled */
+const status = ref('publish')
+const schedDate = ref('')
+const schedTime = ref('12:00')
+const previewing = ref(false)
 const submitting = ref(false)
+const uploading = ref(false)
+
+const mockCategories: CategoryOption[] = [
+	{ id: 'c1', label: '随笔' },
+	{ id: 'c2', label: '技术' },
+]
+const mockTags: TagWallItem[] = [
+	{ id: 't1', label: '前端' },
+	{ id: 't2', label: '生活' },
+]
+
+const categories = ref(mockCategories as CategoryOption[])
+const tags = ref(mockTags as TagWallItem[])
+
+/** 封面展示完整 URL */
+const coverDisplay = computed((): string => {
+	return resolveStaticUrl(cover.value)
+})
+
+/** picker 展示用分类名列表 */
+const categoryLabels = computed((): string[] => {
+	const names: string[] = []
+	for (let i = 0; i < categories.value.length; i++) {
+		names.push(categories.value[i].label)
+	}
+	return names
+})
+
+/** 当前分类在列表中的下标 */
+const categoryIndex = computed((): number => {
+	for (let i = 0; i < categories.value.length; i++) {
+		if (categories.value[i].id == categoryId.value) return i
+	}
+	return 0
+})
+
+/** 当前分类展示文案 */
+const categoryLabel = computed((): string => {
+	if (categoryId.value.length == 0) return '选择分类'
+	for (let i = 0; i < categories.value.length; i++) {
+		if (categories.value[i].id == categoryId.value) return categories.value[i].label
+	}
+	return '选择分类'
+})
+
+/** 主按钮文案 */
+const primaryLabel = computed((): string => {
+	if (status.value == 'draft') return '存草稿'
+	if (status.value == 'scheduled') return '定时发布'
+	return '发布'
+})
 
 /**
- * 尝试恢复本地草稿
+ * 拉取分类与标签
+ */
+async function loadMeta(): Promise<void> {
+	categories.value = await apiOrMock(() => fetchCategories(), mockCategories)
+	tags.value = await apiOrMock(() => fetchTags(), mockTags)
+	if (categoryId.value.length == 0 && categories.value.length > 0) {
+		categoryId.value = categories.value[0].id
+	}
+}
+
+/**
+ * 尝试恢复本地草稿（含封面/分类/标签/定时）
  */
 function tryRestoreDraft(): void {
 	try {
@@ -77,7 +274,24 @@ function tryRestoreDraft(): void {
 		if (draft.title != null) title.value = '' + draft.title
 		if (draft.description != null) description.value = '' + draft.description
 		if (draft.content != null) content.value = '' + draft.content
-		if (title.value.length > 0 || content.value.length > 0) {
+		if (draft.cover != null) cover.value = '' + draft.cover
+		if (draft.category != null) categoryId.value = '' + draft.category
+		if (draft.status != null) status.value = '' + draft.status
+		if (draft.schedDate != null) schedDate.value = '' + draft.schedDate
+		if (draft.schedTime != null) schedTime.value = '' + draft.schedTime
+		if (Array.isArray(draft.tags)) {
+			const ids: string[] = []
+			for (let i = 0; i < draft.tags.length; i++) {
+				ids.push('' + draft.tags[i])
+			}
+			selectedTagIds.value = ids
+		}
+		if (
+			title.value.length > 0 ||
+			content.value.length > 0 ||
+			cover.value.length > 0 ||
+			selectedTagIds.value.length > 0
+		) {
 			showXToast('📝', '已恢复草稿', '')
 		}
 	} catch (_) {}
@@ -93,6 +307,12 @@ function saveLocalDraft(): void {
 			title: title.value,
 			description: description.value,
 			content: content.value,
+			cover: cover.value,
+			category: categoryId.value,
+			tags: selectedTagIds.value,
+			status: status.value,
+			schedDate: schedDate.value,
+			schedTime: schedTime.value,
 			savedAt: Date.now(),
 		}),
 	)
@@ -107,29 +327,234 @@ function clearLocalDraft(): void {
 	} catch (_) {}
 }
 
-onMounted(() => {
+onMounted(async () => {
 	if (!USE_MOCK && !userStore.loggedIn) {
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
 	}
+	await loadMeta()
 	tryRestoreDraft()
 })
 
 /**
- * 提交：status = publish | draft
+ * 分类 picker 变更
  */
-async function onSubmit(status: string): Promise<void> {
+function onCategoryChange(e: any): void {
+	const idx = e != null && e.detail != null ? Number(e.detail.value) : 0
+	if (idx >= 0 && idx < categories.value.length) {
+		categoryId.value = categories.value[idx].id
+		saveLocalDraft()
+	}
+}
+
+/**
+ * 标签是否已选
+ */
+function isTagSelected(id: string): boolean {
+	for (let i = 0; i < selectedTagIds.value.length; i++) {
+		if (selectedTagIds.value[i] == id) return true
+	}
+	return false
+}
+
+/**
+ * 切换标签选中
+ */
+function toggleTag(id: string): void {
+	const next: string[] = []
+	let found = false
+	for (let i = 0; i < selectedTagIds.value.length; i++) {
+		if (selectedTagIds.value[i] == id) {
+			found = true
+		} else {
+			next.push(selectedTagIds.value[i])
+		}
+	}
+	if (!found) next.push(id)
+	selectedTagIds.value = next
+	saveLocalDraft()
+}
+
+/**
+ * 切换发布状态
+ */
+function setStatus(s: string): void {
+	status.value = s
+	saveLocalDraft()
+}
+
+/**
+ * 定时日期变更
+ */
+function onSchedDateChange(e: any): void {
+	const v = e != null && e.detail != null ? '' + e.detail.value : ''
+	schedDate.value = v
+	saveLocalDraft()
+}
+
+/**
+ * 定时时间变更
+ */
+function onSchedTimeChange(e: any): void {
+	const v = e != null && e.detail != null ? '' + e.detail.value : '12:00'
+	schedTime.value = v
+	saveLocalDraft()
+}
+
+/**
+ * 切换正文预览（纯文本；真 Markdown 渲染留给详情页）
+ */
+function togglePreview(): void {
+	previewing.value = !previewing.value
+}
+
+/**
+ * 在正文末尾插入 Markdown 包裹（uvue textarea 无可靠选区 API）
+ */
+function insertMd(before: string, after: string, tip: string): void {
+	if (previewing.value) previewing.value = false
+	const cur = content.value
+	const piece = before + tip + after
+	content.value = cur.length > 0 ? cur + '\n' + piece : piece
+	saveLocalDraft()
+}
+
+/**
+ * 选择并上传封面
+ */
+function pickCover(): void {
+	if (uploading.value) return
+	uni.chooseImage({
+		count: 1,
+		sizeType: ['compressed'],
+		sourceType: ['album', 'camera'],
+		success: (res) => {
+			const paths = res.tempFilePaths
+			if (paths == null || paths.length == 0) return
+			doUploadCover('' + paths[0])
+		},
+	})
+}
+
+/**
+ * 执行封面上传
+ */
+async function doUploadCover(path: string): Promise<void> {
+	if (USE_MOCK) {
+		cover.value = path
+		showXToast('🖼', '封面已选', 'mock')
+		saveLocalDraft()
+		return
+	}
+	uploading.value = true
+	uni.showLoading({ title: '上传中' })
+	try {
+		cover.value = await uploadCover(path)
+		showXToast('🖼', '封面上传成功', '')
+		saveLocalDraft()
+	} catch (e) {
+		const msg = e instanceof Error ? e.message : '上传失败'
+		showXToast('⚠️', msg, '')
+	} finally {
+		uni.hideLoading()
+		uploading.value = false
+	}
+}
+
+/**
+ * 清除封面
+ */
+function clearCover(): void {
+	cover.value = ''
+	saveLocalDraft()
+}
+
+/**
+ * 选择正文插图并插入 Markdown
+ */
+function pickInlineImage(): void {
+	if (previewing.value) previewing.value = false
+	if (uploading.value) return
+	uni.chooseImage({
+		count: 1,
+		sizeType: ['compressed'],
+		sourceType: ['album', 'camera'],
+		success: (res) => {
+			const paths = res.tempFilePaths
+			if (paths == null || paths.length == 0) return
+			doInsertImage('' + paths[0])
+		},
+	})
+}
+
+/**
+ * 上传插图并写入 ![](url)
+ */
+async function doInsertImage(path: string): Promise<void> {
+	if (USE_MOCK) {
+		const md = '![](' + path + ')'
+		content.value = content.value.length > 0 ? content.value + '\n' + md : md
+		showXToast('🖼', '已插入图片', 'mock')
+		saveLocalDraft()
+		return
+	}
+	uploading.value = true
+	uni.showLoading({ title: '上传中' })
+	try {
+		const rel = await uploadArticleImage(path)
+		const url = resolveStaticUrl(rel)
+		const md = '![](' + url + ')'
+		content.value = content.value.length > 0 ? content.value + '\n' + md : md
+		showXToast('🖼', '图片已插入', '')
+		saveLocalDraft()
+	} catch (e) {
+		const msg = e instanceof Error ? e.message : '上传失败'
+		showXToast('⚠️', msg, '')
+	} finally {
+		uni.hideLoading()
+		uploading.value = false
+	}
+}
+
+/**
+ * 拼定时发布时间（对齐 uniapp：YYYY-MM-DD HH:mm:00）
+ */
+function buildScheduledAt(): string {
+	if (schedDate.value.length == 0) return ''
+	const t = schedTime.value.length > 0 ? schedTime.value : '12:00'
+	return schedDate.value + ' ' + t + ':00'
+}
+
+/**
+ * 提交：status = publish | draft | scheduled
+ */
+async function onSubmit(submitStatus: string): Promise<void> {
 	const t = title.value.trim()
 	if (t.length == 0) {
 		showXToast('⚠️', '请填写标题', '')
+		return
+	}
+	if (categoryId.value.length == 0) {
+		showXToast('⚠️', '请选择分类', '')
+		return
+	}
+	if (selectedTagIds.value.length == 0) {
+		showXToast('⚠️', '请至少选择一个标签', '')
+		return
+	}
+	if (submitStatus == 'scheduled' && schedDate.value.length == 0) {
+		showXToast('⚠️', '请选择定时发布日期', '')
 		return
 	}
 	if (submitting.value) return
 	submitting.value = true
 	saveLocalDraft()
 
+	const okMsg =
+		submitStatus == 'draft' ? '草稿已存' : submitStatus == 'scheduled' ? '已设定时发布' : '发布成功'
+
 	if (USE_MOCK) {
-		showXToast('✍️', status == 'draft' ? '草稿已存' : '已发布', 'mock')
+		showXToast('✍️', okMsg, 'mock')
 		clearLocalDraft()
 		submitting.value = false
 		return
@@ -140,11 +565,15 @@ async function onSubmit(status: string): Promise<void> {
 			title: t,
 			description: description.value.trim(),
 			content: content.value,
-			status,
+			status: submitStatus,
+			cover: cover.value,
+			category: categoryId.value,
+			tags: selectedTagIds.value,
+			scheduledPublishAt: submitStatus == 'scheduled' ? buildScheduledAt() : '',
 		})
 		clearLocalDraft()
-		showXToast('✍️', status == 'draft' ? '草稿已存' : '发布成功', '')
-		if (id.length > 0 && status == 'publish') {
+		showXToast('✍️', okMsg, '')
+		if (id.length > 0 && submitStatus == 'publish') {
 			uni.redirectTo({ url: '/pages/detail/detail?id=' + id })
 		} else {
 			uni.navigateBack()
@@ -168,14 +597,162 @@ async function onSubmit(status: string): Promise<void> {
 	margin-bottom: 10px;
 }
 
-.body {
-	min-height: 220px;
+.sec-label {
+	font-size: 12px;
+	color: #9a948a;
+	margin-bottom: 8px;
 }
 
-.inp {
-	font-size: 15px;
+.cover-card {
+	padding: 12px 14px;
+	margin-bottom: 10px;
+}
+
+.cover-img {
+	width: 100%;
+	height: 140px;
+	border-radius: 10px;
+	margin-bottom: 10px;
+	background-color: #f0ebe3;
+}
+
+.cover-acts {
+	flex-direction: row;
+}
+
+.cover-btn {
+	margin-right: 8px;
+	padding-left: 12px;
+	padding-right: 12px;
+}
+
+.meta-card {
+	padding: 12px 14px;
+	margin-bottom: 10px;
+}
+
+.picker-row {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background-color: rgba(61, 184, 154, 0.08);
+}
+
+.picker-t {
+	font-size: 14px;
 	color: #1c1a17;
-	height: 28px;
+}
+
+.picker-hint {
+	font-size: 12px;
+	color: #3db89a;
+}
+
+.tag-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.tag-chip {
+	padding: 4px 10px;
+	border-radius: 8px;
+	background-color: rgba(28, 26, 23, 0.06);
+	margin-right: 6px;
+	margin-bottom: 6px;
+}
+
+.tag-chip-on {
+	background-color: rgba(61, 184, 154, 0.18);
+}
+
+.tag-chip-t {
+	font-size: 12px;
+	color: #5c574f;
+}
+
+.tag-chip-t-on {
+	color: #3db89a;
+	font-weight: 600;
+}
+
+.hint {
+	font-size: 12px;
+	color: #9a948a;
+}
+
+.status-row {
+	flex-direction: row;
+	margin-bottom: 4px;
+}
+
+.st-chip {
+	padding: 6px 14px;
+	border-radius: 8px;
+	background-color: rgba(28, 26, 23, 0.06);
+	margin-right: 8px;
+}
+
+.st-chip-on {
+	background-color: #3db89a;
+}
+
+.st-t {
+	font-size: 13px;
+	color: #5c574f;
+	font-weight: 600;
+}
+
+.st-t-on {
+	color: #ffffff;
+}
+
+.sched-row {
+	flex-direction: row;
+	margin-top: 8px;
+}
+
+.sched-pick {
+	margin-right: 8px;
+	min-width: 120px;
+}
+
+.md-wrap {
+	padding: 10px 12px 12px;
+	margin-bottom: 10px;
+}
+
+.md-bar {
+	flex-direction: row;
+	flex-wrap: wrap;
+	margin-bottom: 8px;
+}
+
+.md-chip {
+	padding: 4px 10px;
+	border-radius: 8px;
+	background-color: rgba(61, 184, 154, 0.1);
+	margin-right: 6px;
+	margin-bottom: 6px;
+}
+
+.md-chip-on {
+	background-color: #3db89a;
+}
+
+.md-chip-t {
+	font-size: 12px;
+	color: #3db89a;
+	font-weight: 700;
+}
+
+.md-chip-t.i {
+	font-style: italic;
+}
+
+.md-chip-t-on {
+	color: #ffffff;
 }
 
 .ta {
@@ -186,6 +763,17 @@ async function onSubmit(status: string): Promise<void> {
 	line-height: 1.5;
 }
 
+.preview-box {
+	min-height: 200px;
+	max-height: 320px;
+}
+
+.preview-t {
+	font-size: 13px;
+	color: #5c574f;
+	line-height: 1.55;
+}
+
 .ph {
 	color: #9a948a;
 }
@@ -193,6 +781,7 @@ async function onSubmit(status: string): Promise<void> {
 .actions {
 	flex-direction: row;
 	margin-top: 8px;
+	margin-bottom: 24px;
 }
 
 .flex1 {

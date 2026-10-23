@@ -83,6 +83,7 @@ const RPG_ROWS: ApiRow[] = [
 	{ name: 'getRpgLoadout', label: '装备栏', method: 'GET', path: '/rpg/loadout' },
 	{ name: 'equipLoadout', label: '穿戴装备', method: 'POST', path: '/rpg/loadout/equip' },
 	{ name: 'unequipLoadout', label: '卸下装备', method: 'POST', path: '/rpg/loadout/unequip' },
+	{ name: 'getMyPets', label: '我的宠物', method: 'GET', path: '/rpg/pets' },
 ]
 
 /** 通知 / AI */
