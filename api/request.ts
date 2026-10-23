@@ -115,9 +115,17 @@ function showErrToast(message: string): void {
 }
 
 /**
- * 跳转登录页
+ * 跳转登录页（已在登录页则不再 navigateTo/reLaunch，避免与 leaveLogin 互踢导致 Web 循环刷新）
  */
 function goLogin(): void {
+	const pages = getCurrentPages()
+	if (pages.length > 0) {
+		const cur = pages[pages.length - 1]
+		const route = cur.route != null ? '' + cur.route : ''
+		if (route == 'pages/login/login') {
+			return
+		}
+	}
 	uni.navigateTo({
 		url: '/pages/login/login',
 		fail: () => {

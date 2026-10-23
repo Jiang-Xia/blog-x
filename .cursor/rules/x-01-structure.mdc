@@ -27,7 +27,7 @@ uni_modules/              → 三方/官方插件（uni-ui x、uts-openSchema �
 
 | 放哪里 | 放什么 |
 |--------|--------|
-| `pages/` | 首页、详情、搜索、登录、Tab 壳页（如 `rpg/entry`）、404 |
+| `pages/` | 四 Tab 主壳（`index/index`）、详情、搜索、登录、消息、404 |
 | `pages-blog/` | 归档、分类、标签、友链、留言、项目、用户中心/公开主页、写文章 |
 | `pages-rpg/` | 冒险中心、玩法说明等完整 RPG 页 |
 | `pages-tool/` | 工具箱及各工具页（体积大、低频） |

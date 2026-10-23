@@ -15,27 +15,6 @@
 			}
 		},
 		{
-			"path": "pages/discover/discover",
-			"style": {
-				"navigationBarTitleText": "发现",
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/rpg/entry",
-			"style": {
-				"navigationBarTitleText": "冒险",
-				"navigationStyle": "custom"
-			}
-		},
-		{
-			"path": "pages/me/me",
-			"style": {
-				"navigationBarTitleText": "我的",
-				"navigationStyle": "custom"
-			}
-		},
-		{
 			"path": "pages/search/search",
 			"style": {
 				"navigationBarTitleText": "搜索"

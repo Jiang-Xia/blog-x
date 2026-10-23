@@ -31,7 +31,9 @@ utils/
 ## 加密库跨端（App 蒸汽 / H5 / 微信小程序）
 
 - **禁止**业务侧直接 `import` npm 包；统一 `utils/lib/crypto-js.ts`、`jsencrypt.ts`
-- **加载链**：`ensure-crypto-random` → 副作用 `import '../vendor/*.js'` → `getRuntimeGlobal().CryptoJS|JSEncrypt`
+- **加载链**：`ensure-crypto-random` → **顶层**副作用 `import '../vendor/*.js'`（全端，勿包在 `#ifdef H5`）→ `getRuntimeGlobal().CryptoJS|JSEncrypt`
+- **禁止**仅函数内 `require('../vendor/...')`：微信小程序不会把该文件打进模块图；且 **APP-ANDROID 无 `require`**（会报 `ReferenceError: require is not defined`）
+- **兜底 `require`**：仅允许包在 `#ifdef MP-WEIXIN`（小程序 UMD 只写 `module.exports` 时）
 - **禁止**对 CJS bridge 写 `import { CryptoJS } from '...bridge.js'`：H5 Vite 是 ESM，会报 *does not provide an export named 'CryptoJS'*
 - **禁止** `import * as mod from UMD`：App/小程序常编成 `require(...).mod`，整包 UMD 读不到
 - **UMD `this`**：ESM 严格模式为 `undefined`；vendor 引导须用 `globalThis`，且 **CJS 分支也要挂全局**（供副作用读取）

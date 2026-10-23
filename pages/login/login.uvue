@@ -105,8 +105,16 @@ import { goTab, TAB_ME } from '../../utils/tabNav'
 const userStore = useUserStore()
 const { submitting } = storeToRefs(userStore)
 
-/** account | weixin */
+/**
+ * 登录方式：account | weixin
+ * 微信小程序默认微信一键（可用且无验证码）；其它端默认账号（微信一键不可用）
+ */
+// #ifdef MP-WEIXIN
+const mode = ref('weixin')
+// #endif
+// #ifndef MP-WEIXIN
 const mode = ref('account')
+// #endif
 const username = ref('')
 const password = ref('')
 const authCode = ref('')
@@ -144,20 +152,38 @@ async function loadCaptcha(): Promise<void> {
 	}
 }
 
+/** 页面实例内防重入（同页多次调用） */
+let leaving = false
+
+/** 跨 remount 防重入：Web reLaunch/reload 会重置脚本变量，须落盘短窗标记 */
+const LEAVE_GUARD_KEY = 'blog_x_leave_login_at'
+const LEAVE_GUARD_MS = 2000
+
 /**
- * 回退或回「我的」
+ * 离开登录页：一律 goTab 回主壳「我的」
+ * - 勿用 navigateBack：Web hash 易把登录页再次压栈，onLoad 见已登录又 leave → 循环刷新
+ * - goTab 在 Web 会先 replaceState 改 hash，再 reLaunch，避免 reload 仍停在 login
  * @param toast 是否弹出登录成功提示
  */
 function leaveLogin(toast: boolean): void {
+	if (leaving) return
+	leaving = true
+
+	const now = Date.now()
+	const prevRaw = uni.getStorageSync(LEAVE_GUARD_KEY)
+	const prev = typeof prevRaw === 'number' ? prevRaw : Number(prevRaw != null ? '' + prevRaw : '0')
+	if (!isNaN(prev) && now - prev < LEAVE_GUARD_MS) {
+		// 短窗内已离开过仍落在登录页：立即再推一次主壳，跳过 Toast / 延迟
+		goTab(TAB_ME)
+		return
+	}
+	uni.setStorageSync(LEAVE_GUARD_KEY, now)
+
 	if (toast) {
 		showXToast('✅', '登录成功', '欢迎回来')
 	}
 	setTimeout(() => {
-		uni.navigateBack({
-			fail: () => {
-				goTab(TAB_ME)
-			},
-		})
+		goTab(TAB_ME)
 	}, toast ? 500 : 0)
 }
 
@@ -212,7 +238,10 @@ onLoad(() => {
 		leaveLogin(false)
 		return
 	}
-	loadCaptcha()
+	// 仅账号登录需要验证码；微信端默认 weixin 时等切到账号再拉
+	if (mode.value == 'account') {
+		loadCaptcha()
+	}
 })
 </script>
 

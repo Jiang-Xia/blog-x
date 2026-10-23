@@ -1,29 +1,30 @@
 /**
  * jsencrypt 加载器（vendored UMD）
  *
- * - 微信小程序 / App：UMD 命中 CommonJS，只写 module.exports，**必须读 require 返回值**
- *   （仅副作用 import + 读 globalThis 会失败）
- * - H5：Vite ESM 下对 CJS 具名 import 不友好；副作用执行 UMD 后读 globalThis.JSEncrypt
+ * - 全端顶层副作用 import：把 vendor 打进模块图，并挂 globalThis.JSEncrypt
+ *   （仅函数内 require：微信小程序会报 module is not defined；Android App 无 require）
+ * - 解析：优先读 getRuntimeGlobal().JSEncrypt；仅微信小程序再兜底 require 返回值
+ * - H5：勿对 CJS 做具名 import（Vite ESM 会报无导出）
  */
 import './ensure-crypto-random'
 import { getRuntimeGlobal } from './runtime-global'
 
-// #ifdef H5
-// H5：副作用执行 UMD，把构造函数挂到 globalThis
-// @ts-ignore
+// @ts-ignore 副作用执行 UMD，挂 JSEncrypt
 import '../vendor/jsencrypt.min.js'
-// #endif
 
 /**
- * 解析 JSEncrypt 构造函数（require 返回值优先，再回落全局）
+ * 解析 JSEncrypt 构造函数（全局优先；微信小程序再兜底 require）
  */
 function resolveJSEncrypt(): any {
-	// #ifndef H5
-	// 小程序 / App：直接拿 CJS 导出（函数本体）
-	// @ts-ignore uni-app x 编译到 MP/App 后为 require
+	const g = getRuntimeGlobal()
+	if (g != null && typeof g.JSEncrypt === 'function') {
+		return g.JSEncrypt
+	}
+	// #ifdef MP-WEIXIN
+	// 小程序：若 UMD 只写了 module.exports、未挂全局，读 require 缓存并回写
+	// @ts-ignore 微信小程序运行时提供 require
 	const raw: any = require('../vendor/jsencrypt.min.js')
 	if (typeof raw === 'function') {
-		const g = getRuntimeGlobal()
 		if (g != null) {
 			g.JSEncrypt = raw
 		}
@@ -36,10 +37,6 @@ function resolveJSEncrypt(): any {
 		return raw.JSEncrypt
 	}
 	// #endif
-	const g = getRuntimeGlobal()
-	if (g != null && typeof g.JSEncrypt === 'function') {
-		return g.JSEncrypt
-	}
 	throw new Error('jsencrypt load failed')
 }
 

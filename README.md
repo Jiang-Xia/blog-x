@@ -70,7 +70,6 @@ await apis.getAllTag()
 | 原型 screen | 路径 | 包 |
 |-------------|------|-----|
 | home / discover / rpg / me | `/pages/index/index`（`uni-tab` + tab-bar-blur，`?tab=0~3`） | 主包主壳 |
-| discover / rpg / me（旧路径） | `/pages/discover|rpg/entry|me/...` 重定向到主壳对应 Tab | 兼容 |
 | search / detail / login / notify | `/pages/search|detail|login|notify/...` | 主包 |
 | archive / guestbook / links / favorites / inbox / profile / audit / ai / tags / write | `/pages-blog/<模块>/index` | 博客分包 |
 | lottery / rank / calendar / recharge / backpack | `/pages-rpg/<模块>/index` | RPG 分包 |
@@ -84,7 +83,7 @@ await apis.getAllTag()
 
 | 分包 root | 说明 |
 | --- | --- |
-| `pages/` | 启动主壳、详情、搜索、登录、消息；旧 Tab 路径仅重定向 |
+| `pages/` | 启动主壳、详情、搜索、登录、消息 |
 | `pages-blog/` | 阅读 / 用户内容 / AI / 审核 |
 | `pages-rpg/` | 玩法页（中心 UI 在主壳 `x-tab-rpg`） |
 | `pages-tool/` | 工具箱 |

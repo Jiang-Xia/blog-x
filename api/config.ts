@@ -13,7 +13,7 @@ export const USE_MOCK = false
  * - 线上 Nest：https://jiang-xia.top/x-blog/api/v1
  * - 线上 Go：https://go.jiang-xia.top/api/v1
  */
-export const API_ORIGIN = 'https://jiang-xia.top/x-blog'
+export const API_ORIGIN = 'http://localhost:5000'
 export const API_PREFIX = '/api/v1'
 
 /** 拼接后的 baseURL，无尾斜杠 */

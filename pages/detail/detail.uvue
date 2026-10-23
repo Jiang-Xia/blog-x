@@ -85,12 +85,12 @@
 			<view class="cmt-input" @click="focusCompose">
 				<text class="cmt-ph">{{ commentDraft.length > 0 ? commentDraft : '说点什么…' }}</text>
 			</view>
-			<view :class="liked ? 'act on' : 'act'" @click="onLike">
-				<view class="ic"></view>
+			<view class="act" @click="onLike">
+				<view :class="liked ? 'ic ic-on' : 'ic'"></view>
 				<text class="act-t">赞</text>
 			</view>
-			<view :class="faved ? 'act fav-on' : 'act'" @click="onFav">
-				<view class="ic"></view>
+			<view class="act" @click="onFav">
+				<view :class="faved ? 'ic ic-fav' : 'ic'"></view>
 				<text class="act-t">藏</text>
 			</view>
 			<view class="act" @click="tipOpen = true">

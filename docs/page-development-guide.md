@@ -37,7 +37,7 @@
 ```
 
    - 首页必须保持主包 `pages` 第一项；标题走 `navigationBarTitleText`
-   - 可选：`preloadRule` 在进入主包页后预下载分包（示例：首页 → `pages-blog`；冒险 entry → `pages-rpg`）
+   - 可选：`preloadRule` 在进入主包页后预下载分包（示例：主壳 `index` → `pages-blog` / `pages-rpg`）
 3. **写页面**：`<script setup lang="ts">` + uni-app x 内置组件（见 §2）。
 4. **验证**：HBuilderX 运行 Android 基座；发行微信小程序后用微信开发者工具核对分包（见 `x-09`，Agent 勿自动启动）。
 
@@ -45,10 +45,7 @@
 
 | 用途 | path |
 |------|------|
-| 首页 Tab | `pages/index/index` |
-| 发现 Tab | `pages/discover/discover` |
-| 冒险 Tab（中心 UI） | `pages/rpg/entry` |
-| 我的 Tab | `pages/me/me` |
+| 四 Tab 主壳 | `pages/index/index`（`?tab=0` 首页 / `1` 发现 / `2` 冒险 / `3` 我的） |
 | 文章详情 | `pages/detail/detail` |
 | 归档 | `pages-blog/archives/index` |
 | 幸运抽奖 | `pages-rpg/lottery/index` |

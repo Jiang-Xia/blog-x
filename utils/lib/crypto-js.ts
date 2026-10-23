@@ -1,26 +1,30 @@
 /**
  * crypto-js 加载器（vendored UMD）
  *
- * - 微信小程序 / App：读 require 返回值（UMD 的 module.exports = CryptoJS）
- * - H5：副作用 import 后读 globalThis.CryptoJS（避免 Vite 对 CJS 具名导入报错）
+ * - 全端顶层副作用 import：微信小程序才能把 vendor 打进模块图；Android App 无 require
+ * - 解析：UMD 已挂 globalThis / global，读 getRuntimeGlobal().CryptoJS
+ * - 仅微信小程序再兜底 require（UMD 只写 module.exports 时）
+ * - H5：勿对 CJS 做具名 import（Vite ESM 会报无导出）
  */
 import './ensure-crypto-random'
 import { getRuntimeGlobal } from './runtime-global'
 
-// #ifdef H5
-// @ts-ignore
+// @ts-ignore 副作用执行 UMD，挂 CryptoJS
 import '../vendor/crypto-js.js'
-// #endif
 
 /**
- * 解析 CryptoJS 命名空间（require 返回值优先，再回落全局）
+ * 解析 CryptoJS 命名空间（全局优先；微信小程序再兜底 require）
  */
 function resolveCrypto(): any {
-	// #ifndef H5
-	// @ts-ignore uni-app x 编译到 MP/App 后为 require
+	const g = getRuntimeGlobal()
+	if (g != null && g.CryptoJS != null && g.CryptoJS.AES != null) {
+		return g.CryptoJS
+	}
+	// #ifdef MP-WEIXIN
+	// 小程序：若 UMD 只写了 module.exports，读 require 缓存并回写全局
+	// @ts-ignore 微信小程序运行时提供 require
 	const raw: any = require('../vendor/crypto-js.js')
 	if (raw != null && raw.AES != null) {
-		const g = getRuntimeGlobal()
 		if (g != null) {
 			g.CryptoJS = raw
 		}
@@ -33,10 +37,6 @@ function resolveCrypto(): any {
 		return raw.CryptoJS
 	}
 	// #endif
-	const g = getRuntimeGlobal()
-	if (g != null && g.CryptoJS != null && g.CryptoJS.AES != null) {
-		return g.CryptoJS
-	}
 	throw new Error('crypto-js load failed')
 }
 
