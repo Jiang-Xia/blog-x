@@ -1,165 +1,172 @@
 <template>
 	<!-- 写文章：封面 + 分类/标签/定时 + Markdown 工具栏 → POST /article/create -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="写文章">
 			<template v-slot:right>
 				<text class="nav-act" @click="onSubmit('draft')">存草稿</text>
 			</template>
 		</x-navbar>
 
-		<view class="x-card field">
-			<input
-				class="inp"
-				type="text"
-				v-model="title"
-				placeholder="文章标题"
-				placeholder-class="ph"
-				maxlength="80"
-			/>
-		</view>
-		<view class="x-card field">
-			<input
-				class="inp"
-				type="text"
-				v-model="description"
-				placeholder="一句话摘要（可选）"
-				placeholder-class="ph"
-				maxlength="120"
-			/>
-		</view>
-
-		<!-- 封面：chooseImage → upload-media?category=cover -->
-		<view class="x-card cover-card">
-			<text class="sec-label">封面</text>
-			<image
-				v-if="coverDisplay.length > 0"
-				class="cover-img"
-				:src="coverDisplay"
-				mode="aspectFill"
-			/>
-			<view class="cover-acts">
-				<view class="x-btn x-btn-ghost cover-btn" @click="pickCover">
-					<text class="x-btn-ghost-text">{{ cover.length > 0 ? '更换封面' : '选择封面' }}</text>
-				</view>
-				<view v-if="cover.length > 0" class="x-btn x-btn-ghost cover-btn" @click="clearCover">
-					<text class="x-btn-ghost-text">清除</text>
-				</view>
+		<!-- 表单页仅纵向滚动，不启下拉刷新/触底（避免编辑中误触发） -->
+		<x-scroll-page
+			:enable-refresh="false"
+			:enable-load-more="false"
+			:show-footer="false"
+		>
+			<view class="x-card field">
+				<input
+					class="inp"
+					type="text"
+					v-model="title"
+					placeholder="文章标题"
+					placeholder-class="ph"
+					maxlength="80"
+				/>
 			</view>
-		</view>
-
-		<!-- 分类：GET /category -->
-		<view class="x-card meta-card">
-			<text class="sec-label">分类</text>
-			<picker mode="selector" :range="categoryLabels" :value="categoryIndex" @change="onCategoryChange">
-				<view class="picker-row">
-					<text class="picker-t">{{ categoryLabel }}</text>
-					<text class="picker-hint">选择</text>
-				</view>
-			</picker>
-		</view>
-
-		<!-- 标签：GET /tag 多选 -->
-		<view class="x-card meta-card">
-			<text class="sec-label">标签</text>
-			<view class="tag-row">
-				<view
-					v-for="tag in tags"
-					:key="tag.id"
-					:class="isTagSelected(tag.id) ? 'tag-chip tag-chip-on' : 'tag-chip'"
-					@click="toggleTag(tag.id)"
-				>
-					<text :class="isTagSelected(tag.id) ? 'tag-chip-t tag-chip-t-on' : 'tag-chip-t'">{{ tag.label }}</text>
-				</view>
+			<view class="x-card field">
+				<input
+					class="inp"
+					type="text"
+					v-model="description"
+					placeholder="一句话摘要（可选）"
+					placeholder-class="ph"
+					maxlength="120"
+				/>
 			</view>
-			<text v-if="tags.length == 0" class="hint">暂无标签</text>
-		</view>
 
-		<!-- 状态：publish / draft / scheduled -->
-		<view class="x-card meta-card">
-			<text class="sec-label">状态</text>
-			<view class="status-row">
-				<view
-					:class="status == 'publish' ? 'st-chip st-chip-on' : 'st-chip'"
-					@click="setStatus('publish')"
-				>
-					<text :class="status == 'publish' ? 'st-t st-t-on' : 'st-t'">发布</text>
-				</view>
-				<view
-					:class="status == 'draft' ? 'st-chip st-chip-on' : 'st-chip'"
-					@click="setStatus('draft')"
-				>
-					<text :class="status == 'draft' ? 'st-t st-t-on' : 'st-t'">草稿</text>
-				</view>
-				<view
-					:class="status == 'scheduled' ? 'st-chip st-chip-on' : 'st-chip'"
-					@click="setStatus('scheduled')"
-				>
-					<text :class="status == 'scheduled' ? 'st-t st-t-on' : 'st-t'">定时</text>
-				</view>
-			</view>
-			<view v-if="status == 'scheduled'" class="sched-row">
-				<picker mode="date" :value="schedDate" @change="onSchedDateChange">
-					<view class="picker-row sched-pick">
-						<text class="picker-t">{{ schedDate.length > 0 ? schedDate : '选择日期' }}</text>
+			<!-- 封面：chooseImage → upload-media?category=cover -->
+			<view class="x-card cover-card">
+				<text class="sec-label">封面</text>
+				<image
+					v-if="coverDisplay.length > 0"
+					class="cover-img"
+					:src="coverDisplay"
+					mode="aspectFill"
+				/>
+				<view class="cover-acts">
+					<view class="x-btn x-btn-ghost cover-btn" @click="pickCover">
+						<text class="x-btn-ghost-text">{{ cover.length > 0 ? '更换封面' : '选择封面' }}</text>
 					</view>
-				</picker>
-				<picker mode="time" :value="schedTime" @change="onSchedTimeChange">
-					<view class="picker-row sched-pick">
-						<text class="picker-t">{{ schedTime }}</text>
+					<view v-if="cover.length > 0" class="x-btn x-btn-ghost cover-btn" @click="clearCover">
+						<text class="x-btn-ghost-text">清除</text>
+					</view>
+				</view>
+			</view>
+
+			<!-- 分类：GET /category -->
+			<view class="x-card meta-card">
+				<text class="sec-label">分类</text>
+				<picker mode="selector" :range="categoryLabels" :value="categoryIndex" @change="onCategoryChange">
+					<view class="picker-row">
+						<text class="picker-t">{{ categoryLabel }}</text>
+						<text class="picker-hint">选择</text>
 					</view>
 				</picker>
 			</view>
-		</view>
 
-		<!-- Markdown 工具栏（uvue 无 md-editor，用插入语法 + 插图上传） -->
-		<view class="x-card md-wrap">
-			<view class="md-bar">
-				<view class="md-chip" @click="insertMd('**', '**', '加粗')">
-					<text class="md-chip-t">B</text>
+			<!-- 标签：GET /tag 多选 -->
+			<view class="x-card meta-card">
+				<text class="sec-label">标签</text>
+				<view class="tag-row">
+					<view
+						v-for="tag in tags"
+						:key="tag.id"
+						:class="isTagSelected(tag.id) ? 'tag-chip tag-chip-on' : 'tag-chip'"
+						@click="toggleTag(tag.id)"
+					>
+						<text :class="isTagSelected(tag.id) ? 'tag-chip-t tag-chip-t-on' : 'tag-chip-t'">{{ tag.label }}</text>
+					</view>
 				</view>
-				<view class="md-chip" @click="insertMd('*', '*', '斜体')">
-					<text class="md-chip-t i">I</text>
-				</view>
-				<view class="md-chip" @click="insertMd('## ', '', '标题')">
-					<text class="md-chip-t">H</text>
-				</view>
-				<view class="md-chip" @click="insertMd('[', '](url)', '链接')">
-					<text class="md-chip-t">链</text>
-				</view>
-				<view class="md-chip" @click="pickInlineImage">
-					<text class="md-chip-t">图</text>
-				</view>
-				<view class="md-chip" @click="insertMd('> ', '', '引用')">
-					<text class="md-chip-t">引</text>
-				</view>
-				<view class="md-chip" @click="insertMd('- ', '', '列表')">
-					<text class="md-chip-t">列</text>
-				</view>
-				<view :class="previewing ? 'md-chip md-chip-on' : 'md-chip'" @click="togglePreview">
-					<text :class="previewing ? 'md-chip-t md-chip-t-on' : 'md-chip-t'">预览</text>
-				</view>
+				<text v-if="tags.length == 0" class="hint">暂无标签</text>
 			</view>
-			<textarea
-				v-if="!previewing"
-				class="ta"
-				v-model="content"
-				placeholder="正文（Markdown；工具栏可插入格式/图片）"
-				placeholder-class="ph"
-				maxlength="20000"
-			/>
-			<scroll-view v-else class="preview-box" scroll-y="true">
-				<text class="preview-t">{{ content.length > 0 ? content : '（暂无正文）' }}</text>
-			</scroll-view>
-		</view>
 
-		<view class="actions">
-			<view class="x-btn x-btn-ghost flex1" @click="onSubmit('draft')">
-				<text class="x-btn-ghost-text">存草稿</text>
+			<!-- 状态：publish / draft / scheduled -->
+			<view class="x-card meta-card">
+				<text class="sec-label">状态</text>
+				<view class="status-row">
+					<view
+						:class="status == 'publish' ? 'st-chip st-chip-on' : 'st-chip'"
+						@click="setStatus('publish')"
+					>
+						<text :class="status == 'publish' ? 'st-t st-t-on' : 'st-t'">发布</text>
+					</view>
+					<view
+						:class="status == 'draft' ? 'st-chip st-chip-on' : 'st-chip'"
+						@click="setStatus('draft')"
+					>
+						<text :class="status == 'draft' ? 'st-t st-t-on' : 'st-t'">草稿</text>
+					</view>
+					<view
+						:class="status == 'scheduled' ? 'st-chip st-chip-on' : 'st-chip'"
+						@click="setStatus('scheduled')"
+					>
+						<text :class="status == 'scheduled' ? 'st-t st-t-on' : 'st-t'">定时</text>
+					</view>
+				</view>
+				<view v-if="status == 'scheduled'" class="sched-row">
+					<picker mode="date" :value="schedDate" @change="onSchedDateChange">
+						<view class="picker-row sched-pick">
+							<text class="picker-t">{{ schedDate.length > 0 ? schedDate : '选择日期' }}</text>
+						</view>
+					</picker>
+					<picker mode="time" :value="schedTime" @change="onSchedTimeChange">
+						<view class="picker-row sched-pick">
+							<text class="picker-t">{{ schedTime }}</text>
+						</view>
+					</picker>
+				</view>
 			</view>
-			<view class="x-btn flex1" @click="onSubmit(status)">
-				<text class="x-btn-text">{{ primaryLabel }}</text>
+
+			<!-- Markdown 工具栏（uvue 无 md-editor，用插入语法 + 插图上传） -->
+			<view class="x-card md-wrap">
+				<view class="md-bar">
+					<view class="md-chip" @click="insertMd('**', '**', '加粗')">
+						<text class="md-chip-t">B</text>
+					</view>
+					<view class="md-chip" @click="insertMd('*', '*', '斜体')">
+						<text class="md-chip-t i">I</text>
+					</view>
+					<view class="md-chip" @click="insertMd('## ', '', '标题')">
+						<text class="md-chip-t">H</text>
+					</view>
+					<view class="md-chip" @click="insertMd('[', '](url)', '链接')">
+						<text class="md-chip-t">链</text>
+					</view>
+					<view class="md-chip" @click="pickInlineImage">
+						<text class="md-chip-t">图</text>
+					</view>
+					<view class="md-chip" @click="insertMd('> ', '', '引用')">
+						<text class="md-chip-t">引</text>
+					</view>
+					<view class="md-chip" @click="insertMd('- ', '', '列表')">
+						<text class="md-chip-t">列</text>
+					</view>
+					<view :class="previewing ? 'md-chip md-chip-on' : 'md-chip'" @click="togglePreview">
+						<text :class="previewing ? 'md-chip-t md-chip-t-on' : 'md-chip-t'">预览</text>
+					</view>
+				</view>
+				<textarea
+					v-if="!previewing"
+					class="ta"
+					v-model="content"
+					placeholder="正文（Markdown；工具栏可插入格式/图片）"
+					placeholder-class="ph"
+					maxlength="20000"
+				/>
+				<scroll-view v-else class="preview-box" scroll-y="true">
+					<text class="preview-t">{{ content.length > 0 ? content : '（暂无正文）' }}</text>
+				</scroll-view>
 			</view>
-		</view>
+
+			<view class="actions">
+				<view class="x-btn x-btn-ghost flex1" @click="onSubmit('draft')">
+					<text class="x-btn-ghost-text">存草稿</text>
+				</view>
+				<view class="x-btn flex1" @click="onSubmit(status)">
+					<text class="x-btn-text">{{ primaryLabel }}</text>
+				</view>
+			</view>
+		</x-scroll-page>
 	</view>
 </template>
 
@@ -167,6 +174,7 @@
 /**
  * 写文章页：封面 + 分类/标签/定时 + Markdown 工具栏 → POST /article/create
  * 数据来源：GET /category、/tag；上传 /resources/upload-media；本地草稿 draft:new
+ * 滚动：x-page-flex + x-scroll-page（仅纵向滚动，关闭刷新/触底）
  */
 import {
 	createArticle,
@@ -563,6 +571,8 @@ async function onSubmit(submitStatus: string): Promise<void> {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .nav-act {
 	font-size: 12px;
 	color: #3db89a;

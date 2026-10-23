@@ -1,0 +1,66 @@
+<template>
+	<!-- Tabler 字体图标：图标名全集见同目录 icons.ts，可在官方 https://tabler.io/icons 预览 -->
+	<text
+		class="x-icon"
+		:style="{ fontFamily: fontFamily, fontSize: sizePx, lineHeight: sizePx, color: color }"
+	>{{ glyph }}</text>
+</template>
+
+<script setup lang="ts">
+/**
+ * Tabler 字体图标组件（easycom：x-icon）
+ * 跨端一致性：字体随包分发，Android / iOS / 鸿蒙 / Web 渲染完全一致，可任意换色缩放
+ */
+import type { IconGlyph } from './icons'
+import { ICON_OUTLINE, ICON_FILLED } from './icons'
+
+const props = defineProps({
+	/** 图标名，Tabler 原生命名（如 arrow-left、heart、diamond、sword） */
+	name: { type: String, default: '' },
+	/** 是否面性（实心）版本；仅部分图标提供面性，未提供时自动回退线性 */
+	filled: { type: Boolean, default: false },
+	/** 图标尺寸（px） */
+	size: { type: Number, default: 18 },
+	/** 图标颜色 */
+	color: { type: String, default: '#1c1a17' },
+})
+
+const fontFamily = computed((): string => {
+	if (props.filled && findGlyph(ICON_FILLED, props.name) != null) {
+		return 'tabler-icons-filled'
+	}
+	return 'tabler-icons'
+})
+
+const glyph = computed((): string => {
+	if (props.filled) {
+		const hit = findGlyph(ICON_FILLED, props.name)
+		if (hit != null) {
+			return hit.unicode
+		}
+	}
+	const outline = findGlyph(ICON_OUTLINE, props.name)
+	if (outline != null) {
+		return outline.unicode
+	}
+	console.warn('[x-icon] 未找到图标:', props.name)
+	return ''
+})
+
+const sizePx = computed((): string => props.size + 'px')
+
+function findGlyph(list: IconGlyph[], name: string): IconGlyph | null {
+	const hit = list.find((item: IconGlyph): boolean => item.name == name)
+	return hit == null ? null : hit
+}
+</script>
+
+<style>
+/* 字体文件在 styles/x-base.css 中 @font-face 全局注册（App.uvue 与各组件均引入） */
+.x-icon {
+	font-style: normal;
+	font-weight: 400;
+	text-align: center;
+	text-decoration: none;
+}
+</style>

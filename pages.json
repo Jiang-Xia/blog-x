@@ -40,6 +40,13 @@
 				"navigationBarTitleText": "消息中心",
 				"disableScroll": true
 			}
+		},
+		{
+			"path": "pages-dev/icons/index",
+			"style": {
+				"navigationBarTitleText": "图标库",
+				"disableScroll": true
+			}
 		}
 	],
 	"subPackages": [
@@ -118,7 +125,8 @@
 				{
 					"path": "write/index",
 					"style": {
-						"navigationBarTitleText": "写文章"
+						"navigationBarTitleText": "写文章",
+						"disableScroll": true
 					}
 				}
 			]

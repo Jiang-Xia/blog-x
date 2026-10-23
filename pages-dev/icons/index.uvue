@@ -1,0 +1,140 @@
+<template>
+	<!-- 图标库：搜索 + 线性/面性切换 + 点击复制图标名（开发辅助页） -->
+	<view class="x-page-flex">
+		<x-navbar title="图标库">
+			<template v-slot:right>
+				<text class="pick-count-all">{{ filled ? filledCount : outlineCount }} 个</text>
+			</template>
+		</x-navbar>
+
+		<view class="pick-bar">
+			<input
+				class="pick-input"
+				v-model="keyword"
+				placeholder="搜索图标名，如 arrow / heart / sword"
+			/>
+			<view class="pick-toggle" @click="onToggleFilled">
+				<text class="pick-toggle-text">{{ filled ? '面性' : '线性' }}</text>
+			</view>
+		</view>
+
+		<x-scroll-page>
+			<view class="pick-inner">
+				<text class="pick-count">{{ shown.length }} 个图标{{ keyword.length > 0 ? '（最多展示 200）' : '' }}，点击复制名称</text>
+				<view class="pick-grid">
+					<view v-for="item in shown" :key="item.name" class="pick-cell" @click="onPick(item.name)">
+						<x-icon :name="item.name" :filled="filled" :size="24" color="#1c1a17"></x-icon>
+						<text class="pick-name">{{ item.name }}</text>
+					</view>
+				</view>
+				<x-empty v-if="shown.length == 0" text="没有匹配的图标"></x-empty>
+			</view>
+		</x-scroll-page>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 开发辅助页：Tabler 图标检索
+ * 用途：挑图标 → 点按复制名称 → 粘贴到 <x-icon name="..." />
+ */
+import type { IconGlyph } from '../../components/x-icon/icons'
+import { ICON_OUTLINE, ICON_FILLED } from '../../components/x-icon/icons'
+import { showXToast } from '../../utils/toast'
+
+const keyword = ref('')
+const filled = ref(false)
+
+const outlineCount = ICON_OUTLINE.length
+const filledCount = ICON_FILLED.length
+
+const shown = computed((): IconGlyph[] => {
+	const src = filled.value ? ICON_FILLED : ICON_OUTLINE
+	const k = keyword.value.trim().toLowerCase()
+	const list =
+		k.length == 0
+			? src
+			: src.filter((it: IconGlyph): boolean => it.name.includes(k))
+	return list.slice(0, 200)
+})
+
+function onToggleFilled(): void {
+	filled.value = !filled.value
+}
+
+function onPick(name: string): void {
+	uni.setClipboardData({
+		data: name,
+		success: () => {
+			showXToast('📋', '已复制', name)
+		},
+	})
+}
+</script>
+
+<style>
+.pick-bar {
+	flex-direction: row;
+	align-items: center;
+	padding: 0 2px 10px;
+}
+
+.pick-input {
+	flex: 1;
+	height: 36px;
+	background-color: #ffffff;
+	border-radius: 999px;
+	padding: 0 14px;
+	font-size: 12px;
+	color: #1c1a17;
+}
+
+.pick-toggle {
+	margin-left: 8px;
+	background-color: #1c1a17;
+	border-radius: 999px;
+	padding: 8px 14px;
+}
+
+.pick-toggle-text {
+	font-size: 12px;
+	color: #ffffff;
+	font-weight: 600;
+}
+
+.pick-inner {
+	width: 100%;
+	padding: 0 2px 24px;
+}
+
+.pick-count {
+	font-size: 11px;
+	color: #9a948a;
+	margin: 0 2px 10px;
+}
+
+.pick-count-all {
+	font-size: 12px;
+	color: #9a948a;
+}
+
+.pick-grid {
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.pick-cell {
+	width: 25%;
+	align-items: center;
+	padding: 14px 4px 10px;
+}
+
+.pick-name {
+	font-size: 9px;
+	color: #9a948a;
+	margin-top: 6px;
+	text-align: center;
+	lines: 1;
+	text-overflow: ellipsis;
+}
+</style>

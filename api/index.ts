@@ -10,7 +10,14 @@ const raw = createApi()
 /** 注册表生成的薄封装（USE_MOCK 时合并挡板） */
 export const apis: Record<string, ApiFn> = USE_MOCK ? applyMocks(raw) : raw
 
-export { USE_MOCK, getBaseUrl, API_ORIGIN, API_PREFIX } from './config'
+export {
+	USE_MOCK,
+	getBaseUrl,
+	API_ORIGIN,
+	API_PREFIX,
+	WEB_DEV_PROXY,
+	WEB_DEV_PROXY_PREFIX,
+} from './config'
 export { get, post, put, patch, del, request } from './request'
 export { API_ROWS } from './registry'
 

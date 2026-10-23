@@ -3,6 +3,17 @@
  * 须在使用方 <style> 中 @import：App.uvue（页面）+ 各组件（styleIsolation v2 不继承 App）
  */
 
+/* Tabler Icons 字体（x-icon 组件依赖；双声明去重由各端自动处理） */
+@font-face {
+	font-family: 'tabler-icons';
+	src: url('/static/fonts/tabler-icons.ttf');
+}
+
+@font-face {
+	font-family: 'tabler-icons-filled';
+	src: url('/static/fonts/tabler-icons-filled.ttf');
+}
+
 .uni-row {
 	flex-direction: row;
 }

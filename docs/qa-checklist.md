@@ -27,7 +27,7 @@
 
 ## 联调（blog-server）
 
-前置：`api/config.ts` 中 `USE_MOCK=false`，`API_ORIGIN` 指向可用后端（默认 `http://localhost:5000`），已启动 Nest/Go。
+前置：`api/config.ts` 中 `USE_MOCK=false`；`api/dev-target.js` 的 `API_ORIGIN` 指向可用后端（默认 `http://localhost:5000`）；Web 联调保持 `WEB_DEV_PROXY=true`（经 Vite `/x-api` 代理）。已启动 Nest/Go（本地时）。
 
 - [ ] 首页文章列表来自 `POST /article/list`（非仅 mock 三篇）
 - [ ] 首页 / 收藏 / 搜索 / 留言 / 消息等长列表可纵向滚动；下拉刷新生效；有分页的上滑能加载更多

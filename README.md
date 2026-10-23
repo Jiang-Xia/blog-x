@@ -19,8 +19,9 @@ blog-x/
 ├── store/            # Pinia：user（登录态 / 资料 / 自动登录）
 ├── mock/             # 原型静态数据与失败回落
 ├── types/            # TS 类型
-├── api/              # 联调：config / request / registry / modules / mocks
+├── api/              # 联调：dev-target / config / request / registry / modules / mocks
 ├── utils/            # storage / gateway-crypto / vendor / toast / tabNav
+├── vite.config.js    # Web 开发代理（防 CORS）
 ├── pages.json
 ├── manifest.json
 └── docs/
@@ -38,7 +39,9 @@ blog-x/
 
 | 文件 | 作用 |
 |------|------|
-| [`api/config.ts`](api/config.ts) | `API_ORIGIN` / `USE_MOCK` / `OPEN_ENCRYPT` / `OPEN_REQUEST_LOG` / `GATEWAY_CRYPTO` |
+| [`api/dev-target.js`](api/dev-target.js) | 联调目标：`API_ORIGIN` / `API_PREFIX` / Web 代理前缀（与 `vite.config.js` 共用） |
+| [`api/config.ts`](api/config.ts) | `USE_MOCK` / `WEB_DEV_PROXY` / `OPEN_ENCRYPT` / `OPEN_REQUEST_LOG` / `GATEWAY_CRYPTO` |
+| [`vite.config.js`](vite.config.js) | Web 开发：`/x-api` → Nest，避免浏览器 CORS |
 | [`api/request.ts`](api/request.ts) | `uni.request`：解包、Bearer、加密网关、401 refresh、开发日志 |
 | [`api/registry.ts`](api/registry.ts) | 接口注册表（新增接口追加一行） |
 | [`api/createApi.ts`](api/createApi.ts) | 按注册表生成薄封装（类 shopkeeper-cli） |
@@ -46,7 +49,24 @@ blog-x/
 | [`api/mocks/`](api/mocks) | 同名方法挡板，`USE_MOCK` 时合并 |
 | [`utils/gateway-crypto/`](utils/gateway-crypto) | 对齐 Nuxt：`/encrypt` 信封加解密（aes） |
 
-默认 baseURL：`http://localhost:5000/api/v1`（Nest `blog-server`）。改 Go 本地：`API_ORIGIN = 'http://localhost:8000'`。
+默认 baseURL：`http://localhost:5000/api/v1`（Nest `blog-server`）。切换环境只改 [`api/dev-target.js`](api/dev-target.js)：
+
+| 环境 | `API_ORIGIN` | `API_PREFIX` |
+|------|--------------|--------------|
+| 本地 Nest | `http://localhost:5000` | `/api/v1` |
+| 线上 Nest | `https://jiang-xia.top` | `/x-blog/api/v1` |
+| 本地 Go | `http://localhost:8000` | `/api/v1` |
+
+### Web 本地开发代理（防 CORS）
+
+浏览器跑在 `http://localhost:3008`，直连线上/异端口 Nest 会触发 CORS。做法与 uni-app x 官方一致：
+
+1. `WEB_DEV_PROXY=true`（`api/config.ts`）时，Web + `development` 下 `getBaseUrl()` 返回同源前缀 `/x-api`
+2. [`vite.config.js`](vite.config.js) 把 `/x-api` 转发到 `API_ORIGIN + API_PREFIX`，并把 `/static` 转到 `API_ORIGIN`
+3. App / 小程序仍直连完整 `API_ORIGIN`，不受代理影响
+4. 改完 `dev-target.js` 后需**重新运行到浏览器**（Vite 才会读到新代理目标）
+
+线上 Nest 静态资源若挂在 `/x-api/blog-server`，可在 `vite.config.js` 的 `/static` 代理里加 `rewrite`（按需）。
 
 ### 鉴权头 / 加密 / 开发日志（对齐 Nuxt）
 
@@ -92,8 +112,9 @@ await apis.getAllTag()
 
 ## 开发与验证
 
-- 运行/编译：HBuilderX（无独立 Vite dev server）。
-- 联调前启动 `blog-server`（默认 :5000），按需改 `api/config.ts`。
+- 运行/编译：HBuilderX；Web 端会走根目录 `vite.config.js`（端口 3008 + 代理）。
+- 联调：改 [`api/dev-target.js`](api/dev-target.js)；本地 Nest 先起 `blog-server`（:5000）。
+- Web 连线上 Nest：把 `dev-target.js` 改成 `jiang-xia.top` + `/x-blog/api/v1`，保持 `WEB_DEV_PROXY=true`。
 - Android：运行到自定义基座；微信：发行后用微信开发者工具打开产物。
 - Agent 勿自动启动 HBuilderX / 开发者工具。
 - 验收清单：[`docs/qa-checklist.md`](docs/qa-checklist.md)。

@@ -14,14 +14,16 @@ alwaysApply: false
 
 ```
 api/
-  config.ts      # API_ORIGIN / USE_MOCK / OPEN_ENCRYPT / OPEN_REQUEST_LOG / GATEWAY_CRYPTO
-  request.ts     # get/post/put/patch/del，解包 { code, data, message }
-  registry.ts    # 接口注册表（新增接口只改这里 + modules）
-  createApi.ts   # 按注册表生成 apis.xxx
-  modules/       # 带适配的业务方法（页面优先）
-  adapters/      # 服务端字段 → types/*
-  mocks/         # USE_MOCK 时同名覆盖
-  index.ts       # 统一出口
+  dev-target.js   # API_ORIGIN / API_PREFIX / WEB_DEV_PROXY_PREFIX（与 vite.config.js 共用）
+  config.ts       # USE_MOCK / WEB_DEV_PROXY / OPEN_ENCRYPT / OPEN_REQUEST_LOG / GATEWAY_CRYPTO
+  request.ts      # get/post/put/patch/del，解包 { code, data, message }
+  registry.ts     # 接口注册表（新增接口只改这里 + modules）
+  createApi.ts    # 按注册表生成 apis.xxx
+  modules/        # 带适配的业务方法（页面优先）
+  adapters/       # 服务端字段 → types/*
+  mocks/          # USE_MOCK 时同名覆盖
+  index.ts        # 统一出口
+vite.config.js    # Web 开发代理：/x-api → Nest（防 CORS）
 utils/
   gateway-crypto/ # /encrypt 信封加解密（aes）
   vendor/         # crypto-js.js / jsencrypt.min.js（UMD，挂 globalThis）
@@ -44,7 +46,9 @@ utils/
 ## 入口
 
 - 统一 `api/request.ts`：`uni.request`，暴露 `get` / `post` / `put` / `patch` / `del`
-- baseURL：HBuilderX 改 [`api/config.ts`](api/config.ts) 的 `API_ORIGIN` + `API_PREFIX`（无 Vite 时不依赖 `.env`）
+- baseURL：改 [`api/dev-target.js`](api/dev-target.js)（`API_ORIGIN` + `API_PREFIX`）；`getBaseUrl()` 读取之
+- Web 本地开发：`WEB_DEV_PROXY=true` 时浏览器走同源 `/x-api`，由 [`vite.config.js`](vite.config.js) 转发，禁止 Web 直连线上域名（CORS）
+- App / 小程序：始终直连完整 `API_ORIGIN`，不经 Vite 代理
 - `USE_MOCK=true`：由 `apis` 合并 `api/mocks/` 同名覆盖；mock 的 `data` 必须抄真实接口
 - **禁止**在页面堆 `if (USE_MOCK)` / 为 mock 放宽解析；既有 `apiOrMock` 勿在新页扩张（见 `x-10`）
 - 业务 modules 只封装 URL / 参数 / **薄**适配，不重复处理 token / 加密，不写「list 或 items 或裸数组」矩阵
