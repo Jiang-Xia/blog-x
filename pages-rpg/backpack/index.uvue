@@ -1,6 +1,6 @@
 <template>
 	<!-- 背包装扮：inventory + loadout + 宠物槽 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="背包装扮"></x-navbar>
 
 		<view class="x-card loadout">
@@ -21,51 +21,62 @@
 			</view>
 		</view>
 
-		<!-- 宠物分段：实例来自 GET /rpg/pets -->
-		<template v-if="isPetSeg">
-			<view v-for="pet in pets" :key="pet.id" class="x-card row">
-				<view class="ico">
-					<text class="ico-t">{{ pet.icon }}</text>
+		<x-scroll-page
+			:enable-load-more="false"
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<!-- 宠物分段：实例来自 GET /rpg/pets -->
+			<template v-if="isPetSeg">
+				<view v-for="pet in pets" :key="pet.id" class="x-card row">
+					<view class="ico">
+						<text class="ico-t">{{ pet.icon }}</text>
+					</view>
+					<view class="body">
+						<text class="name">{{ pet.name }}</text>
+						<text class="meta">Lv.{{ pet.level }} · {{ pet.petCode }}</text>
+					</view>
+					<view
+						:class="loadout.petId == pet.id ? 'x-btn' : 'x-btn x-btn-ghost'"
+						@click="onTogglePet(pet)"
+					>
+						<text :class="loadout.petId == pet.id ? 'x-btn-text' : 'x-btn-ghost-text'">
+							{{ loadout.petId == pet.id ? '休息' : '出战' }}
+						</text>
+					</view>
 				</view>
-				<view class="body">
-					<text class="name">{{ pet.name }}</text>
-					<text class="meta">Lv.{{ pet.level }} · {{ pet.petCode }}</text>
-				</view>
-				<view
-					:class="loadout.petId == pet.id ? 'x-btn' : 'x-btn x-btn-ghost'"
-					@click="onTogglePet(pet)"
-				>
-					<text :class="loadout.petId == pet.id ? 'x-btn-text' : 'x-btn-ghost-text'">
-						{{ loadout.petId == pet.id ? '休息' : '出战' }}
-					</text>
-				</view>
-			</view>
-			<x-empty v-if="pets.length == 0" text="暂无宠物"></x-empty>
-		</template>
+				<x-empty v-if="pets.length == 0 && showFooter" text="暂无宠物"></x-empty>
+			</template>
 
-		<!-- 物品分段 -->
-		<template v-else>
-			<view v-for="item in filtered" :key="item.id" class="x-card row">
-				<view class="ico">
-					<text class="ico-t">{{ item.icon }}</text>
+			<!-- 物品分段 -->
+			<template v-else>
+				<view v-for="item in filtered" :key="item.id" class="x-card row">
+					<view class="ico">
+						<text class="ico-t">{{ item.icon }}</text>
+					</view>
+					<view class="body">
+						<text class="name">{{ item.name }}</text>
+						<text class="meta">{{ item.itemTypeLabel }} · ×{{ item.quantity }}</text>
+						<text v-if="item.sourceLabel.length > 0" class="src">{{ item.sourceLabel }}</text>
+					</view>
+					<view
+						v-if="item.equippable"
+						:class="isEquipped(item) ? 'x-btn' : 'x-btn x-btn-ghost'"
+						@click="onToggle(item)"
+					>
+						<text :class="isEquipped(item) ? 'x-btn-text' : 'x-btn-ghost-text'">
+							{{ isEquipped(item) ? '卸下' : '穿戴' }}
+						</text>
+					</view>
 				</view>
-				<view class="body">
-					<text class="name">{{ item.name }}</text>
-					<text class="meta">{{ item.itemTypeLabel }} · ×{{ item.quantity }}</text>
-					<text v-if="item.sourceLabel.length > 0" class="src">{{ item.sourceLabel }}</text>
-				</view>
-				<view
-					v-if="item.equippable"
-					:class="isEquipped(item) ? 'x-btn' : 'x-btn x-btn-ghost'"
-					@click="onToggle(item)"
-				>
-					<text :class="isEquipped(item) ? 'x-btn-text' : 'x-btn-ghost-text'">
-						{{ isEquipped(item) ? '卸下' : '穿戴' }}
-					</text>
-				</view>
-			</view>
-			<x-empty v-if="filtered.length == 0" text="背包为空"></x-empty>
-		</template>
+				<x-empty v-if="filtered.length == 0 && showFooter" text="背包为空"></x-empty>
+			</template>
+		</x-scroll-page>
 	</view>
 </template>
 
@@ -85,9 +96,21 @@ import {
 	type BagPet,
 } from '../../api/modules/rpg'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { USE_MOCK } from '../../api/config'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
+
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(20)
 
 const segs = ['全部', '称号', '头像框', '宠物', '其他']
 const segTypes = ['', 'title', 'avatar_frame', 'pet', '_other']
@@ -212,12 +235,22 @@ async function loadBag(): Promise<void> {
 	)
 }
 
+/**
+ * 下拉刷新背包
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	await loadBag()
+	const n = isPetSeg.value ? pets.value.length : filtered.value.length
+	endRefresh(n, n, n)
+}
+
 onMounted(() => {
 	if (!USE_MOCK && !userStore.loggedIn) {
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
 	}
-	loadBag()
+	onRefresh()
 })
 
 /**
@@ -289,6 +322,8 @@ async function onTogglePet(pet: BagPet): Promise<void> {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .loadout {
 	margin-bottom: 12px;
 }

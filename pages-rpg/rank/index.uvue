@@ -1,73 +1,105 @@
 <template>
 	<!-- 排行榜：真实头像 + 分段切换 type -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="排行榜"></x-navbar>
 		<view class="x-seg">
 			<view
 				v-for="(s, i) in segs"
 				:key="s"
 				:class="segIndex === i ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
-				@click="segIndex = i"
+				@click="setSeg(i)"
 			>
 				<text :class="segIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
 			</view>
 		</view>
-		<view
-			v-for="row in rows"
-			:key="row.rank"
-			:class="row.isMe ? 'x-card row me' : 'x-card row'"
+		<x-scroll-page
+			:enable-load-more="false"
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
 		>
-			<text class="rank">#{{ row.rank }}</text>
-			<view class="av">
-				<image
-					v-if="row.avatarUrl != null && row.avatarUrl.length > 0"
-					class="av-img"
-					:src="row.avatarUrl"
-					mode="aspectFill"
-				></image>
-				<text v-else class="em">{{ row.emoji }}</text>
+			<view
+				v-for="row in rows"
+				:key="row.rank"
+				:class="row.isMe ? 'x-card row me' : 'x-card row'"
+			>
+				<text class="rank">#{{ row.rank }}</text>
+				<view class="av">
+					<image
+						v-if="row.avatarUrl != null && row.avatarUrl.length > 0"
+						class="av-img"
+						:src="row.avatarUrl"
+						mode="aspectFill"
+					></image>
+					<text v-else class="em">{{ row.emoji }}</text>
+				</view>
+				<view class="body">
+					<text class="name">{{ row.name }}{{ row.isMe ? '（我）' : '' }}</text>
+					<text class="x-meta">Lv.{{ row.level }}</text>
+				</view>
+				<text class="score">{{ row.score }}</text>
 			</view>
-			<view class="body">
-				<text class="name">{{ row.name }}{{ row.isMe ? '（我）' : '' }}</text>
-				<text class="x-meta">Lv.{{ row.level }}</text>
-			</view>
-			<text class="score">{{ row.score }}</text>
-		</view>
+		</x-scroll-page>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 排行榜：联调 GET /rpg/leaderboard；头像用接口 avatar 字段
+ * 滚动：接口一次返回 TopN，仅下拉刷新 + 纵向滚动
  */
 import { rankRows } from '../../mock/data'
 import type { RankRow } from '../../types/rpg'
 import { fetchLeaderboard } from '../../api/modules/rpg'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 
 const segs = ['本周经验', '钻石', '连续签到']
 const types = ['exp', 'currency', 'signDays']
 const segIndex = ref(0)
-const rows = ref(rankRows as RankRow[])
+const rows = ref([] as RankRow[])
+
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(20)
+
+/**
+ * 切换分段并刷新
+ */
+function setSeg(i: number): void {
+	segIndex.value = i
+	onRefresh()
+}
 
 /**
  * 按分段拉榜
  */
-async function loadRank(): Promise<void> {
+async function onRefresh(): Promise<void> {
+	beginRefresh()
 	const type = types[segIndex.value]
 	rows.value = await apiOrMock(() => fetchLeaderboard(type, 20, 'week'), rankRows)
+	endRefresh(rows.value.length, rows.value.length, rows.value.length)
 }
 
 onMounted(() => {
-	loadRank()
-})
-
-watch(segIndex, () => {
-	loadRank()
+	onRefresh()
 })
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .row {
 	flex-direction: row;
 	align-items: center;

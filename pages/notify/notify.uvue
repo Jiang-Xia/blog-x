@@ -1,6 +1,6 @@
 <template>
 	<!-- 消息中心：分段按 kind 过滤 + 全部已读 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="消息中心">
 			<template v-slot:right>
 				<text class="read-all" @click="onReadAll">全部已读</text>
@@ -18,16 +18,28 @@
 			</view>
 		</view>
 
-		<view v-for="item in filtered" :key="item.id" class="msg">
-			<view class="msg-row">
-				<text class="msg-em">{{ item.emoji }}</text>
-				<view class="msg-body">
-					<text class="msg-title">{{ item.title }}</text>
-					<text class="msg-desc">{{ item.desc }}</text>
+		<x-scroll-page
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:footer-text="footerText"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@loadmore="onLoadMore"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<view v-for="item in filtered" :key="item.id" class="msg">
+				<view class="msg-row">
+					<text class="msg-em">{{ item.emoji }}</text>
+					<view class="msg-body">
+						<text class="msg-title">{{ item.title }}</text>
+						<text class="msg-desc">{{ item.desc }}</text>
+					</view>
 				</view>
 			</view>
-		</view>
-		<x-empty v-if="filtered.length == 0" text="暂无消息"></x-empty>
+			<x-empty v-if="filtered.length == 0 && showFooter" text="暂无消息"></x-empty>
+		</x-scroll-page>
 	</view>
 </template>
 
@@ -35,11 +47,13 @@
 /**
  * 消息中心：联调 /notification/list + read
  * 分段「全部/评论/赞藏/系统」按 NotifyItem.kind 前端过滤（后端 list 无 type 筛选参数）
+ * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
 import { notifyItems } from '../../mock/data'
 import type { NotifyItem } from '../../types/notify'
 import { fetchNotifications, markNotificationsRead } from '../../api/modules/notification'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { USE_MOCK } from '../../api/config'
 import { clearNotifyBadge } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
@@ -48,7 +62,22 @@ const segs = ['全部', '评论', '赞藏', '系统']
 /** 与 segs 下标对齐；空串 = 全部 */
 const segKinds = ['', 'comment', 'like', 'system']
 const segIndex = ref(0)
-const allItems = ref(notifyItems as NotifyItem[])
+const allItems = ref([] as NotifyItem[])
+
+const {
+	pageSize,
+	refreshing,
+	pullingDistance,
+	footerText,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+	beginLoadMore,
+	endLoadMore,
+} = useListScroll(20)
 
 /** 当前分段过滤后的列表 */
 const filtered = computed((): NotifyItem[] => {
@@ -69,14 +98,37 @@ function setSeg(i: number): void {
 }
 
 /**
- * 拉取通知列表
+ * 拉取一页通知
  */
-async function loadList(): Promise<void> {
-	allItems.value = await apiOrMock(() => fetchNotifications(1, 30), notifyItems)
+async function fetchPage(page: number): Promise<NotifyItem[]> {
+	return await apiOrMock(() => fetchNotifications(page, pageSize), page == 1 ? notifyItems : [])
+}
+
+/**
+ * 下拉刷新
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	const rows = await fetchPage(1)
+	allItems.value = rows
+	endRefresh(rows.length, allItems.value.length)
+}
+
+/**
+ * 上滑加载更多
+ */
+async function onLoadMore(): Promise<void> {
+	const p = beginLoadMore()
+	if (p <= 0) return
+	const rows = await fetchPage(p)
+	for (let i = 0; i < rows.length; i++) {
+		allItems.value.push(rows[i])
+	}
+	endLoadMore(rows.length, allItems.value.length)
 }
 
 onMounted(() => {
-	loadList()
+	onRefresh()
 })
 
 /**
@@ -94,6 +146,8 @@ async function onReadAll(): Promise<void> {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .read-all {
 	font-size: 12px;
 	color: #3db89a;

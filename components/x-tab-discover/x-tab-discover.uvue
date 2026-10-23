@@ -1,87 +1,108 @@
 <template>
-	<!-- 发现 Tab：scroll-view 全宽贴边；内边距在 inner -->
-	<scroll-view class="x-page-tab" scroll-y="true">
-		<view class="x-page-tab-inner">
-			<view class="status-pad"></view>
-			<text class="x-page-title">发现</text>
+	<!-- 发现 Tab：统一滚动壳；入口磁贴 + 热门 -->
+	<x-scroll-page
+		variant="tab"
+		:enable-load-more="false"
+		:refreshing="refreshing"
+		:pulling-distance="pullingDistance"
+		:show-footer="showFooter"
+		@refresh="onRefresh"
+		@refresherpulling="onRefresherPulling"
+		@refresherrestore="onRefresherRestore"
+		@refresherabort="onRefresherAbort"
+	>
+		<view class="status-pad"></view>
+		<text class="x-page-title">发现</text>
 
-			<view class="search-bar" @click="goSearch">
-				<text class="search-ico">⌕</text>
-				<text class="search-ph">搜索文章、标签、作者</text>
-			</view>
+		<view class="search-bar" @click="goSearch">
+			<text class="search-ico">⌕</text>
+			<text class="search-ph">搜索文章、标签、作者</text>
+		</view>
 
-			<scroll-view class="cat-scroll" scroll-x="true" show-scrollbar="false">
-				<view class="chip-row nowrap">
-					<view
-						v-for="(c, i) in categories"
-						:key="c"
-						:class="i === 0 ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
-						@click="goSearchWith(c)"
-					>
-						<text :class="i === 0 ? 'chip-t-dark' : 'chip-t'">{{ c }}</text>
-					</view>
-				</view>
-			</scroll-view>
-
-			<view class="x-grid-2">
-				<view class="x-grid-2-item">
-					<view class="x-tile" @click="goArchive">
-						<text class="x-tile-ico">📚</text>
-						<text class="x-tile-title">归档</text>
-						<text class="x-tile-desc">按月浏览</text>
-					</view>
-				</view>
-				<view class="x-grid-2-item">
-					<view class="x-tile" @click="goTags">
-						<text class="x-tile-ico">🏷️</text>
-						<text class="x-tile-title">标签墙</text>
-						<text class="x-tile-desc">全部标签</text>
-					</view>
-				</view>
-				<view class="x-grid-2-item">
-					<view class="x-tile" @click="goGuestbook">
-						<text class="x-tile-ico">💬</text>
-						<text class="x-tile-title">留言板</text>
-						<text class="x-tile-desc">访客留言</text>
-					</view>
-				</view>
-				<view class="x-grid-2-item">
-					<view class="x-tile" @click="goLinks">
-						<text class="x-tile-ico">🔗</text>
-						<text class="x-tile-title">友链</text>
-						<text class="x-tile-desc">友情链接</text>
-					</view>
+		<scroll-view class="cat-scroll" scroll-x="true" show-scrollbar="false">
+			<view class="chip-row nowrap">
+				<view
+					v-for="(c, i) in categories"
+					:key="c"
+					:class="i === 0 ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
+					@click="goSearchWith(c)"
+				>
+					<text :class="i === 0 ? 'chip-t-dark' : 'chip-t'">{{ c }}</text>
 				</view>
 			</view>
+		</scroll-view>
 
-			<view class="x-section-head">
-				<text class="x-section-title">热门</text>
-			</view>
-			<view class="x-card article" @click="goDetail(hot.id)">
-				<view class="article-body">
-					<text class="article-title">{{ hot.title }}</text>
-					<text class="article-stat">{{ hot.hotLabel }} · 💭</text>
+		<view class="x-grid-2">
+			<view class="x-grid-2-item">
+				<view class="x-tile" @click="goArchive">
+					<text class="x-tile-ico">📚</text>
+					<text class="x-tile-title">归档</text>
+					<text class="x-tile-desc">按月浏览</text>
 				</view>
-				<view class="cover">
-					<text class="cover-em">{{ hot.coverEmoji }}</text>
+			</view>
+			<view class="x-grid-2-item">
+				<view class="x-tile" @click="goTags">
+					<text class="x-tile-ico">🏷️</text>
+					<text class="x-tile-title">标签墙</text>
+					<text class="x-tile-desc">全部标签</text>
+				</view>
+			</view>
+			<view class="x-grid-2-item">
+				<view class="x-tile" @click="goGuestbook">
+					<text class="x-tile-ico">💬</text>
+					<text class="x-tile-title">留言板</text>
+					<text class="x-tile-desc">访客留言</text>
+				</view>
+			</view>
+			<view class="x-grid-2-item">
+				<view class="x-tile" @click="goLinks">
+					<text class="x-tile-ico">🔗</text>
+					<text class="x-tile-title">友链</text>
+					<text class="x-tile-desc">友情链接</text>
 				</view>
 			</view>
 		</view>
-	</scroll-view>
+
+		<view class="x-section-head">
+			<text class="x-section-title">热门</text>
+		</view>
+		<view class="x-card article" @click="goDetail(hot.id)">
+			<view class="article-body">
+				<text class="article-title">{{ hot.title }}</text>
+				<text class="article-stat">{{ hot.hotLabel }} · 💭</text>
+			</view>
+			<view class="cover">
+				<text class="cover-em">{{ hot.coverEmoji }}</text>
+			</view>
+		</view>
+	</x-scroll-page>
 </template>
 
 <script setup lang="ts">
 /**
  * 发现 Tab 面板：对齐原型 discover
  * 数据来源：联调文章列表取热门；分类 GET /category
+ * 滚动：x-scroll-page 下拉刷新（入口页无分页）
  */
 import { discoverCategories, hotArticle } from '../../mock/data'
 import type { ArticleSummary } from '../../types/article'
 import { fetchArticleList, fetchCategoryNames } from '../../api/modules/article'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 
 const categories = ref(discoverCategories as string[])
 const hot = ref(hotArticle as ArticleSummary)
+
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(5)
 
 /**
  * 加载分类 + 热门（列表首条）
@@ -101,8 +122,17 @@ async function loadDiscover(): Promise<void> {
 	}
 }
 
+/**
+ * 下拉刷新
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	await loadDiscover()
+	endRefresh(1, 1, 1)
+}
+
 onMounted(() => {
-	loadDiscover()
+	onRefresh()
 })
 
 function goSearch(): void {

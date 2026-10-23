@@ -1,33 +1,46 @@
 <template>
 	<!-- 幸运抽奖：3×3 格 + 中心抽一次 + 高亮轮转 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="幸运抽奖"></x-navbar>
-		<view class="lottery">
-			<view
-				v-for="(cell, i) in displayCells"
-				:key="'c' + i"
-				:class="cellClass(i)"
-				@click="onCellClick(i)"
-			>
-				<text class="cell-em">{{ cell.emoji }}</text>
-				<text class="cell-lb">{{ cell.label }}</text>
+		<x-scroll-page
+			:enable-load-more="false"
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<view class="lottery">
+				<view
+					v-for="(cell, i) in displayCells"
+					:key="'c' + i"
+					:class="cellClass(i)"
+					@click="onCellClick(i)"
+				>
+					<text class="cell-em">{{ cell.emoji }}</text>
+					<text class="cell-lb">{{ cell.label }}</text>
+				</view>
 			</view>
-		</view>
-		<view class="x-section-head">
-			<text class="x-section-title">最近获得</text>
-		</view>
-		<text class="recent">{{ recentLabel }}</text>
+			<view class="x-section-head">
+				<text class="x-section-title">最近获得</text>
+			</view>
+			<text class="recent">{{ recentLabel }}</text>
+		</x-scroll-page>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 幸运抽奖：联调 pool + draw；UI 轮转后 toast 服务端结果
+ * 滚动：x-scroll-page 下拉刷新奖池
  */
 import { lotteryCells } from '../../mock/data'
 import type { LotteryCell } from '../../types/rpg'
 import { fetchLotteryPool, lotteryDraw } from '../../api/modules/rpg'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { USE_MOCK } from '../../api/config'
 import { showXToast } from '../../utils/toast'
 
@@ -38,8 +51,28 @@ const spinning = ref(false)
 const pool = ref(lotteryCells as LotteryCell[])
 const recentLabel = ref('宠物蛋 · 钻石+10')
 
-onMounted(async () => {
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(10)
+
+/**
+ * 下拉刷新奖池
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
 	pool.value = await apiOrMock(() => fetchLotteryPool(), lotteryCells)
+	endRefresh(1, 1, 1)
+}
+
+onMounted(() => {
+	onRefresh()
 })
 
 type CellView = { emoji: string; label: string; isGo: boolean }
@@ -138,6 +171,8 @@ async function spinLottery(): Promise<void> {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .lottery {
 	flex-direction: row;
 	flex-wrap: wrap;

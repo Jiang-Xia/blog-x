@@ -1,56 +1,80 @@
 <template>
 	<!-- 文章归档：按年→月→文章，对齐 Nest /article/archives -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="归档"></x-navbar>
-		<view v-if="years.length == 0" class="empty">
-			<text class="x-meta">暂无归档</text>
-		</view>
-		<view v-for="y in years" :key="y.year" class="year-block">
-			<text class="year">{{ y.year }}</text>
-			<view v-for="m in y.months" :key="y.year + m.monthLabel" class="x-card">
-				<view class="month-row">
-					<view class="dot"></view>
-					<view class="bar-wrap">
-						<view class="label-row">
-							<text class="m-label">{{ m.monthLabel }}</text>
-							<text class="m-count">{{ m.count }} 篇</text>
-						</view>
-						<view class="bar light">
-							<view class="bar-i" :style="{ width: barWidth(m.count) }"></view>
+		<x-scroll-page
+			:enable-load-more="false"
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:show-footer="showFooter"
+			footer-done-text="— 已经到底了 —"
+			@refresh="onRefresh"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<view v-if="years.length == 0 && showFooter" class="empty">
+				<text class="x-meta">暂无归档</text>
+			</view>
+			<view v-for="y in years" :key="y.year" class="year-block">
+				<text class="year">{{ y.year }}</text>
+				<view v-for="m in y.months" :key="y.year + m.monthLabel" class="x-card">
+					<view class="month-row">
+						<view class="dot"></view>
+						<view class="bar-wrap">
+							<view class="label-row">
+								<text class="m-label">{{ m.monthLabel }}</text>
+								<text class="m-count">{{ m.count }} 篇</text>
+							</view>
+							<view class="bar light">
+								<view class="bar-i" :style="{ width: barWidth(m.count) }"></view>
+							</view>
 						</view>
 					</view>
-				</view>
-				<view
-					v-for="art in (m.articles != null ? m.articles : [])"
-					:key="art.id"
-					class="art-link"
-					@click="goDetail(art.id)"
-				>
-					<text class="art-t">{{ art.title }}</text>
-					<text v-if="art.timeLabel != null && art.timeLabel.length > 0" class="art-time">{{
-						art.timeLabel
-					}}</text>
+					<view
+						v-for="art in (m.articles != null ? m.articles : [])"
+						:key="art.id"
+						class="art-link"
+						@click="goDetail(art.id)"
+					>
+						<text class="art-t">{{ art.title }}</text>
+						<text v-if="art.timeLabel != null && art.timeLabel.length > 0" class="art-time">{{
+							art.timeLabel
+						}}</text>
+					</view>
 				</view>
 			</view>
-		</view>
+		</x-scroll-page>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 归档页：联调 GET /article/archives（年→英文月→文章列表）
+ * 滚动：整树一次返回，仅下拉刷新 + 纵向滚动
  */
 import { archiveMonths } from '../../mock/data'
 import type { ArchiveYear } from '../../types/notify'
 import { fetchArchives } from '../../api/modules/article'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 
 /** mock 回落：包一层假年份 */
 function mockYears(): ArchiveYear[] {
 	return [{ year: '2026', months: archiveMonths }]
 }
 
-const years = ref(mockYears() as ArchiveYear[])
+const years = ref([] as ArchiveYear[])
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(10)
 
 /**
  * 进度条宽度（相对上限 12 篇封顶）
@@ -60,8 +84,17 @@ function barWidth(count: number): string {
 	return n * 8 + '%'
 }
 
-onMounted(async () => {
+/**
+ * 下拉刷新归档树
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
 	years.value = await apiOrMock(() => fetchArchives(), mockYears())
+	endRefresh(years.value.length, years.value.length, years.value.length)
+}
+
+onMounted(() => {
+	onRefresh()
 })
 
 function goDetail(id: string): void {
@@ -70,6 +103,8 @@ function goDetail(id: string): void {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .year-block {
 	margin-bottom: 8px;
 }

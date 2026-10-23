@@ -1,53 +1,107 @@
 <template>
 	<!-- 我的收藏：联调 GET /collect/list，展示真实文章卡片 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="我的收藏"></x-navbar>
-		<view v-if="loading" class="state">
-			<text class="x-meta">加载中…</text>
-		</view>
-		<view v-else-if="list.length == 0">
-			<x-empty emoji="⭐" text="还没有收藏，去首页逛逛吧" action-text="去首页" @action="goHome"></x-empty>
-		</view>
-		<view
-			v-for="item in list"
-			:key="item.id"
-			class="x-card article"
-			@click="goDetail(item.id)"
+		<x-scroll-page
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:footer-text="footerText"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@loadmore="onLoadMore"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
 		>
-			<view class="article-body">
-				<text class="article-title">{{ item.title }}</text>
-				<text class="x-meta">{{ item.categoryName }} · {{ item.timeLabel }}</text>
+			<view v-if="!showFooter && list.length == 0" class="state">
+				<text class="x-meta">加载中…</text>
 			</view>
-			<view class="cover" :style="{ backgroundColor: item.coverC1 }">
-				<text class="cover-em">{{ item.coverEmoji }}</text>
+			<view v-else-if="list.length == 0">
+				<x-empty emoji="⭐" text="还没有收藏，去首页逛逛吧" action-text="去首页" @action="goHome"></x-empty>
 			</view>
-		</view>
+			<view
+				v-for="item in list"
+				:key="item.id"
+				class="x-card article"
+				@click="goDetail(item.id)"
+			>
+				<view class="article-body">
+					<text class="article-title">{{ item.title }}</text>
+					<text class="x-meta">{{ item.categoryName }} · {{ item.timeLabel }}</text>
+				</view>
+				<view class="cover" :style="{ backgroundColor: item.coverC1 }">
+					<text class="cover-em">{{ item.coverEmoji }}</text>
+				</view>
+			</view>
+		</x-scroll-page>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 收藏页：联调 GET /collect/list（需登录；article.category.label）
+ * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
 import type { ArticleSummary } from '../../types/article'
 import { fetchCollectList } from '../../api/modules/interact'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { goTab, TAB_HOME } from '../../utils/tabNav'
 import { showXToast } from '../../utils/toast'
 
 const list = ref([] as ArticleSummary[])
-const loading = ref(true)
+const {
+	pageSize,
+	refreshing,
+	pullingDistance,
+	footerText,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+	beginLoadMore,
+	endLoadMore,
+} = useListScroll(20)
 
-onMounted(async () => {
-	loading.value = true
+/**
+ * 拉取一页收藏
+ */
+async function fetchPage(page: number): Promise<ArticleSummary[]> {
 	try {
-		list.value = await apiOrMock(() => fetchCollectList(1, 50), [])
+		return await apiOrMock(() => fetchCollectList(page, pageSize), [])
 	} catch (_) {
-		list.value = []
 		showXToast('⚠️', '加载失败', '请确认已登录')
-	} finally {
-		loading.value = false
+		return []
 	}
+}
+
+/**
+ * 下拉刷新
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	const rows = await fetchPage(1)
+	list.value = rows
+	endRefresh(rows.length, list.value.length)
+}
+
+/**
+ * 上滑加载更多
+ */
+async function onLoadMore(): Promise<void> {
+	const p = beginLoadMore()
+	if (p <= 0) return
+	const rows = await fetchPage(p)
+	for (let i = 0; i < rows.length; i++) {
+		list.value.push(rows[i])
+	}
+	endLoadMore(rows.length, list.value.length)
+}
+
+onMounted(() => {
+	onRefresh()
 })
 
 function goHome(): void {
@@ -60,6 +114,8 @@ function goDetail(id: string): void {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .state {
 	align-items: center;
 	padding: 24px 0;

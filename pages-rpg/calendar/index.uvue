@@ -1,25 +1,36 @@
 <template>
 	<!-- 签到日历：当月网格 + sign-info 摘要（网格由连续天数回溯） -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="签到日历"></x-navbar>
-		<view class="x-card summary">
-			<text class="sum-t">{{ summaryText }}</text>
-			<view class="ring">
-				<text class="ring-pct">{{ ringPct }}%</text>
+		<x-scroll-page
+			:enable-load-more="false"
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<view class="x-card summary">
+				<text class="sum-t">{{ summaryText }}</text>
+				<view class="ring">
+					<text class="ring-pct">{{ ringPct }}%</text>
+				</view>
 			</view>
-		</view>
-		<text class="month">{{ monthLabel }}</text>
-		<view class="cal">
-			<text v-for="h in weekHeads" :key="h" class="hd">{{ h }}</text>
-			<view
-				v-for="(d, i) in days"
-				:key="'d' + i"
-				:class="dayClass(d)"
-			>
-				<text :class="dayTextClass(d)">{{ d.label }}</text>
+			<text class="month">{{ monthLabel }}</text>
+			<view class="cal">
+				<text v-for="h in weekHeads" :key="h" class="hd">{{ h }}</text>
+				<view
+					v-for="(d, i) in days"
+					:key="'d' + i"
+					:class="dayClass(d)"
+				>
+					<text :class="dayTextClass(d)">{{ d.label }}</text>
+				</view>
 			</view>
-		</view>
-		<text class="hint">说明：后端仅提供连续签到，网格按最近连续天数回溯标注</text>
+			<text class="hint">说明：后端仅提供连续签到，网格按最近连续天数回溯标注</text>
+		</x-scroll-page>
 	</view>
 </template>
 
@@ -31,7 +42,19 @@
 import { calendarHits } from '../../mock/data'
 import { fetchSignInfo, type SignInfoSummary } from '../../api/modules/rpg'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { USE_MOCK } from '../../api/config'
+
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(10)
 
 const weekHeads = ['日', '一', '二', '三', '四', '五', '六']
 const now = new Date()
@@ -122,8 +145,17 @@ async function loadCalendar(): Promise<void> {
 	ringPct.value = Math.min(100, Math.floor((signedCount / daysInMonth) * 100))
 }
 
+/**
+ * 下拉刷新日历
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	await loadCalendar()
+	endRefresh(1, 1, 1)
+}
+
 onMounted(() => {
-	loadCalendar()
+	onRefresh()
 })
 
 /**
@@ -176,6 +208,8 @@ function dayTextClass(d: DayCell): string {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .summary {
 	flex-direction: row;
 	align-items: center;

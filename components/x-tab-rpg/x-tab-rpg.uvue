@@ -1,7 +1,16 @@
 <template>
-	<!-- 冒险中心：scroll-view 全宽贴边；内边距在 inner -->
-	<scroll-view class="x-page-tab" scroll-y="true">
-		<view class="x-page-tab-inner">
+	<!-- 冒险中心：统一滚动壳 + 下拉刷新 -->
+	<x-scroll-page
+		variant="tab"
+		:enable-load-more="false"
+		:refreshing="refreshing"
+		:pulling-distance="pullingDistance"
+		:show-footer="showFooter"
+		@refresh="onRefresh"
+		@refresherpulling="onRefresherPulling"
+		@refresherrestore="onRefresherRestore"
+		@refresherabort="onRefresherAbort"
+	>
 			<view class="status-pad"></view>
 			<view class="head-row">
 				<text class="x-page-title">冒险中心</text>
@@ -94,14 +103,14 @@
 					<text class="x-btn-text">充值</text>
 				</view>
 			</view>
-		</view>
-	</scroll-view>
+	</x-scroll-page>
 </template>
 
 <script setup lang="ts">
 /**
  * 冒险中心面板：对齐原型 rpg 屏
  * 数据来源：联调 /rpg/status|sign|my-quests；失败回落 mock
+ * 滚动：x-scroll-page 下拉刷新
  */
 import { rpgHeroSeed, rpgQuestsSeed } from '../../mock/data'
 import type { RpgHero, RpgQuest } from '../../types/rpg'
@@ -113,6 +122,7 @@ import {
 	rpgSignIn,
 } from '../../api/modules/rpg'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { USE_MOCK } from '../../api/config'
 import { doMockCheckin, useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
@@ -124,6 +134,17 @@ const store = useMockStore()
 const diamonds = store.diamonds
 const streakDays = store.streakDays
 const checkedInToday = store.checkedInToday
+
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(10)
 
 /** 展示用任务（排除签到，避免与上方签到卡重复） */
 const displayQuests = computed((): RpgQuest[] => {
@@ -157,8 +178,17 @@ async function loadRpg(): Promise<void> {
 	quests.value = await apiOrMock(() => fetchMyQuests(), rpgQuestsSeed)
 }
 
+/**
+ * 下拉刷新冒险状态
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	await loadRpg()
+	endRefresh(1, 1, 1)
+}
+
 onMounted(() => {
-	loadRpg()
+	onRefresh()
 })
 
 /** 每日签到 */

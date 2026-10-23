@@ -1,34 +1,66 @@
 <template>
 	<!-- 友情链接：列表 + 申请示意 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="友情链接">
 			<template v-slot:right>
 				<text class="apply" @click="onApply">申请</text>
 			</template>
 		</x-navbar>
-		<view v-for="item in links" :key="item.id" class="x-card">
-			<text class="name">{{ item.name }}</text>
-			<text class="url">{{ item.url }}</text>
-		</view>
-		<text class="hint">点击卡片可在真机用 web-view / 复制链接（示意）</text>
+		<x-scroll-page
+			:enable-load-more="false"
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<view v-for="item in links" :key="item.id" class="x-card">
+				<text class="name">{{ item.name }}</text>
+				<text class="url">{{ item.url }}</text>
+			</view>
+			<text class="hint">点击卡片可在真机用 web-view / 复制链接（示意）</text>
+		</x-scroll-page>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 友链页：联调 GET/POST /link
+ * 滚动：一次全量，仅下拉刷新
  */
 import { friendLinks } from '../../mock/data'
 import type { FriendLink } from '../../types/notify'
 import { createLink, fetchLinks } from '../../api/modules/interact'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { USE_MOCK } from '../../api/config'
 import { showXToast } from '../../utils/toast'
 
-const links = ref(friendLinks as FriendLink[])
+const links = ref([] as FriendLink[])
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(20)
 
-onMounted(async () => {
+/**
+ * 下拉刷新友链
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
 	links.value = await apiOrMock(() => fetchLinks(), friendLinks)
+	endRefresh(links.value.length, links.value.length, links.value.length)
+}
+
+onMounted(() => {
+	onRefresh()
 })
 
 /**
@@ -42,12 +74,14 @@ async function onApply(): Promise<void> {
 	try {
 		await createLink({ title: '申请友链', url: 'https://example.com', desp: '来自 blog-x' })
 		showXToast('🔗', '已提交', '等待审核')
-		links.value = await fetchLinks()
+		await onRefresh()
 	} catch (_) {}
 }
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .apply {
 	font-size: 12px;
 	color: #3db89a;

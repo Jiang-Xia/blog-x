@@ -1,6 +1,6 @@
 <template>
 	<!-- 审核台：敏感词命中列表 + 通过/驳回 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="审核台">
 			<template v-slot:right>
 				<text class="exit" @click="onExit">退出</text>
@@ -31,25 +31,37 @@
 			</view>
 		</view>
 
-		<view v-for="item in items" :key="item.id" class="audit-item">
-			<view class="meta-row">
-				<text class="kind">{{ item.sourceType }}</text>
-				<text class="status">{{ item.status }}</text>
-			</view>
-			<text class="summary">{{ item.content }}</text>
-			<text v-if="item.hitWords.length > 0" class="hl">命中「{{ item.hitWords }}」</text>
-			<view v-if="item.status == 'pending'" class="actions">
-				<view class="x-btn" @click="onPass(item)">
-					<text class="x-btn-text">通过</text>
+		<x-scroll-page
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:footer-text="footerText"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@loadmore="onLoadMore"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<view v-for="item in items" :key="item.id" class="audit-item">
+				<view class="meta-row">
+					<text class="kind">{{ item.sourceType }}</text>
+					<text class="status">{{ item.status }}</text>
 				</view>
-				<view class="x-btn warn" @click="onReject(item)">
-					<text class="warn-t">驳回</text>
+				<text class="summary">{{ item.content }}</text>
+				<text v-if="item.hitWords.length > 0" class="hl">命中「{{ item.hitWords }}」</text>
+				<view v-if="item.status == 'pending'" class="actions">
+					<view class="x-btn" @click="onPass(item)">
+						<text class="x-btn-text">通过</text>
+					</view>
+					<view class="x-btn warn" @click="onReject(item)">
+						<text class="warn-t">驳回</text>
+					</view>
 				</view>
 			</view>
-		</view>
 
-		<x-empty v-if="items.length == 0" text="暂无命中记录"></x-empty>
-		<text class="footer">共 {{ total }} 条</text>
+			<x-empty v-if="items.length == 0 && showFooter" text="暂无命中记录"></x-empty>
+			<text class="footer">共 {{ total }} 条</text>
+		</x-scroll-page>
 	</view>
 </template>
 
@@ -57,6 +69,7 @@
 /**
  * 审核台：GET /sensitive-word/hit + approve/reject（对齐 blog-admin 敏感词审核）
  * 展示字段来自命中记录实体；需登录（管理员权限）
+ * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
 import {
 	approveAuditHit,
@@ -65,6 +78,7 @@ import {
 	type AuditHit,
 } from '../../api/modules/audit'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { USE_MOCK } from '../../api/config'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
@@ -102,10 +116,26 @@ const mockHits: AuditHit[] = [
 	},
 ]
 
-const items = ref(mockHits as AuditHit[])
-const total = ref(mockHits.length)
+const items = ref([] as AuditHit[])
+const total = ref(0)
 const acting = ref(false)
 const userStore = useUserStore()
+
+const {
+	pageSize,
+	refreshing,
+	pullingDistance,
+	footerText,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+	beginLoadMore,
+	endLoadMore,
+	resetPaging,
+} = useListScroll(20)
 
 /**
  * 当前筛选：来源 + 状态
@@ -118,29 +148,61 @@ function currentQuery(): { sourceType: string; status: string } {
 }
 
 /**
- * 拉取命中列表
+ * mock 按筛选过滤
  */
-async function loadHits(): Promise<void> {
+function mockFiltered(): AuditHit[] {
 	const q = currentQuery()
-	const mockFiltered: AuditHit[] = []
+	const out: AuditHit[] = []
 	for (let i = 0; i < mockHits.length; i++) {
 		const h = mockHits[i]
 		if (q.sourceType.length > 0 && h.sourceType != q.sourceType) continue
 		if (q.status.length > 0 && h.status != q.status) continue
-		mockFiltered.push(h)
+		out.push(h)
 	}
-	const res = await apiOrMock(
+	return out
+}
+
+/**
+ * 拉取一页命中
+ */
+async function fetchPage(page: number): Promise<{ list: AuditHit[]; total: number }> {
+	const q = currentQuery()
+	const mf = mockFiltered()
+	return await apiOrMock(
 		() =>
 			fetchAuditHits({
-				page: 1,
-				pageSize: 50,
+				page,
+				pageSize,
 				sourceType: q.sourceType,
 				status: q.status,
 			}),
-		{ list: mockFiltered, total: mockFiltered.length },
+		{ list: page == 1 ? mf : [], total: mf.length },
 	)
+}
+
+/**
+ * 下拉刷新
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	const res = await fetchPage(1)
 	items.value = res.list
 	total.value = res.total
+	endRefresh(res.list.length, items.value.length, res.total)
+}
+
+/**
+ * 上滑加载更多
+ */
+async function onLoadMore(): Promise<void> {
+	const p = beginLoadMore()
+	if (p <= 0) return
+	const res = await fetchPage(p)
+	for (let i = 0; i < res.list.length; i++) {
+		items.value.push(res.list[i])
+	}
+	total.value = res.total
+	endLoadMore(res.list.length, items.value.length, res.total)
 }
 
 onMounted(() => {
@@ -148,7 +210,7 @@ onMounted(() => {
 		uni.navigateTo({ url: '/pages/login/login' })
 		return
 	}
-	loadHits()
+	onRefresh()
 })
 
 /**
@@ -156,7 +218,8 @@ onMounted(() => {
  */
 function setSeg(i: number): void {
 	segIndex.value = i
-	loadHits()
+	resetPaging()
+	onRefresh()
 }
 
 /**
@@ -164,7 +227,8 @@ function setSeg(i: number): void {
  */
 function setStatus(i: number): void {
 	statusIndex.value = i
-	loadHits()
+	resetPaging()
+	onRefresh()
 }
 
 /**
@@ -202,14 +266,14 @@ async function doApprove(item: AuditHit): Promise<void> {
 	if (USE_MOCK) {
 		item.status = 'approved'
 		showXToast('✅', '已通过', 'mock')
-		loadHits()
+		onRefresh()
 		return
 	}
 	acting.value = true
 	try {
 		await approveAuditHit(item.id)
 		showXToast('✅', '已通过', '')
-		await loadHits()
+		await onRefresh()
 	} catch (_) {
 	} finally {
 		acting.value = false
@@ -223,14 +287,14 @@ async function doReject(item: AuditHit): Promise<void> {
 	if (USE_MOCK) {
 		item.status = 'rejected'
 		showXToast('❌', '已驳回', 'mock')
-		loadHits()
+		onRefresh()
 		return
 	}
 	acting.value = true
 	try {
 		await rejectAuditHit(item.id)
 		showXToast('❌', '已驳回', '')
-		await loadHits()
+		await onRefresh()
 	} catch (_) {
 	} finally {
 		acting.value = false
@@ -246,6 +310,8 @@ function onExit(): void {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .exit {
 	font-size: 12px;
 	color: #c2543f;
@@ -340,7 +406,7 @@ function onExit(): void {
 	font-size: 11px;
 	color: #9a948a;
 	margin-top: 8px;
-	margin-bottom: 24px;
+	margin-bottom: 8px;
 	text-align: center;
 }
 </style>

@@ -1,52 +1,67 @@
 <template>
 	<!-- 评论收件箱：列表 + 回复 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="评论收件箱"></x-navbar>
 		<text class="badge-line">未读 {{ badge }}</text>
-		<view v-for="item in items" :key="item.id" class="x-card">
-			<text class="art">《{{ item.articleTitle }}》</text>
-			<text class="author">{{ item.author }}</text>
-			<text class="content">{{ item.content }}</text>
-			<view v-if="replyingId == item.id" class="reply-box">
-				<input
-					class="reply-input"
-					type="text"
-					v-model="replyDraft"
-					placeholder="回复内容…"
-					placeholder-class="ph"
-					confirm-type="send"
-					@confirm="onSubmitReply"
-				/>
-				<view class="reply-actions">
-					<view class="x-btn x-btn-ghost" @click="cancelReply">
-						<text class="x-btn-ghost-text">取消</text>
-					</view>
-					<view class="x-btn" @click="onSubmitReply">
-						<text class="x-btn-text">发送</text>
+		<x-scroll-page
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:footer-text="footerText"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@loadmore="onLoadMore"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<view v-for="item in items" :key="item.id" class="x-card">
+				<text class="art">《{{ item.articleTitle }}》</text>
+				<text class="author">{{ item.author }}</text>
+				<text class="content">{{ item.content }}</text>
+				<view v-if="replyingId == item.id" class="reply-box">
+					<input
+						class="reply-input"
+						type="text"
+						v-model="replyDraft"
+						placeholder="回复内容…"
+						placeholder-class="ph"
+						confirm-type="send"
+						@confirm="onSubmitReply"
+					/>
+					<view class="reply-actions">
+						<view class="x-btn x-btn-ghost" @click="cancelReply">
+							<text class="x-btn-ghost-text">取消</text>
+						</view>
+						<view class="x-btn" @click="onSubmitReply">
+							<text class="x-btn-text">发送</text>
+						</view>
 					</view>
 				</view>
+				<view v-else class="x-btn x-btn-ghost reply" @click="onReply(item)">
+					<text class="x-btn-ghost-text">回复</text>
+				</view>
 			</view>
-			<view v-else class="x-btn x-btn-ghost reply" @click="onReply(item)">
-				<text class="x-btn-ghost-text">回复</text>
-			</view>
-		</view>
+			<x-empty v-if="items.length == 0 && showFooter" text="暂无评论"></x-empty>
+		</x-scroll-page>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 评论收件箱：联调 GET /comment/on-my-articles + POST /reply/create
+ * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
 import { inboxItems } from '../../mock/data'
 import type { InboxItem } from '../../types/notify'
 import { addReply, fetchInbox } from '../../api/modules/interact'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { USE_MOCK } from '../../api/config'
 import { useMockStore } from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
 
-const items = ref(inboxItems as InboxItem[])
+const items = ref([] as InboxItem[])
 const store = useMockStore()
 const userStore = useUserStore()
 const badge = store.inboxBadge
@@ -54,9 +69,54 @@ const replyingId = ref('')
 const replyDraft = ref('')
 const submitting = ref(false)
 
-onMounted(async () => {
-	items.value = await apiOrMock(() => fetchInbox(1, 30), inboxItems)
+const {
+	pageSize,
+	refreshing,
+	pullingDistance,
+	footerText,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+	beginLoadMore,
+	endLoadMore,
+} = useListScroll(20)
+
+/**
+ * 拉取一页收件箱
+ */
+async function fetchPage(page: number): Promise<InboxItem[]> {
+	return await apiOrMock(() => fetchInbox(page, pageSize), page == 1 ? inboxItems : [])
+}
+
+/**
+ * 下拉刷新
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	const rows = await fetchPage(1)
+	items.value = rows
 	store.inboxBadge.value = items.value.length
+	endRefresh(rows.length, items.value.length)
+}
+
+/**
+ * 上滑加载更多
+ */
+async function onLoadMore(): Promise<void> {
+	const p = beginLoadMore()
+	if (p <= 0) return
+	const rows = await fetchPage(p)
+	for (let i = 0; i < rows.length; i++) {
+		items.value.push(rows[i])
+	}
+	endLoadMore(rows.length, items.value.length)
+}
+
+onMounted(() => {
+	onRefresh()
 })
 
 /**
@@ -118,6 +178,8 @@ async function onSubmitReply(): Promise<void> {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .badge-line {
 	font-size: 12px;
 	color: #e8897a;

@@ -14,8 +14,8 @@ blog-x/
 ├── pages-blog/       # 分包：归档 / 留言 / 友链 / 收藏 / 审核 / AI 等
 ├── pages-rpg/        # 分包：抽奖 / 排行 / 日历 / 充值
 ├── pages-tool/       # 分包：实用工具（占位）
-├── components/       # x-tab-* / x-navbar / x-toast / x-empty / x-tip-sheet
-├── composables/      # useMockStore / useApiOrMock
+├── components/       # x-tab-* / x-scroll-page / x-navbar / x-toast / x-empty / x-tip-sheet
+├── composables/      # useListScroll / useMockStore / useApiOrMock
 ├── store/            # Pinia：user（登录态 / 资料 / 自动登录）
 ├── mock/             # 原型静态数据与失败回落
 ├── types/            # TS 类型
@@ -76,6 +76,8 @@ await apis.getAllTag()
 | tipSheet | 详情页内 `x-tip-sheet`（钻石 tip + 站点赞赏） | 组件 |
 
 底栏：`uni_modules/uni-tab-bar` 的 **tab-bar-blur**。切 Tab 用 `utils/tabNav.goTab`，**不要**用 `uni.switchTab`。
+
+长页/长列表统一用 `x-scroll-page` + `useListScroll`（下拉刷新、上滑加载更多）；`pages.json` 对应页开 `disableScroll`。约定见 [`docs/page-development-guide.md`](docs/page-development-guide.md) §2。
 
 已联调：详情评论、收件箱回复、任务领奖、标签墙、钻石/站点打赏、AI 流式、签到日历网格（sign-info 推算）、消息分段过滤、首页今日进度（签到+任务）、写文章（封面 + 分类/标签/定时 + Markdown 工具栏/插图 + `/article/create`）、背包装扮（inventory/loadout + 宠物槽 `/rpg/pets`）、审核台（`/sensitive-word/hit` 通过/拒绝）。工具箱分包仍占位。
 

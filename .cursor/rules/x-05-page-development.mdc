@@ -46,11 +46,21 @@ alwaysApply: false
 2. `uni.scss` 全局变量
 3. 页面 `<style>`（App 端页面样式默认不影响子组件内部）
 
+## 长页 / 长列表滚动（强制）
+
+- 外层：`x-page-flex` + `x-navbar`；内容：`x-scroll-page`（内置 `uni-refresh-box` + `@scrolltolower`）
+- 状态：`composables/useListScroll`（`beginRefresh` / `endRefresh` / `beginLoadMore` / `endLoadMore`）
+- Tab 面板：`x-scroll-page variant="tab"`
+- 无分页：`:enable-load-more="false"`，仍保留下拉刷新
+- `pages.json` 对该页加 `"disableScroll": true`
+- 详见 `docs/page-development-guide.md` §2「长页 / 长列表滚动约定」
+
 ## 新增页面 Checklist
 
 - [ ] 已按主包/分包归类，且 `pages.json` 登记正确（含标题注释）？
 - [ ] 分包跳转 path 是否含 root（如 `/pages-rpg/index/index`）？
 - [ ] 文字是否都包在 `<text>` 内？
 - [ ] 是否只用 class 选择器、rpx/px 单位？
+- [ ] 长页是否已用 `x-scroll-page` + `disableScroll`？
 - [ ] `onLoad` 参数有判空/类型处理？
 - [ ] 端差异（如有）已用条件编译 + 注释？

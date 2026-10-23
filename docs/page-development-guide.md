@@ -63,12 +63,74 @@
 | `view` | 容器（默认 flex、纵向） |
 | `text` | 文本 |
 | `image` | 图片 |
-| `scroll-view` | 滚动容器（列表页标配） |
+| `scroll-view` | 滚动容器（列表页标配；优先用 `x-scroll-page`） |
+| `x-scroll-page` | **长页/长列表统一滚动壳**：下拉刷新 + 上滑加载更多 |
 | `swiper / swiper-item` | 轮播 |
 | `button / input / textarea` | 表单基础件 |
-| `refresh-box`（uni_modules） | 下拉刷新 |
+| `uni-refresh-box`（uni_modules） | 下拉刷新 UI（已封装进 `x-scroll-page`） |
 
 - 禁用浏览器标签（div/span/img/…）与 DOM API。
+
+### 长页 / 长列表滚动约定（强制）
+
+很多页面原先只有 `view.x-page`、内容超出后**无法滚动**。统一改用：
+
+```vue
+<template>
+  <view class="x-page-flex">
+    <x-navbar title="标题"></x-navbar>
+    <!-- 筛选条等可放在 scroll 外固定 -->
+    <x-scroll-page
+      :refreshing="refreshing"
+      :pulling-distance="pullingDistance"
+      :footer-text="footerText"
+      :show-footer="showFooter"
+      :enable-load-more="true"
+      @refresh="onRefresh"
+      @loadmore="onLoadMore"
+      @refresherpulling="onRefresherPulling"
+      @refresherrestore="onRefresherRestore"
+      @refresherabort="onRefresherAbort"
+    >
+      <!-- 列表项 -->
+    </x-scroll-page>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { useListScroll } from '../../composables/useListScroll'
+
+const {
+  pageSize, refreshing, pullingDistance, footerText, showFooter,
+  onRefresherPulling, onRefresherRestore, onRefresherAbort,
+  beginRefresh, endRefresh, beginLoadMore, endLoadMore,
+} = useListScroll(20)
+
+async function onRefresh(): Promise<void> {
+  beginRefresh()
+  const rows = await fetchPage(1)
+  list.value = rows
+  endRefresh(rows.length, list.value.length /*, total */)
+}
+
+async function onLoadMore(): Promise<void> {
+  const p = beginLoadMore()
+  if (p <= 0) return
+  const rows = await fetchPage(p)
+  // append…
+  endLoadMore(rows.length, list.value.length /*, total */)
+}
+</script>
+```
+
+| 场景 | 做法 |
+|------|------|
+| 二级列表（收藏/消息/留言/搜索…） | `x-page-flex` + `x-scroll-page` + `useListScroll` |
+| 主壳 Tab | `x-scroll-page variant="tab"`（全宽贴边） |
+| 一次返回全量（归档/友链/标签/排行榜） | `enable-load-more=false`，仍要下拉刷新 |
+| `pages.json` | 内滚页面加 `"disableScroll": true`，避免与页面原生滚动冲突 |
+
+实现文件：`components/x-scroll-page/`、`composables/useListScroll.ts`、样式 `styles/x-base.css`（`.x-page-flex` / `.x-scroll-page`）。
 
 ## 3. 生命周期与路由
 
@@ -146,6 +208,7 @@ App 端为原生渲染，CSS 是**子集**：
 - [ ] 分包跳转 path 含 root（如 `/pages-rpg/index/index`）
 - [ ] 文字都在 `<text>` 内；无浏览器标签
 - [ ] 只用 class 选择器、rpx/px 单位、flex 布局
+- [ ] 长页/长列表已用 `x-scroll-page`（下拉刷新；分页页开 `enable-load-more`），且 `disableScroll: true`
 - [ ] `onLoad` 参数有判空；`onUnload` 清理了监听/定时器
 - [ ] 新增函数有中文 JSDoc（`x-04`）
 - [ ] 端差异已条件编译 + 注释

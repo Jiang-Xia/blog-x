@@ -1,35 +1,49 @@
 <template>
 	<!-- 钻石充值：SKU + 支付增加 mock 钻石 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="钻石充值"></x-navbar>
-		<view class="x-card bal-card">
-			<text class="bal-label">当前钻石</text>
-			<text class="bal-n">💎 {{ diamonds }}</text>
-		</view>
-		<view class="pack">
-			<view
-				v-for="sku in skus"
-				:key="sku.id"
-				:class="sku.id === selectedId ? 'sku on' : 'sku'"
-				@click="selectSku(sku.id)"
-			>
-				<text class="sku-strong">{{ sku.diamonds }} 钻石</text>
-				<text class="sku-span">¥{{ sku.priceYuan }}{{ sku.bonusLabel != null ? ' · ' + sku.bonusLabel : '' }}</text>
+		<x-scroll-page
+			:enable-load-more="false"
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<view class="x-card bal-card">
+				<text class="bal-label">当前钻石</text>
+				<text class="bal-n">💎 {{ diamonds }}</text>
 			</view>
-		</view>
-		<view class="x-btn pay" @click="onPay">
-			<text class="x-btn-text">支付 ¥{{ payPrice }}</text>
-		</view>
+			<view class="pack">
+				<view
+					v-for="sku in skus"
+					:key="sku.id"
+					:class="sku.id === selectedId ? 'sku on' : 'sku'"
+					@click="selectSku(sku.id)"
+				>
+					<text class="sku-strong">{{ sku.diamonds }} 钻石</text>
+					<text class="sku-span">¥{{ sku.priceYuan }}{{ sku.bonusLabel != null ? ' · ' + sku.bonusLabel : '' }}</text>
+				</view>
+			</view>
+			<view class="x-btn pay" @click="onPay">
+				<text class="x-btn-text">支付 ¥{{ payPrice }}</text>
+			</view>
+		</x-scroll-page>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 钻石充值：联调 create + 轮询 status；USE_MOCK 写本地钻石
+ * 滚动：x-scroll-page 下拉刷新余额
  */
 import { rechargeSkus } from '../../mock/data'
 import { USE_MOCK } from '../../api/config'
 import { createRpgRecharge, getRpgRechargeStatus, fetchRpgHero } from '../../api/modules/rpg'
+import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { addMockDiamonds, useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 
@@ -38,6 +52,33 @@ const selectedId = ref('300')
 const store = useMockStore()
 const diamonds = store.diamonds
 const paying = ref(false)
+
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(10)
+
+/**
+ * 下拉刷新钻石余额
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	const hero = await apiOrMock(() => fetchRpgHero(), null)
+	if (hero != null) {
+		store.diamonds.value = hero.diamonds
+	}
+	endRefresh(1, 1, 1)
+}
+
+onMounted(() => {
+	onRefresh()
+})
 
 /**
  * 按 id 查找充值档
@@ -130,6 +171,8 @@ async function onPay(): Promise<void> {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .bal-card {
 	align-items: center;
 	margin-bottom: 14px;

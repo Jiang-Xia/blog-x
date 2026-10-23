@@ -17,13 +17,15 @@
 		{
 			"path": "pages/search/search",
 			"style": {
-				"navigationBarTitleText": "搜索"
+				"navigationBarTitleText": "搜索",
+				"disableScroll": true
 			}
 		},
 		{
 			"path": "pages/detail/detail",
 			"style": {
-				"navigationBarTitleText": "文章"
+				"navigationBarTitleText": "文章",
+				"disableScroll": true
 			}
 		},
 		{
@@ -35,7 +37,8 @@
 		{
 			"path": "pages/notify/notify",
 			"style": {
-				"navigationBarTitleText": "消息中心"
+				"navigationBarTitleText": "消息中心",
+				"disableScroll": true
 			}
 		}
 	],
@@ -52,55 +55,64 @@
 				{
 					"path": "archives/index",
 					"style": {
-						"navigationBarTitleText": "归档"
+						"navigationBarTitleText": "归档",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "guestbook/index",
 					"style": {
-						"navigationBarTitleText": "留言板"
+						"navigationBarTitleText": "留言板",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "links/index",
 					"style": {
-						"navigationBarTitleText": "友情链接"
+						"navigationBarTitleText": "友情链接",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "favorites/index",
 					"style": {
-						"navigationBarTitleText": "我的收藏"
+						"navigationBarTitleText": "我的收藏",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "inbox/index",
 					"style": {
-						"navigationBarTitleText": "评论收件箱"
+						"navigationBarTitleText": "评论收件箱",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "profile/index",
 					"style": {
-						"navigationBarTitleText": "公开主页"
+						"navigationBarTitleText": "公开主页",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "audit/index",
 					"style": {
-						"navigationBarTitleText": "审核台"
+						"navigationBarTitleText": "审核台",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "ai/index",
 					"style": {
-						"navigationBarTitleText": "AI 助手"
+						"navigationBarTitleText": "AI 助手",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "tags/index",
 					"style": {
-						"navigationBarTitleText": "标签墙"
+						"navigationBarTitleText": "标签墙",
+						"disableScroll": true
 					}
 				},
 				{
@@ -124,31 +136,36 @@
 				{
 					"path": "lottery/index",
 					"style": {
-						"navigationBarTitleText": "幸运抽奖"
+						"navigationBarTitleText": "幸运抽奖",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "rank/index",
 					"style": {
-						"navigationBarTitleText": "排行榜"
+						"navigationBarTitleText": "排行榜",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "calendar/index",
 					"style": {
-						"navigationBarTitleText": "签到日历"
+						"navigationBarTitleText": "签到日历",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "recharge/index",
 					"style": {
-						"navigationBarTitleText": "钻石充值"
+						"navigationBarTitleText": "钻石充值",
+						"disableScroll": true
 					}
 				},
 				{
 					"path": "backpack/index",
 					"style": {
-						"navigationBarTitleText": "背包装扮"
+						"navigationBarTitleText": "背包装扮",
+						"disableScroll": true
 					}
 				}
 			]
@@ -159,7 +176,8 @@
 				{
 					"path": "index/index",
 					"style": {
-						"navigationBarTitleText": "工具箱"
+						"navigationBarTitleText": "工具箱",
+						"disableScroll": true
 					}
 				}
 			]

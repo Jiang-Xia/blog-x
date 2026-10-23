@@ -1,7 +1,16 @@
 <template>
-	<!-- 我的 Tab：scroll-view 全宽贴边；内边距在 inner -->
-	<scroll-view class="x-page-tab" scroll-y="true">
-		<view class="x-page-tab-inner">
+	<!-- 我的 Tab：统一滚动壳 + 下拉刷新资料 -->
+	<x-scroll-page
+		variant="tab"
+		:enable-load-more="false"
+		:refreshing="refreshing"
+		:pulling-distance="pullingDistance"
+		:show-footer="showFooter"
+		@refresh="onRefresh"
+		@refresherpulling="onRefresherPulling"
+		@refresherrestore="onRefresherRestore"
+		@refresherabort="onRefresherAbort"
+	>
 			<view class="status-pad"></view>
 			<view class="profile-top" @click="onProfileTap">
 				<view class="big-avatar">
@@ -69,18 +78,19 @@
 					<text class="chev">›</text>
 				</view>
 			</view>
-		</view>
-	</scroll-view>
+	</x-scroll-page>
 </template>
 
 <script setup lang="ts">
 /**
  * 我的 Tab 面板：对齐原型 me
  * 数据来源：Pinia useUserStore（冷启动自动登录后已有资料）；角标来自收件箱
+ * 滚动：x-scroll-page 下拉刷新
  */
 import { storeToRefs } from 'pinia'
 import { fetchInbox } from '../../api/modules/interact'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
@@ -89,6 +99,17 @@ const userStore = useUserStore()
 const { profile, loggedIn } = storeToRefs(userStore)
 const store = useMockStore()
 const inboxBadge = store.inboxBadge
+
+const {
+	refreshing,
+	pullingDistance,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+} = useListScroll(10)
 
 /**
  * 已登录则刷新资料与收件箱角标
@@ -102,8 +123,17 @@ async function loadMe(): Promise<void> {
 	store.inboxBadge.value = inbox.length
 }
 
+/**
+ * 下拉刷新
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	await loadMe()
+	endRefresh(1, 1, 1)
+}
+
 onMounted(() => {
-	loadMe()
+	onRefresh()
 })
 
 // 登录成功 / 退出后即时刷新（组件常驻主壳，不会重新 mount）

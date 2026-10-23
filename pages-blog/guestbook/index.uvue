@@ -1,47 +1,76 @@
 <template>
 	<!-- 留言板：真实头像 + 列表 + 发布示意 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="留言板">
 			<template v-slot:right>
 				<text class="pub" @click="onPublish">发布</text>
 			</template>
 		</x-navbar>
 		<text class="count">{{ totalLabel }}</text>
-		<view v-for="item in items" :key="item.id" class="x-card">
-			<view class="row">
-				<view class="av">
-					<image
-						v-if="item.avatarUrl != null && item.avatarUrl.length > 0"
-						class="av-img"
-						:src="item.avatarUrl"
-						mode="aspectFill"
-					></image>
-					<text v-else class="av-fall">{{ authorInitial(item.author) }}</text>
+		<x-scroll-page
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:footer-text="footerText"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@loadmore="onLoadMore"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
+		>
+			<view v-for="item in items" :key="item.id" class="x-card">
+				<view class="row">
+					<view class="av">
+						<image
+							v-if="item.avatarUrl != null && item.avatarUrl.length > 0"
+							class="av-img"
+							:src="item.avatarUrl"
+							mode="aspectFill"
+						></image>
+						<text v-else class="av-fall">{{ authorInitial(item.author) }}</text>
+					</view>
+					<text class="author">{{ item.author }}</text>
+					<text class="floor">#{{ item.floor }}</text>
 				</view>
-				<text class="author">{{ item.author }}</text>
-				<text class="floor">#{{ item.floor }}</text>
+				<text class="content">{{ item.content }}</text>
+				<view v-if="item.reply != null" class="reply-nest">
+					<text class="reply-t">{{ item.reply }}</text>
+				</view>
 			</view>
-			<text class="content">{{ item.content }}</text>
-			<view v-if="item.reply != null" class="reply-nest">
-				<text class="reply-t">{{ item.reply }}</text>
-			</view>
-		</view>
+		</x-scroll-page>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 留言板：联调 GET/POST /msgboard；头像用接口 avatar 字段
+ * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
 import { guestbookItems } from '../../mock/data'
 import type { GuestbookItem } from '../../types/notify'
 import { fetchMsgboard, postMsgboard } from '../../api/modules/interact'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { USE_MOCK } from '../../api/config'
 import { showXToast } from '../../utils/toast'
 
-const items = ref(guestbookItems as GuestbookItem[])
-const totalLabel = ref('共 ' + guestbookItems.length + ' 条留言')
+const items = ref([] as GuestbookItem[])
+const totalLabel = ref('共 0 条留言')
+
+const {
+	pageSize,
+	refreshing,
+	pullingDistance,
+	footerText,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+	beginLoadMore,
+	endLoadMore,
+} = useListScroll(20)
 
 /**
  * 昵称首字兜底（无头像时）
@@ -52,15 +81,42 @@ function authorInitial(name: string): string {
 }
 
 /**
- * 加载留言列表
+ * 拉取一页留言
  */
-async function loadList(): Promise<void> {
-	items.value = await apiOrMock(() => fetchMsgboard(1, 30), guestbookItems)
+async function fetchPage(page: number): Promise<GuestbookItem[]> {
+	return await apiOrMock(
+		() => fetchMsgboard(page, pageSize),
+		page == 1 ? guestbookItems : [],
+	)
+}
+
+/**
+ * 下拉刷新
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	const rows = await fetchPage(1)
+	items.value = rows
 	totalLabel.value = '共 ' + items.value.length + ' 条留言'
+	endRefresh(rows.length, items.value.length)
+}
+
+/**
+ * 上滑加载更多
+ */
+async function onLoadMore(): Promise<void> {
+	const p = beginLoadMore()
+	if (p <= 0) return
+	const rows = await fetchPage(p)
+	for (let i = 0; i < rows.length; i++) {
+		items.value.push(rows[i])
+	}
+	totalLabel.value = '共 ' + items.value.length + ' 条留言'
+	endLoadMore(rows.length, items.value.length)
 }
 
 onMounted(() => {
-	loadList()
+	onRefresh()
 })
 
 /**
@@ -74,12 +130,14 @@ async function onPublish(): Promise<void> {
 	try {
 		await postMsgboard({ name: '访客', comment: '来自 blog-x 的留言' })
 		showXToast('💬', '已发布', '')
-		await loadList()
+		await onRefresh()
 	} catch (_) {}
 }
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .pub {
 	font-size: 12px;
 	color: #3db89a;

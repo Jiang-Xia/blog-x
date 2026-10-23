@@ -30,6 +30,7 @@
 前置：`api/config.ts` 中 `USE_MOCK=false`，`API_ORIGIN` 指向可用后端（默认 `http://localhost:5000`），已启动 Nest/Go。
 
 - [ ] 首页文章列表来自 `POST /article/list`（非仅 mock 三篇）
+- [ ] 首页 / 收藏 / 搜索 / 留言 / 消息等长列表可纵向滚动；下拉刷新生效；有分页的上滑能加载更多
 - [ ] 详情 `GET /article/info`；赞/藏打到 `/like` `/collect`
 - [ ] 详情发表评论 `POST /comment/create`；未登录引导登录
 - [ ] 收件箱回复 `POST /reply/create`（parentId=评论 id，replyUid=评论者）

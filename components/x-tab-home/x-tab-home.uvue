@@ -1,90 +1,99 @@
 <template>
-	<!-- 首页 Tab：scroll-view 全宽贴边；内边距在 x-page-tab-inner -->
-	<scroll-view class="x-page-tab" scroll-y="true">
-		<view class="x-page-tab-inner">
-			<view class="status-pad"></view>
-			<view class="search-bar" @click="goSearch">
-				<text class="search-ico">⌕</text>
-				<text class="search-ph">搜索文章、标签、作者</text>
-				<view class="bell" @click.stop="goNotify">
-					<text class="bell-text">{{ notifyBadge }}</text>
-				</view>
-			</view>
-
-			<view class="x-card today">
-				<view class="today-left">
-					<text class="today-label">今日进度</text>
-					<text class="today-title">{{ homeTodayTitle }}</text>
-					<view class="chip-row">
-						<text class="x-chip">{{ homeStreakLabel }}</text>
-						<text class="x-chip x-chip-lav">{{ unreadChip }}</text>
-					</view>
-				</view>
-				<view class="ring">
-					<text class="ring-pct">{{ ringPct }}%</text>
-					<text class="ring-sub">签到</text>
-				</view>
-			</view>
-
-			<view class="chip-row chip-gap">
-				<view class="x-chip x-chip-dark" @click="goAi">
-					<text class="chip-t-dark">✦ AI 助手</text>
-				</view>
-				<view class="x-chip x-chip-plain" @click="goRpg">
-					<text class="chip-t">{{ questChip }}</text>
-				</view>
-				<view class="x-chip x-chip-plain" @click="onWrite">
-					<text class="chip-t">写文章</text>
-				</view>
-			</view>
-
-			<!-- 分类横滑：点击按 category.id 筛选 -->
-			<scroll-view class="cat-scroll" scroll-x="true" show-scrollbar="false">
-				<view class="chip-row nowrap">
-					<view
-						v-for="(c, i) in categories"
-						:key="c.id"
-						:class="catIndex === i ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
-						@click="onSelectCat(i)"
-					>
-						<text :class="catIndex === i ? 'chip-t-dark' : 'chip-t'">{{ c.label }}</text>
-					</view>
-				</view>
-			</scroll-view>
-
-			<view class="x-section-head">
-				<text class="x-section-title">最新文章</text>
-				<text class="x-link" @click="goDiscover">全部</text>
-			</view>
-
-			<view
-				v-for="item in list"
-				:key="item.id"
-				class="x-card article"
-				@click="goDetail(item.id)"
-			>
-				<view class="article-body">
-					<view class="meta-row">
-						<text class="x-meta">{{ item.categoryName }}</text>
-						<text class="x-meta"> · </text>
-						<text class="x-meta">{{ item.timeLabel }}</text>
-					</view>
-					<text class="article-title">{{ item.title }}</text>
-					<text class="article-stat">👍 {{ item.likeCount }} · 💬 {{ item.commentCount }}</text>
-				</view>
-				<view class="cover" :style="{ backgroundColor: item.coverC1 }">
-					<text class="cover-em">{{ item.coverEmoji }}</text>
-				</view>
+	<!-- 首页 Tab：统一滚动壳；分类横滑单独 scroll-x -->
+	<x-scroll-page
+		variant="tab"
+		:refreshing="refreshing"
+		:pulling-distance="pullingDistance"
+		:footer-text="footerText"
+		:show-footer="showFooter"
+		@refresh="onRefresh"
+		@loadmore="onLoadMore"
+		@refresherpulling="onRefresherPulling"
+		@refresherrestore="onRefresherRestore"
+		@refresherabort="onRefresherAbort"
+	>
+		<view class="status-pad"></view>
+		<view class="search-bar" @click="goSearch">
+			<text class="search-ico">⌕</text>
+			<text class="search-ph">搜索文章、标签、作者</text>
+			<view class="bell" @click.stop="goNotify">
+				<text class="bell-text">{{ notifyBadge }}</text>
 			</view>
 		</view>
-	</scroll-view>
+
+		<view class="x-card today">
+			<view class="today-left">
+				<text class="today-label">今日进度</text>
+				<text class="today-title">{{ homeTodayTitle }}</text>
+				<view class="chip-row">
+					<text class="x-chip">{{ homeStreakLabel }}</text>
+					<text class="x-chip x-chip-lav">{{ unreadChip }}</text>
+				</view>
+			</view>
+			<view class="ring">
+				<text class="ring-pct">{{ ringPct }}%</text>
+				<text class="ring-sub">签到</text>
+			</view>
+		</view>
+
+		<view class="chip-row chip-gap">
+			<view class="x-chip x-chip-dark" @click="goAi">
+				<text class="chip-t-dark">✦ AI 助手</text>
+			</view>
+			<view class="x-chip x-chip-plain" @click="goRpg">
+				<text class="chip-t">{{ questChip }}</text>
+			</view>
+			<view class="x-chip x-chip-plain" @click="onWrite">
+				<text class="chip-t">写文章</text>
+			</view>
+		</view>
+
+		<!-- 分类横滑：点击按 category.id 筛选 -->
+		<scroll-view class="cat-scroll" scroll-x="true" show-scrollbar="false">
+			<view class="chip-row nowrap">
+				<view
+					v-for="(c, i) in categories"
+					:key="c.id"
+					:class="catIndex === i ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
+					@click="onSelectCat(i)"
+				>
+					<text :class="catIndex === i ? 'chip-t-dark' : 'chip-t'">{{ c.label }}</text>
+				</view>
+			</view>
+		</scroll-view>
+
+		<view class="x-section-head">
+			<text class="x-section-title">最新文章</text>
+			<text class="x-link" @click="goDiscover">全部</text>
+		</view>
+
+		<view
+			v-for="item in list"
+			:key="item.id"
+			class="x-card article"
+			@click="goDetail(item.id)"
+		>
+			<view class="article-body">
+				<view class="meta-row">
+					<text class="x-meta">{{ item.categoryName }}</text>
+					<text class="x-meta"> · </text>
+					<text class="x-meta">{{ item.timeLabel }}</text>
+				</view>
+				<text class="article-title">{{ item.title }}</text>
+				<text class="article-stat">👍 {{ item.likeCount }} · 💬 {{ item.commentCount }}</text>
+			</view>
+			<view class="cover" :style="{ backgroundColor: item.coverC1 }">
+				<text class="cover-em">{{ item.coverEmoji }}</text>
+			</view>
+		</view>
+	</x-scroll-page>
 </template>
 
 <script setup lang="ts">
 /**
  * 首页 Tab 面板：对齐小卡原型 home
  * 数据来源：联调 article/list、category、未读、sign-info、my-quests；失败回落 mock
- * 滚动：Tab 内容一层 scroll-y 整体滚；分类横滑单独 scroll-x
+ * 滚动：x-scroll-page(variant=tab) 下拉刷新 + 文章上滑加载更多
  */
 import { homeArticles, homeCategories, rpgQuestsSeed } from '../../mock/data'
 import type { ArticleSummary } from '../../types/article'
@@ -92,6 +101,7 @@ import { fetchArticleList, fetchCategories, type CategoryOption } from '../../ap
 import { fetchUnreadCount } from '../../api/modules/notification'
 import { fetchMyQuests, fetchSignInfo } from '../../api/modules/rpg'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
 import { goTab, TAB_DISCOVER, TAB_RPG } from '../../utils/tabNav'
@@ -99,7 +109,8 @@ import { goTab, TAB_DISCOVER, TAB_RPG } from '../../utils/tabNav'
 /** 分类 chip：id 为空表示「全部」 */
 type CatChip = { id: string; label: string }
 
-const list = ref(homeArticles as ArticleSummary[])
+const list = ref([] as ArticleSummary[])
+const listTotal = ref(-1)
 const categories = ref([
 	{ id: '', label: '全部' },
 ] as CatChip[])
@@ -114,6 +125,22 @@ const ringPct = ref(70)
 /** 今日任务进度芯片文案 */
 const questChip = ref('今日任务 —')
 
+const {
+	pageSize,
+	refreshing,
+	pullingDistance,
+	footerText,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+	beginLoadMore,
+	endLoadMore,
+	resetPaging,
+} = useListScroll(10)
+
 /**
  * 将 mock 分类名转成 chip（无 id）
  */
@@ -126,27 +153,36 @@ function mockCats(): CatChip[] {
 }
 
 /**
- * 拉取文章列表（可选按分类 UUID 筛选）
+ * 当前选中分类 UUID（空=全部）
  */
-async function loadArticles(): Promise<void> {
+function currentCatId(): string | undefined {
 	const cat = categories.value[catIndex.value]
-	const catId = cat != null && cat.id.length > 0 ? cat.id : undefined
-	const articles = await apiOrMock(async () => {
-		const res = await fetchArticleList({
-			page: 1,
-			pageSize: 10,
-			client: true,
-			category: catId,
-		})
-		return res.list
-	}, homeArticles)
-	list.value = articles
+	if (cat != null && cat.id.length > 0) return cat.id
+	return undefined
 }
 
 /**
- * 拉取首页列表、分类、未读、签到与任务进度
+ * 拉取一页文章
  */
-async function loadHome(): Promise<void> {
+async function fetchArticlesPage(page: number): Promise<{ list: ArticleSummary[]; total: number }> {
+	return await apiOrMock(
+		async () => {
+			const res = await fetchArticleList({
+				page,
+				pageSize,
+				client: true,
+				category: currentCatId(),
+			})
+			return { list: res.list, total: res.total }
+		},
+		page == 1 ? { list: homeArticles, total: homeArticles.length } : { list: [], total: 0 },
+	)
+}
+
+/**
+ * 拉取首页头区（分类/未读/签到/任务），不含文章分页
+ */
+async function loadHomeMeta(): Promise<void> {
 	const cats = await apiOrMock(async () => {
 		const rows = await fetchCategories()
 		const chips: CatChip[] = [{ id: '', label: '全部' }]
@@ -157,7 +193,6 @@ async function loadHome(): Promise<void> {
 		return chips
 	}, mockCats())
 	categories.value = cats
-	await loadArticles()
 
 	const unread = await apiOrMock(() => fetchUnreadCount(), store.notifyBadge.value)
 	store.notifyBadge.value = unread
@@ -193,8 +228,34 @@ async function loadHome(): Promise<void> {
 	ringPct.value = sign.signedToday ? 100 : total > 0 ? Math.floor((done / total) * 100) : 40
 }
 
+/**
+ * 下拉刷新：头区 + 文章第 1 页
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	await loadHomeMeta()
+	const res = await fetchArticlesPage(1)
+	list.value = res.list
+	listTotal.value = res.total
+	endRefresh(res.list.length, list.value.length, res.total)
+}
+
+/**
+ * 上滑加载更多文章
+ */
+async function onLoadMore(): Promise<void> {
+	const p = beginLoadMore()
+	if (p <= 0) return
+	const res = await fetchArticlesPage(p)
+	for (let i = 0; i < res.list.length; i++) {
+		list.value.push(res.list[i])
+	}
+	if (res.total >= 0) listTotal.value = res.total
+	endLoadMore(res.list.length, list.value.length, listTotal.value)
+}
+
 onMounted(() => {
-	loadHome()
+	onRefresh()
 })
 
 /**
@@ -203,7 +264,19 @@ onMounted(() => {
 function onSelectCat(i: number): void {
 	if (i < 0 || i >= categories.value.length) return
 	catIndex.value = i
-	loadArticles()
+	resetPaging()
+	onRefreshArticlesOnly()
+}
+
+/**
+ * 仅刷新文章（分类切换，不重复拉签到等）
+ */
+async function onRefreshArticlesOnly(): Promise<void> {
+	beginRefresh()
+	const res = await fetchArticlesPage(1)
+	list.value = res.list
+	listTotal.value = res.total
+	endRefresh(res.list.length, list.value.length, res.total)
 }
 
 /** 进搜索 */

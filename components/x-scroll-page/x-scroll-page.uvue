@@ -1,0 +1,120 @@
+<template>
+	<!-- 统一长页滚动：下拉刷新（uni-refresh-box）+ 触底加载更多 -->
+	<scroll-view
+		:class="scrollClass"
+		scroll-y="true"
+		:refresher-enabled="enableRefresh"
+		:refresher-triggered="refreshing"
+		refresher-default-style="none"
+		:refresher-threshold="45"
+		refresher-max-drag-distance="200px"
+		:lower-threshold="100"
+		@refresherpulling="onPulling"
+		@refresherrefresh="onRefresh"
+		@refresherrestore="onRestore"
+		@refresherabort="onAbort"
+		@scrolltolower="onToLower"
+	>
+		<view :class="innerClass">
+			<slot></slot>
+			<view v-if="showFooter && enableLoadMore" class="x-scroll-footer">
+				<text class="x-scroll-footer-t">{{ footerText }}</text>
+			</view>
+			<view v-else-if="showFooter && !enableLoadMore" class="x-scroll-footer">
+				<text class="x-scroll-footer-t">{{ footerDoneText }}</text>
+			</view>
+		</view>
+		<uni-refresh-box
+			v-if="enableRefresh"
+			slot="refresher"
+			:pulling-distance="pullingDistance"
+			:refreshing="refreshing"
+		></uni-refresh-box>
+	</scroll-view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 长列表/长页面滚动壳：scroll-view + 下拉刷新 + 上滑触底
+ * - variant=page：二级页（配合外层 x-page + navbar）
+ * - variant=tab：主壳 Tab 面板（全宽贴边，内边距在 inner）
+ * 数据请求由父组件在 @refresh / @loadmore 中完成；状态用 useListScroll
+ */
+const props = defineProps({
+	/** page=二级页；tab=主壳 Tab */
+	variant: { type: String, default: 'page' },
+	/** 是否启用下拉刷新 */
+	enableRefresh: { type: Boolean, default: true },
+	/** 是否启用触底加载（false 时底栏仅显示「已全部加载」类文案） */
+	enableLoadMore: { type: Boolean, default: true },
+	/** 是否正在刷新（绑定 useListScroll.refreshing） */
+	refreshing: { type: Boolean, default: false },
+	/** 下拉距离 px */
+	pullingDistance: { type: Number, default: 0 },
+	/** 底栏文案（加载中 / 上滑加载更多 / 没有更多了） */
+	footerText: { type: String, default: '' },
+	/** 无分页时的底栏文案 */
+	footerDoneText: { type: String, default: '— 已经到底了 —' },
+	/** 是否展示底栏 */
+	showFooter: { type: Boolean, default: false },
+})
+
+const emit = defineEmits(['refresh', 'loadmore', 'refresherpulling', 'refresherrestore', 'refresherabort'])
+
+/** scroll-view class */
+const scrollClass = computed((): string => {
+	return props.variant == 'tab' ? 'x-page-tab' : 'x-scroll-page'
+})
+
+/** 内容区 class */
+const innerClass = computed((): string => {
+	return props.variant == 'tab' ? 'x-page-tab-inner' : 'x-scroll-page-inner'
+})
+
+/**
+ * 下拉距离同步
+ */
+function onPulling(e: any): void {
+	emit('refresherpulling', e)
+}
+
+/**
+ * 触发刷新
+ */
+function onRefresh(): void {
+	emit('refresh')
+}
+
+/** 刷新复位 */
+function onRestore(): void {
+	emit('refresherrestore')
+}
+
+/** 刷新中止 */
+function onAbort(): void {
+	emit('refresherabort')
+}
+
+/**
+ * 触底：仅 enableLoadMore 时向外抛
+ */
+function onToLower(): void {
+	if (!props.enableLoadMore) return
+	emit('loadmore')
+}
+</script>
+
+<style>
+@import '../../styles/x-base.css';
+
+.x-scroll-footer {
+	align-items: center;
+	justify-content: center;
+	padding: 16px 0 8px;
+}
+
+.x-scroll-footer-t {
+	font-size: 12px;
+	color: #9a948a;
+}
+</style>

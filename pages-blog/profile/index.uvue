@@ -1,40 +1,53 @@
 <template>
 	<!-- 公开主页：资料 + RPG 公开信息 + 文章 -->
-	<view class="x-page">
+	<view class="x-page-flex">
 		<x-navbar title="主页"></x-navbar>
-		<view class="top">
-			<view class="big-avatar">
-				<text class="em">🦊</text>
-			</view>
-			<text class="name">{{ nickname }}</text>
-			<text class="bio">{{ bio }}</text>
-		</view>
-		<view class="x-card">
-			<text class="sec">公开 RPG</text>
-			<text class="line">称号「{{ rpg.titleName }}」</text>
-			<text class="line">公会 {{ rpg.guildName }}</text>
-			<text class="line">{{ rpg.rankLabel }}</text>
-			<text class="line">宠物 {{ rpg.petLabel }}</text>
-			<text class="line">连续签到 {{ rpg.streakDays }} 天</text>
-		</view>
-		<view class="x-section-head">
-			<text class="x-section-title">TA 的文章</text>
-		</view>
-		<view
-			v-for="art in articleList"
-			:key="art.id"
-			class="x-card"
-			@click="goDetail(art.id)"
+		<x-scroll-page
+			:refreshing="refreshing"
+			:pulling-distance="pullingDistance"
+			:footer-text="footerText"
+			:show-footer="showFooter"
+			@refresh="onRefresh"
+			@loadmore="onLoadMore"
+			@refresherpulling="onRefresherPulling"
+			@refresherrestore="onRefresherRestore"
+			@refresherabort="onRefresherAbort"
 		>
-			<text class="art-t">{{ art.title }}</text>
-			<text class="x-meta">{{ art.categoryName }} · {{ art.timeLabel }}</text>
-		</view>
+			<view class="top">
+				<view class="big-avatar">
+					<text class="em">🦊</text>
+				</view>
+				<text class="name">{{ nickname }}</text>
+				<text class="bio">{{ bio }}</text>
+			</view>
+			<view class="x-card">
+				<text class="sec">公开 RPG</text>
+				<text class="line">称号「{{ rpg.titleName }}」</text>
+				<text class="line">公会 {{ rpg.guildName }}</text>
+				<text class="line">{{ rpg.rankLabel }}</text>
+				<text class="line">宠物 {{ rpg.petLabel }}</text>
+				<text class="line">连续签到 {{ rpg.streakDays }} 天</text>
+			</view>
+			<view class="x-section-head">
+				<text class="x-section-title">TA 的文章</text>
+			</view>
+			<view
+				v-for="art in articleList"
+				:key="art.id"
+				class="x-card"
+				@click="goDetail(art.id)"
+			>
+				<text class="art-t">{{ art.title }}</text>
+				<text class="x-meta">{{ art.categoryName }} · {{ art.timeLabel }}</text>
+			</view>
+		</x-scroll-page>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 公开主页：联调 /user/public/:uid + /rpg/public/:uid/status + 文章列表
+ * 滚动：资料区随列表滚；文章分页加载更多
  */
 import { articles, meProfile, publicRpg } from '../../mock/data'
 import type { ArticleSummary } from '../../types/article'
@@ -43,33 +56,90 @@ import { fetchPublicProfile, fetchPublicRpg } from '../../api/modules/auth'
 import { get } from '../../api/request'
 import { mapArticleSummary } from '../../api/adapters/article'
 import { apiOrMock } from '../../composables/useApiOrMock'
+import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
 
 const userStore = useUserStore()
 const nickname = ref(meProfile.nickname)
 const bio = ref(meProfile.bio)
 const rpg = ref(publicRpg as PublicRpgCard)
-const articleList = ref([articles[0]] as ArticleSummary[])
+const articleList = ref([] as ArticleSummary[])
 const uid = ref(0)
+const articleTotal = ref(-1)
+
+const {
+	pageSize,
+	refreshing,
+	pullingDistance,
+	footerText,
+	showFooter,
+	onRefresherPulling,
+	onRefresherRestore,
+	onRefresherAbort,
+	beginRefresh,
+	endRefresh,
+	beginLoadMore,
+	endLoadMore,
+} = useListScroll(10)
 
 /**
- * 解析当前用户 uid 后拉公开数据（优先 Pinia 已登录资料）
+ * 解析 uid（优先 Pinia）
  */
-async function loadProfile(): Promise<void> {
-	if (userStore.loggedIn) {
-		if (userStore.profile.id > 0) {
-			uid.value = userStore.profile.id
-			nickname.value = userStore.profile.nickname
-			bio.value = userStore.profile.bio
-		} else {
-			try {
-				const me = await userStore.refreshProfile()
-				nickname.value = me.nickname
-				bio.value = me.bio
-				uid.value = me.id
-			} catch (_) {}
-		}
+async function resolveUid(): Promise<void> {
+	if (!userStore.loggedIn) return
+	if (userStore.profile.id > 0) {
+		uid.value = userStore.profile.id
+		nickname.value = userStore.profile.nickname
+		bio.value = userStore.profile.bio
+		return
 	}
+	try {
+		const me = await userStore.refreshProfile()
+		nickname.value = me.nickname
+		bio.value = me.bio
+		uid.value = me.id
+	} catch (_) {}
+}
+
+/**
+ * 拉取一页公开文章
+ */
+async function fetchArticles(page: number): Promise<{ list: ArticleSummary[]; total: number }> {
+	if (uid.value <= 0) {
+		return { list: page == 1 ? [articles[0]] : [], total: 1 }
+	}
+	return await apiOrMock(
+		async () => {
+			const res = await get(
+				'/user/public/' + uid.value + '/articles',
+				{ page, pageSize },
+				{ silent: true },
+			)
+			const arr = res != null && res.list != null ? res.list : Array.isArray(res) ? res : []
+			const out: ArticleSummary[] = []
+			for (let i = 0; i < arr.length; i++) {
+				out.push(mapArticleSummary(arr[i]))
+			}
+			let total = out.length
+			if (res != null && res.pagination != null && res.pagination.total != null) {
+				total = Number(res.pagination.total)
+			} else if (res != null && res.total != null) {
+				total = Number(res.total)
+			} else {
+				total = -1
+			}
+			return { list: out, total }
+		},
+		page == 1 ? { list: [articles[0]], total: 1 } : { list: [], total: 0 },
+	)
+}
+
+/**
+ * 下拉刷新：资料 + 文章第一页
+ */
+async function onRefresh(): Promise<void> {
+	beginRefresh()
+	await resolveUid()
 	if (uid.value > 0) {
 		const pub = await apiOrMock(() => fetchPublicProfile(uid.value), null)
 		if (pub != null) {
@@ -77,20 +147,29 @@ async function loadProfile(): Promise<void> {
 			if (pub.intro != null) bio.value = '' + pub.intro
 		}
 		rpg.value = await apiOrMock(() => fetchPublicRpg(uid.value), publicRpg)
-		articleList.value = await apiOrMock(async () => {
-			const res = await get('/user/public/' + uid.value + '/articles', { page: 1, pageSize: 10 }, { silent: true })
-			const arr = res != null && res.list != null ? res.list : Array.isArray(res) ? res : []
-			const out: ArticleSummary[] = []
-			for (let i = 0; i < arr.length; i++) {
-				out.push(mapArticleSummary(arr[i]))
-			}
-			return out.length > 0 ? out : [articles[0]]
-		}, [articles[0]])
 	}
+	const res = await fetchArticles(1)
+	articleList.value = res.list.length > 0 ? res.list : uid.value > 0 ? [] : [articles[0]]
+	articleTotal.value = res.total
+	endRefresh(res.list.length, articleList.value.length, res.total)
+}
+
+/**
+ * 上滑加载更多文章
+ */
+async function onLoadMore(): Promise<void> {
+	const p = beginLoadMore()
+	if (p <= 0) return
+	const res = await fetchArticles(p)
+	for (let i = 0; i < res.list.length; i++) {
+		articleList.value.push(res.list[i])
+	}
+	if (res.total >= 0) articleTotal.value = res.total
+	endLoadMore(res.list.length, articleList.value.length, articleTotal.value)
 }
 
 onMounted(() => {
-	loadProfile()
+	onRefresh()
 })
 
 function goDetail(id: string): void {
@@ -99,6 +178,8 @@ function goDetail(id: string): void {
 </script>
 
 <style>
+@import '../../styles/x-base.css';
+
 .top {
 	align-items: center;
 	padding: 8px 0 16px;
