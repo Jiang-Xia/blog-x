@@ -20,7 +20,7 @@
 						:src="profile.avatarUrl"
 						mode="aspectFill"
 					></image>
-					<x-icon v-else :name="profile.avatarIcon" :size="30" color="#1c1a17"></x-icon>
+					<x-icon v-else :name="profile.avatarIcon" :size="30" :color="tokens.ink"></x-icon>
 				</view>
 				<text class="name">{{ profile.nickname }}</text>
 				<text class="bio">{{ profile.bio.length > 0 ? profile.bio : '点击完善个人简介' }}</text>
@@ -42,52 +42,55 @@
 				</view>
 			</view>
 
+			<!-- 莫兰迪色系 + 暗黑模式 -->
+			<x-theme-picker></x-theme-picker>
+
 			<view class="x-card menu">
 				<view v-if="loggedIn" class="mrow" @click="goEditProfile">
-					<view class="m-ico"><x-icon name="pencil" :size="16" color="#1c1a17"></x-icon></view>
+					<view class="m-ico"><x-icon name="pencil" :size="16" :color="tokens.ink"></x-icon></view>
 					<text class="m-label">编辑资料</text>
-					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 				<view class="mrow" @click="goFavorites">
-					<view class="m-ico"><x-icon name="star" :size="16" color="#1c1a17"></x-icon></view>
+					<view class="m-ico"><x-icon name="star" :size="16" :color="tokens.ink"></x-icon></view>
 					<text class="m-label">我的收藏</text>
-					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 				<view class="mrow" @click="goInbox">
-					<view class="m-ico"><x-icon name="inbox" :size="16" color="#1c1a17"></x-icon></view>
+					<view class="m-ico"><x-icon name="inbox" :size="16" :color="tokens.ink"></x-icon></view>
 					<text class="m-label">评论收件箱</text>
 					<view v-if="inboxBadge > 0" class="badge">
 						<text class="badge-t">{{ inboxBadge }}</text>
 					</view>
-					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 				<view class="mrow" @click="goProfile">
-					<view class="m-ico"><x-icon name="user" :size="16" color="#1c1a17"></x-icon></view>
+					<view class="m-ico"><x-icon name="user" :size="16" :color="tokens.ink"></x-icon></view>
 					<text class="m-label">公开主页</text>
-					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 				<view class="mrow" @click="goAudit">
-					<view class="m-ico"><x-icon name="shield" :size="16" color="#1c1a17"></x-icon></view>
+					<view class="m-ico"><x-icon name="shield" :size="16" :color="tokens.ink"></x-icon></view>
 					<view class="m-col">
 						<text class="m-label">切换管理模式</text>
 						<text class="m-sub">审核 / 订单</text>
 					</view>
-					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 				<view v-if="!loggedIn" class="mrow" @click="goLogin">
-					<view class="m-ico"><x-icon name="message" :size="16" color="#1c1a17"></x-icon></view>
+					<view class="m-ico"><x-icon name="message" :size="16" :color="tokens.ink"></x-icon></view>
 					<text class="m-label">登录 / 绑定</text>
-					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 				<view v-else class="mrow" @click="onLogout">
-					<view class="m-ico"><x-icon name="logout" :size="16" color="#1c1a17"></x-icon></view>
+					<view class="m-ico"><x-icon name="logout" :size="16" :color="tokens.ink"></x-icon></view>
 					<text class="m-label">退出登录</text>
-					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 				<view class="mrow last" @click="goNotify">
-					<view class="m-ico"><x-icon name="bell" :size="16" color="#1c1a17"></x-icon></view>
+					<view class="m-ico"><x-icon name="bell" :size="16" :color="tokens.ink"></x-icon></view>
 					<text class="m-label">站内通知</text>
-					<x-icon name="chevron-right" :size="16" color="#9a948a"></x-icon>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 			</view>
 	</x-scroll-page>
@@ -104,6 +107,7 @@ import { storeToRefs } from 'pinia'
 import { fetchInbox } from '../../api/modules/interact'
 import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
+import { useTheme } from '../../composables/useTheme'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
 
@@ -111,6 +115,7 @@ const userStore = useUserStore()
 const { profile, loggedIn } = storeToRefs(userStore)
 const store = useMockStore()
 const inboxBadge = store.inboxBadge
+const { tokens } = useTheme()
 
 /**
  * 个人主页展示文案（不依赖 URL 构造，兼容 App / 小程序）
@@ -267,10 +272,10 @@ function goNotify(): void {
 	width: 72px;
 	height: 72px;
 	border-radius: 36px;
-	background-color: #ffe8d6;
+	background-color: var(--x-warm-tint, #ffe8d6);
 	border-width: 3px;
 	border-style: solid;
-	border-color: #ffffff;
+	border-color: var(--x-surface, #ffffff);
 	align-items: center;
 	justify-content: center;
 	margin-bottom: 10px;
@@ -285,19 +290,19 @@ function goNotify(): void {
 .name {
 	font-size: 18px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 4px;
 }
 
 .bio {
 	font-size: 12px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	text-align: center;
 }
 
 .homepage {
 	font-size: 11px;
-	color: #7a9e8e;
+	color: var(--x-accent-deep, #2a8f76);
 	margin-top: 4px;
 	text-align: center;
 }
@@ -310,7 +315,7 @@ function goNotify(): void {
 
 .stat {
 	flex: 1;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 14px;
 	padding: 12px 6px;
 	align-items: center;
@@ -320,13 +325,13 @@ function goNotify(): void {
 .stat-n {
 	font-size: 17px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 2px;
 }
 
 .stat-l {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .menu {
@@ -339,7 +344,7 @@ function goNotify(): void {
 	padding: 12px 2px;
 	border-bottom-width: 1px;
 	border-bottom-style: solid;
-	border-bottom-color: rgba(28, 26, 23, 0.06);
+	border-bottom-color: var(--x-line, rgba(28, 26, 23, 0.06));
 }
 
 .last {
@@ -350,7 +355,7 @@ function goNotify(): void {
 	width: 34px;
 	height: 34px;
 	border-radius: 11px;
-	background-color: #ebe6df;
+	background-color: var(--x-bg-2, #ebe6df);
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;
@@ -364,19 +369,19 @@ function goNotify(): void {
 	flex: 1;
 	font-size: 13px;
 	font-weight: 500;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .m-sub {
 	font-size: 10px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .badge {
 	min-width: 16px;
 	height: 16px;
 	border-radius: 8px;
-	background-color: #e8897a;
+	background-color: var(--x-danger, #e8897a);
 	padding: 0 4px;
 	align-items: center;
 	justify-content: center;
@@ -386,6 +391,6 @@ function goNotify(): void {
 .badge-t {
 	font-size: 9px;
 	font-weight: 600;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 </style>

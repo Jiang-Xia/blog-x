@@ -1,6 +1,6 @@
 <template>
 	<!-- 评论收件箱：列表 + 回复 -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="评论收件箱"></x-navbar>
 		<text class="badge-line">未读 {{ badge }}</text>
 		<x-scroll-page
@@ -57,6 +57,8 @@ import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const items = ref([] as InboxItem[])
 const store = useMockStore()
@@ -170,6 +172,10 @@ async function onSubmitReply(): Promise<void> {
 		submitting.value = false
 	}
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -177,7 +183,7 @@ async function onSubmitReply(): Promise<void> {
 
 .badge-line {
 	font-size: 12px;
-	color: #e8897a;
+	color: var(--x-danger, #e8897a);
 	font-weight: 600;
 	margin-bottom: 10px;
 }
@@ -185,19 +191,19 @@ async function onSubmitReply(): Promise<void> {
 .art {
 	font-size: 12px;
 	font-weight: 650;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 4px;
 }
 
 .author {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-bottom: 6px;
 }
 
 .content {
 	font-size: 13px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	line-height: 1.45;
 	margin-bottom: 10px;
 }
@@ -213,15 +219,15 @@ async function onSubmitReply(): Promise<void> {
 .reply-input {
 	height: 40px;
 	border-radius: 12px;
-	background-color: #f4f1ec;
+	background-color: var(--x-bg, #f4f1ec);
 	padding: 0 12px;
 	font-size: 13px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 8px;
 }
 
 .ph {
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .reply-actions {

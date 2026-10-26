@@ -1,6 +1,6 @@
 <template>
 	<!-- 签到日历：当月网格 + sign-info 摘要（网格由连续天数回溯） -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="签到日历"></x-navbar>
 		<x-scroll-page
 			:enable-load-more="false"
@@ -41,6 +41,8 @@
  */
 import { fetchSignInfo, type SignInfoSummary } from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const {
 	refreshing,
@@ -192,6 +194,10 @@ function dayTextClass(d: DayCell): string {
 	if (d.muted) return 'd-t muted-t'
 	return 'd-t'
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -206,7 +212,7 @@ function dayTextClass(d: DayCell): string {
 .sum-t {
 	flex: 1;
 	font-size: 13px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	line-height: 1.4;
 	margin-right: 12px;
 }
@@ -217,8 +223,8 @@ function dayTextClass(d: DayCell): string {
 	border-radius: 28px;
 	border-width: 5px;
 	border-style: solid;
-	border-color: #3db89a;
-	background-color: rgba(61, 184, 154, 0.12);
+	border-color: var(--x-accent, #3db89a);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 	align-items: center;
 	justify-content: center;
 }
@@ -226,13 +232,13 @@ function dayTextClass(d: DayCell): string {
 .ring-pct {
 	font-size: 12px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .month {
 	font-size: 15px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 10px;
 }
 
@@ -245,7 +251,7 @@ function dayTextClass(d: DayCell): string {
 	width: 14.28%;
 	text-align: center;
 	font-size: 10px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	padding: 4px 0;
 }
 
@@ -255,7 +261,7 @@ function dayTextClass(d: DayCell): string {
 	border-radius: 10px;
 	align-items: center;
 	justify-content: center;
-	background-color: #ebe6df;
+	background-color: var(--x-bg-2, #ebe6df);
 	margin-bottom: 4px;
 }
 
@@ -264,36 +270,36 @@ function dayTextClass(d: DayCell): string {
 }
 
 .on {
-	background-color: #3db89a;
+	background-color: var(--x-accent, #3db89a);
 }
 
 .hit {
-	background-color: rgba(61, 184, 154, 0.12);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 }
 
 .d-t {
 	font-size: 11px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 }
 
 .on-t {
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 	font-weight: 700;
 }
 
 .hit-t {
-	color: #2a8f76;
+	color: var(--x-accent-deep, #2a8f76);
 	font-weight: 600;
 }
 
 .muted-t {
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .hint {
 	margin-top: 12px;
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	line-height: 1.4;
 }
 </style>

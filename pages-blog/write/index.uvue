@@ -1,6 +1,6 @@
 <template>
 	<!-- 写文章：封面 + 分类/标签/定时 + Markdown 工具栏 → POST /article/create -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="写文章">
 			<template v-slot:right>
 				<text class="nav-act" @click="onSubmit('draft')">存草稿</text>
@@ -193,9 +193,12 @@ import {
 	type TagWallItem,
 } from '../../api/modules/article'
 import { uploadArticleImage, uploadCover } from '../../api/modules/resources'
+import { useTheme } from '../../composables/useTheme'
 import { useUserStore } from '../../store/user'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
+
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const DRAFT_KEY = 'draft:new'
 const userStore = useUserStore()
@@ -605,6 +608,10 @@ async function onSubmit(submitStatus: string): Promise<void> {
 		submitting.value = false
 	}
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -612,7 +619,7 @@ async function onSubmit(submitStatus: string): Promise<void> {
 
 .nav-act {
 	font-size: 12px;
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 	font-weight: 600;
 }
 
@@ -623,7 +630,7 @@ async function onSubmit(submitStatus: string): Promise<void> {
 
 .sec-label {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-bottom: 8px;
 }
 
@@ -666,12 +673,12 @@ async function onSubmit(submitStatus: string): Promise<void> {
 
 .picker-t {
 	font-size: 14px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .picker-hint {
 	font-size: 12px;
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 }
 
 .tag-row {
@@ -682,7 +689,7 @@ async function onSubmit(submitStatus: string): Promise<void> {
 .tag-chip {
 	padding: 4px 10px;
 	border-radius: 8px;
-	background-color: rgba(28, 26, 23, 0.06);
+	background-color: var(--x-line, rgba(28, 26, 23, 0.06));
 	margin-right: 6px;
 	margin-bottom: 6px;
 }
@@ -693,17 +700,17 @@ async function onSubmit(submitStatus: string): Promise<void> {
 
 .tag-chip-t {
 	font-size: 12px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 }
 
 .tag-chip-t-on {
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 	font-weight: 600;
 }
 
 .hint {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .status-row {
@@ -714,22 +721,22 @@ async function onSubmit(submitStatus: string): Promise<void> {
 .st-chip {
 	padding: 6px 14px;
 	border-radius: 8px;
-	background-color: rgba(28, 26, 23, 0.06);
+	background-color: var(--x-line, rgba(28, 26, 23, 0.06));
 	margin-right: 8px;
 }
 
 .st-chip-on {
-	background-color: #3db89a;
+	background-color: var(--x-accent, #3db89a);
 }
 
 .st-t {
 	font-size: 13px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	font-weight: 600;
 }
 
 .st-t-on {
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 
 .sched-row {
@@ -762,12 +769,12 @@ async function onSubmit(submitStatus: string): Promise<void> {
 }
 
 .md-chip-on {
-	background-color: #3db89a;
+	background-color: var(--x-accent, #3db89a);
 }
 
 .md-chip-t {
 	font-size: 12px;
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 	font-weight: 700;
 }
 
@@ -776,21 +783,21 @@ async function onSubmit(submitStatus: string): Promise<void> {
 }
 
 .md-chip-t-on {
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 
 .ta {
 	width: 100%;
 	min-height: 280px;
 	font-size: 14px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	line-height: 1.5;
-	background-color: #f4f1ec;
+	background-color: var(--x-bg, #f4f1ec);
 	border-radius: 10px;
 	padding: 10px 12px;
 	border-width: 1px;
 	border-style: solid;
-	border-color: #ebe6df;
+	border-color: var(--x-bg-2, #ebe6df);
 }
 
 .kb-pad {
@@ -808,12 +815,12 @@ async function onSubmit(submitStatus: string): Promise<void> {
 
 .preview-t {
 	font-size: 13px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	line-height: 1.55;
 }
 
 .ph {
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .actions {

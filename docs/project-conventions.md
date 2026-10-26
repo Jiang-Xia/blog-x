@@ -31,7 +31,7 @@ uni-app x 版博客前端（规划中）：与 `blog-home-nuxt`（Web 主站）�
 ## 关键约定速查
 
 1. **模板**：只用 uni-app x 内置组件；文字包 `<text>`；禁 DOM/web 库。
-2. **样式**：class 选择器 + rpx/px + flex；主题变量走 `uni.scss`；组件样式走 class/externalClass。
+2. **样式**：class 选择器 + rpx/px + flex；运行时主题走 `useTheme` + `var(--x-*)`；`$uni-*` 编译期兜底；组件样式走 class/externalClass。
 3. **路由**：新页面按主包/分包归类后在 `pages.json` 登记；首页保持 `pages` 第一项；四 Tab 在主壳 `pages/index`（`uni-tab` tab-bar-blur），用 `goTab` 切换，无原生 tabBar。
 4. **分包**：低频/大体量进 `pages-blog|pages-rpg|pages-tool`；跳转 path 含 root；可用 `preloadRule` 预下载。
 5. **注释**：新文件顶 + 导出函数中文 JSDoc；条件编译必注释；展示数据只用 API 字段。

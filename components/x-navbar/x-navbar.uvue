@@ -2,7 +2,7 @@
 	<!-- 二级页顶栏：返回 + 标题 + 右侧插槽区 -->
 	<view class="x-navbar">
 		<view class="x-navbar-back" @click="onBack">
-			<x-icon name="chevron-left" :size="20" color="#5c574f"></x-icon>
+			<x-icon name="chevron-left" :size="20" :color="tokens.ink2"></x-icon>
 		</view>
 		<text class="x-navbar-title">{{ title }}</text>
 		<view class="x-navbar-right">
@@ -16,6 +16,7 @@
  * 通用导航栏：默认 navigateBack；可传 @back 自定义
  * 无历史栈时回主壳首页 Tab（自定义 tab-bar-blur，不用 switchTab）
  */
+import { useTheme } from '../../composables/useTheme'
 import { goTab, TAB_HOME } from '../../utils/tabNav'
 
 const props = defineProps({
@@ -23,6 +24,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['back'])
+const { tokens } = useTheme()
 
 /**
  * 点击返回
@@ -49,7 +51,7 @@ function onBack(): void {
 	width: 36px;
 	height: 36px;
 	border-radius: 18px;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;
@@ -59,7 +61,7 @@ function onBack(): void {
 	flex: 1;
 	font-size: 15px;
 	font-weight: 600;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .x-navbar-right {

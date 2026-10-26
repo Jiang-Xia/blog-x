@@ -29,7 +29,8 @@ uni-app x（uvue）· Vue 3 `<script setup>` + TypeScript · 蒸汽模式（mani
 | `pages.json` | 页面注册、`subPackages`、`preloadRule`、globalStyle；新增页面必须在此登记（四 Tab 用自定义 uni-tab，无原生 tabBar） |
 | `manifest.json` | 应用信息（appid、版本、`vapor`、`styleIsolationVersion`、`mp-weixin`） |
 | `platformConfig.json` | 编译目标平台（`targets`） |
-| `uni.scss` | 全局 SCSS 变量（`$uni-*`），跨端主题令牌 |
+| `uni.scss` | 全局 SCSS 变量（`$uni-*` / `$x-*`），编译期兜底；运行时主题见 `constants/theme` + `useTheme` |
+| `constants/` | 主题等跨模块常量（莫兰迪色板） |
 | `uni_modules/` | uni-ui x 等组件插件（见 `x-06-uni-modules.mdc`）；含 `uni-tab-bar`（tab-bar-blur） |
 | `static/` | 静态资源（logo 等） |
 | `unpackage/` | 编译产物，禁止手改、禁止提交（见 `x-09-testing-and-artifacts.mdc`） |

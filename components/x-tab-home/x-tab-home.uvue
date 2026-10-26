@@ -312,7 +312,7 @@ function goDetail(id: string): void {
 .search-bar {
 	flex-direction: row;
 	align-items: center;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 999px;
 	padding: 11px 14px;
 	margin-bottom: 12px;
@@ -336,14 +336,14 @@ function goDetail(id: string): void {
 .search-ph {
 	flex: 1;
 	font-size: 13px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .bell {
 	min-width: 18px;
 	height: 18px;
 	border-radius: 9px;
-	background-color: #e8897a;
+	background-color: var(--x-danger, #e8897a);
 	padding: 0 4px;
 	align-items: center;
 	justify-content: center;
@@ -352,7 +352,7 @@ function goDetail(id: string): void {
 .bell-text {
 	font-size: 9px;
 	font-weight: 600;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 
 .today {
@@ -369,14 +369,14 @@ function goDetail(id: string): void {
 
 .today-label {
 	font-size: 12px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	margin-bottom: 4px;
 }
 
 .today-title {
 	font-size: 16px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 8px;
 }
 
@@ -392,13 +392,13 @@ function goDetail(id: string): void {
 
 .chip-t {
 	font-size: 11px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	font-weight: 500;
 }
 
 .chip-t-dark {
 	font-size: 11px;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 	font-weight: 500;
 }
 
@@ -411,17 +411,17 @@ function goDetail(id: string): void {
 	justify-content: center;
 	border-width: 6px;
 	border-style: solid;
-	border-color: #3db89a;
+	border-color: var(--x-accent, #3db89a);
 }
 
 .ring-pct {
 	font-size: 14px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .ring-sub {
 	font-size: 9px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 </style>

@@ -94,7 +94,7 @@ function onOpen(): void {
 .article-title {
 	font-size: 14px;
 	font-weight: 650;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	line-height: 1.35;
 	margin-bottom: 4px;
 	lines: 2;
@@ -108,7 +108,7 @@ function onOpen(): void {
 
 .article-stat {
 	font-size: 11px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	margin-left: 2px;
 	margin-right: 8px;
 }

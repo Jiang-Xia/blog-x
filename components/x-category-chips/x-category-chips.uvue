@@ -85,23 +85,23 @@ function onTap(i: number): void {
 }
 
 .cat-chip-on {
-	background-color: #1c1a17;
+	background-color: var(--x-ink, #1c1a17);
 }
 
 .cat-chip-off {
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 }
 
 .cat-t {
 	font-size: 11px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	font-weight: 500;
 	lines: 1;
 }
 
 .cat-t-on {
 	font-size: 11px;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 	font-weight: 500;
 	lines: 1;
 }

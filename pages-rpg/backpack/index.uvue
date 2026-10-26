@@ -1,6 +1,6 @@
 <template>
 	<!-- 背包装扮：inventory + loadout + 宠物槽 -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="背包装扮"></x-navbar>
 
 		<view class="x-card loadout">
@@ -96,9 +96,12 @@ import {
 	type BagPet,
 } from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
+import { useTheme } from '../../composables/useTheme'
 import { useUserStore } from '../../store/user'
 import { toIconName } from '../../utils/icon-name'
 import { showXToast } from '../../utils/toast'
+
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 /** 背包物品图标：服务端可能仍是 emoji，规范为 Tabler 名 */
 function itemIcon(raw: string): string {
@@ -254,6 +257,10 @@ async function onTogglePet(pet: BagPet): Promise<void> {
 		await loadBag()
 	} catch (_) {}
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -265,13 +272,13 @@ async function onTogglePet(pet: BagPet): Promise<void> {
 
 .lo-label {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-bottom: 6px;
 }
 
 .lo-line {
 	font-size: 13px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	font-weight: 600;
 	margin-bottom: 4px;
 }
@@ -286,7 +293,7 @@ async function onTogglePet(pet: BagPet): Promise<void> {
 	width: 44px;
 	height: 44px;
 	border-radius: 12px;
-	background-color: rgba(61, 184, 154, 0.12);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;
@@ -304,18 +311,18 @@ async function onTogglePet(pet: BagPet): Promise<void> {
 .name {
 	font-size: 14px;
 	font-weight: 650;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 2px;
 }
 
 .meta {
 	font-size: 11px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 }
 
 .src {
 	font-size: 10px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-top: 2px;
 }
 </style>

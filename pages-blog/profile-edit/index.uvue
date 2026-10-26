@@ -1,6 +1,6 @@
 <template>
 	<!-- 编辑资料：头像 / 昵称 / 简介 / 个人主页（对齐 nuxt profile-edit-form） -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="编辑资料"></x-navbar>
 		<!-- 表单页仅纵向滚动，关闭刷新/触底 -->
 		<x-scroll-page
@@ -78,6 +78,8 @@ import { useUserStore } from '../../store/user'
 import { uploadAvatar } from '../../api/modules/resources'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const userStore = useUserStore()
 
@@ -168,6 +170,7 @@ async function onSubmit(): Promise<void> {
 }
 
 onShow(() => {
+	syncNativeChrome()
 	if (!userStore.loggedIn) {
 		uni.redirectTo({ url: '/pages/login/login' })
 		return
@@ -192,7 +195,7 @@ onShow(() => {
 	width: 72px;
 	height: 72px;
 	border-radius: 36px;
-	background-color: #ffe8d6;
+	background-color: var(--x-warm-tint, #ffe8d6);
 	align-items: center;
 	justify-content: center;
 	overflow: hidden;
@@ -207,19 +210,19 @@ onShow(() => {
 .change-btn {
 	padding: 8px 14px;
 	border-radius: 999px;
-	background-color: #ebe6df;
+	background-color: var(--x-bg-2, #ebe6df);
 }
 
 .change-t {
 	font-size: 13px;
 	font-weight: 600;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .label {
 	font-size: 12px;
 	font-weight: 600;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	margin-bottom: 6px;
 	margin-top: 4px;
 }
@@ -228,9 +231,9 @@ onShow(() => {
 	height: 44px;
 	padding: 0 12px;
 	border-radius: 12px;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	font-size: 14px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 14px;
 }
 
@@ -238,22 +241,22 @@ onShow(() => {
 	min-height: 88px;
 	padding: 10px 12px;
 	border-radius: 12px;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	font-size: 14px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 14px;
 	width: 100%;
 }
 
 .ph {
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .submit-btn {
 	margin-top: 8px;
 	height: 46px;
 	border-radius: 14px;
-	background-color: #1c1a17;
+	background-color: var(--x-ink, #1c1a17);
 	align-items: center;
 	justify-content: center;
 }
@@ -261,7 +264,7 @@ onShow(() => {
 .submit-t {
 	font-size: 15px;
 	font-weight: 700;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 
 .btn-disabled {

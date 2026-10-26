@@ -1,6 +1,6 @@
 <template>
 	<!-- 图标库：搜索 + 线性/面性切换 + 点击复制图标名（开发辅助页） -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="图标库">
 			<template v-slot:right>
 				<text class="pick-count-all">{{ filled ? filledCount : outlineCount }} 个</text>
@@ -41,6 +41,8 @@
 import type { IconGlyph } from '../../components/x-icon/icons-full'
 import { ICON_OUTLINE, ICON_FILLED } from '../../components/x-icon/icons-full'
 import { showXToast } from '../../utils/toast'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const keyword = ref('')
 const filled = ref(false)
@@ -70,6 +72,10 @@ function onPick(name: string): void {
 		},
 	})
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -82,23 +88,23 @@ function onPick(name: string): void {
 .pick-input {
 	flex: 1;
 	height: 36px;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 999px;
 	padding: 0 14px;
 	font-size: 12px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .pick-toggle {
 	margin-left: 8px;
-	background-color: #1c1a17;
+	background-color: var(--x-ink, #1c1a17);
 	border-radius: 999px;
 	padding: 8px 14px;
 }
 
 .pick-toggle-text {
 	font-size: 12px;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 	font-weight: 600;
 }
 
@@ -109,13 +115,13 @@ function onPick(name: string): void {
 
 .pick-count {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin: 0 2px 10px;
 }
 
 .pick-count-all {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .pick-grid {
@@ -131,7 +137,7 @@ function onPick(name: string): void {
 
 .pick-name {
 	font-size: 9px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-top: 6px;
 	text-align: center;
 	lines: 1;

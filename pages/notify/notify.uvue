@@ -1,6 +1,6 @@
 <template>
 	<!-- 消息中心：分段按 kind 过滤 + 全部已读 -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="消息中心">
 			<template v-slot:right>
 				<text class="read-all" @click="onReadAll">全部已读</text>
@@ -56,6 +56,8 @@ import { fetchNotifications, markNotificationsRead } from '../../api/modules/not
 import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const store = useMockStore()
 
@@ -146,6 +148,10 @@ async function onReadAll(): Promise<void> {
 	} catch (_) {}
 	showXToast('check', '全部已读', '角标已清')
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -153,12 +159,12 @@ async function onReadAll(): Promise<void> {
 
 .read-all {
 	font-size: 12px;
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 	font-weight: 500;
 }
 
 .msg {
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 18px;
 	padding: 12px 13px;
 	margin-bottom: 10px;
@@ -181,13 +187,13 @@ async function onReadAll(): Promise<void> {
 .msg-title {
 	font-size: 13px;
 	font-weight: 600;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 4px;
 }
 
 .msg-desc {
 	font-size: 12px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	line-height: 1.4;
 }
 </style>

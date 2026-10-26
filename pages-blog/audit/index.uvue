@@ -1,6 +1,6 @@
 <template>
 	<!-- 审核台：敏感词命中列表 + 通过/驳回 -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="审核台">
 			<template v-slot:right>
 				<text class="exit" @click="onExit">退出</text>
@@ -78,8 +78,11 @@ import {
 	type AuditHit,
 } from '../../api/modules/audit'
 import { useListScroll } from '../../composables/useListScroll'
+import { useTheme } from '../../composables/useTheme'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
+
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const segs = ['全部', '评论', '留言', '回复']
 const segTypes = ['', 'comment', 'msgboard', 'reply']
@@ -256,6 +259,10 @@ async function doReject(item: AuditHit): Promise<void> {
 function onExit(): void {
 	uni.navigateBack()
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -276,27 +283,27 @@ function onExit(): void {
 .st-chip {
 	padding: 4px 12px;
 	border-radius: 8px;
-	background-color: rgba(28, 26, 23, 0.06);
+	background-color: var(--x-line, rgba(28, 26, 23, 0.06));
 	margin-right: 8px;
 	margin-bottom: 6px;
 }
 
 .st-chip-on {
-	background-color: #3db89a;
+	background-color: var(--x-accent, #3db89a);
 }
 
 .st-t {
 	font-size: 12px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	font-weight: 600;
 }
 
 .st-t-on {
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 
 .audit-item {
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 18px;
 	padding: 12px 13px;
 	margin-bottom: 10px;
@@ -316,12 +323,12 @@ function onExit(): void {
 
 .status {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .summary {
 	font-size: 13px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	line-height: 1.45;
 	margin-bottom: 6px;
 }
@@ -353,7 +360,7 @@ function onExit(): void {
 
 .footer {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-top: 8px;
 	margin-bottom: 8px;
 	text-align: center;

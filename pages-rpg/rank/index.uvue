@@ -1,6 +1,6 @@
 <template>
 	<!-- 排行榜：周期 + 维度双 Tab，对齐 Nuxt LeaderboardPanel；头像进公开主页 -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="排行榜"></x-navbar>
 		<view class="x-seg">
 			<view
@@ -71,6 +71,8 @@ import { fetchLeaderboard } from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
 import { goPublicProfile } from '../../utils/nav-profile'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const periodLabels = ['总榜', '赛季榜', '周榜', '月榜']
 const periodKeys = ['total', 'season', 'week', 'month']
@@ -173,6 +175,10 @@ async function onRefresh(): Promise<void> {
 onMounted(() => {
 	onRefresh()
 })
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -191,7 +197,7 @@ onMounted(() => {
 .me {
 	border-width: 1.5px;
 	border-style: solid;
-	border-color: #3db89a;
+	border-color: var(--x-accent, #3db89a);
 }
 
 .top {
@@ -201,7 +207,7 @@ onMounted(() => {
 .rank {
 	font-size: 14px;
 	font-weight: 700;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	width: 40px;
 	text-align: center;
 }
@@ -222,7 +228,7 @@ onMounted(() => {
 	width: 36px;
 	height: 36px;
 	border-radius: 18px;
-	background-color: #ebe6df;
+	background-color: var(--x-bg-2, #ebe6df);
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;
@@ -237,7 +243,7 @@ onMounted(() => {
 .av-fall {
 	font-size: 14px;
 	font-weight: 700;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 }
 
 .body {
@@ -247,13 +253,13 @@ onMounted(() => {
 .name {
 	font-size: 14px;
 	font-weight: 650;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .score {
 	font-size: 13px;
 	font-weight: 700;
-	color: #2a8f76;
+	color: var(--x-accent-deep, #2a8f76);
 }
 
 .empty {

@@ -1,8 +1,8 @@
 <template>
-	<!-- 主壳：uni-tab + tab-bar-blur 毛玻璃悬浮底栏（对齐官方示例与小卡原型） -->
+	<!-- 主壳：uni-tab + tab-bar-blur；根节点挂主题 CSS 变量供四 Tab 继承 -->
 	<uni-tab
 		class="tab-shell"
-		style="flex: 1; --uni-tab-bar-height: 62px"
+		:style="shellStyle"
 		:active-index="activeIndex"
 		:tab-content-height-full="tabContentHeightFull"
 		@change="handleChange"
@@ -28,7 +28,7 @@
 							name="home"
 							:size="17"
 							:filled="activeIndex == 0"
-							:color="activeIndex == 0 ? '#2a8f76' : '#9a948a'"
+							:color="activeIndex == 0 ? tokens.accentDeep : tokens.ink3"
 						></x-icon>
 					</view>
 					<text :class="activeIndex == 0 ? 'tl tl-on' : 'tl'">首页</text>
@@ -41,7 +41,7 @@
 							name="compass"
 							:size="17"
 							:filled="activeIndex == 1"
-							:color="activeIndex == 1 ? '#2a8f76' : '#9a948a'"
+							:color="activeIndex == 1 ? tokens.accentDeep : tokens.ink3"
 						></x-icon>
 					</view>
 					<text :class="activeIndex == 1 ? 'tl tl-on' : 'tl'">发现</text>
@@ -54,7 +54,7 @@
 							name="sword"
 							:size="17"
 							:filled="activeIndex == 2"
-							:color="activeIndex == 2 ? '#2a8f76' : '#9a948a'"
+							:color="activeIndex == 2 ? tokens.accentDeep : tokens.ink3"
 						></x-icon>
 					</view>
 					<text :class="activeIndex == 2 ? 'tl tl-on' : 'tl'">冒险</text>
@@ -67,7 +67,7 @@
 							name="user"
 							:size="17"
 							:filled="activeIndex == 3"
-							:color="activeIndex == 3 ? '#2a8f76' : '#9a948a'"
+							:color="activeIndex == 3 ? tokens.accentDeep : tokens.ink3"
 						></x-icon>
 					</view>
 					<text :class="activeIndex == 3 ? 'tl tl-on' : 'tl'">我的</text>
@@ -82,6 +82,7 @@
  * 主壳页：自定义 tab-bar-blur（半透明毛玻璃）承载四 Tab
  * 底栏图标用 x-icon（home/compass/sword/user）；切 Tab 用 utils/tabNav.goTab，勿用 switchTab
  */
+import { useTheme } from '../../composables/useTheme'
 import { useUserStore } from '../../store/user'
 import { tabActiveIndex, TAB_HOME, TAB_ME } from '../../utils/tabNav'
 
@@ -90,12 +91,22 @@ const TAB_BAR_MARGIN = 14
 /** 底边距（对齐原型 16px） */
 const TAB_BAR_BOTTOM = 16
 
+const { themeCssVars, tokens, syncNativeChrome } = useTheme()
+
 /**
- * 计算悬浮底栏定位样式（宽度随窗口变化）
+ * 主壳根样式：主题 CSS 变量 + tab 高度
+ */
+const shellStyle = computed((): string => {
+	return themeCssVars.value + 'flex: 1; --uni-tab-bar-height: 62px;'
+})
+
+/**
+ * 计算悬浮底栏定位样式（宽度随窗口变化；色随主题）
  */
 function buildTabBarStyle(): string {
 	const windowInfo = uni.getWindowInfo()
 	const tabBarWidth = Math.max(0, windowInfo.windowWidth - TAB_BAR_MARGIN * 2)
+	const t = tokens.value
 	return (
 		'left: ' +
 		TAB_BAR_MARGIN +
@@ -103,12 +114,20 @@ function buildTabBarStyle(): string {
 		TAB_BAR_BOTTOM +
 		'px; width: ' +
 		tabBarWidth +
-		'px; padding-bottom: 0px; align-items: center; border-radius: 22px; overflow: hidden; border-top-width: 0px; border-width: 1px; border-style: solid; border-color: rgba(255,255,255,0.7); background-color: rgba(255, 255, 255, 0.82);'
+		'px; padding-bottom: 0px; align-items: center; border-radius: 22px; overflow: hidden; border-top-width: 0px; border-width: 1px; border-style: solid; border-color: ' +
+		t.tabBarBorder +
+		'; background-color: ' +
+		t.tabBarBg +
+		';'
 	)
 }
 
 const activeIndex = tabActiveIndex
 const tabBarStyle = ref(buildTabBarStyle())
+
+watch(tokens, () => {
+	syncTabBarStyle()
+})
 
 /**
  * 底栏绝对悬浮钉死（tabContentHeightFull → position:absolute）
@@ -164,6 +183,7 @@ onReady(() => {
 
 onShow(() => {
 	syncTabBarStyle()
+	syncNativeChrome()
 	// 从登录页返回时，对齐 storage 与 Pinia（含 401 清态）
 	useUserStore().hydrateFromStorage()
 })
@@ -174,11 +194,11 @@ onShow(() => {
 	flex: 1;
 	width: 100%;
 	height: 100%;
-	background-color: #f4f1ec;
+	background-color: var(--x-bg, #f4f1ec);
 }
 
 .blur-tab-list {
-	/* 官方 tab-bar-blur：backdrop-filter；不支持端仍可见半透明白底 */
+	/* 官方 tab-bar-blur：backdrop-filter；不支持端仍可见半透明底 */
 	backdrop-filter: blur(20px);
 	box-shadow: 0px 10px 30px rgba(40, 32, 20, 0.12);
 }
@@ -207,7 +227,7 @@ onShow(() => {
 }
 
 .tab-inner-on {
-	background-color: rgba(61, 184, 154, 0.12);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 }
 
 .ti-wrap {
@@ -219,10 +239,10 @@ onShow(() => {
 .tl {
 	font-size: 10px;
 	font-weight: 600;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .tl-on {
-	color: #2a8f76;
+	color: var(--x-accent-deep, #2a8f76);
 }
 </style>

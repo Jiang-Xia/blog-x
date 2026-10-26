@@ -215,7 +215,7 @@ function goDetail(id: string): void {
 .search-bar {
 	flex-direction: row;
 	align-items: center;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 999px;
 	padding: 11px 14px;
 	margin-bottom: 12px;
@@ -230,6 +230,6 @@ function goDetail(id: string): void {
 .search-ph {
 	flex: 1;
 	font-size: 13px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 </style>

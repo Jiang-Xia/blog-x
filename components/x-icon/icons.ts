@@ -1,5 +1,5 @@
 /**
- * Tabler 字形映射（子集 outline 48 / filled 34）—— 由 scripts/subset-icons.py 生成，请勿手改。
+ * Tabler 字形映射（子集 outline 49 / filled 35）—— 由 scripts/subset-icons.py 生成，请勿手改。
  * 新增图标后重跑：python scripts/subset-icons.py
  * 动态拼接的图标名请加入 scripts/icon-whitelist.txt
  */
@@ -9,7 +9,7 @@ export interface IconGlyph {
 	unicode: string
 }
 
-/** 线性图标（tabler-icons.ttf），共 48 个 */
+/** 线性图标（tabler-icons.ttf），共 49 个 */
 export const ICON_OUTLINE: IconGlyph[] = [
 		{ name: 'arrow-back', unicode: '\uea0c' },
 		{ name: 'arrow-left', unicode: '\uea19' },
@@ -28,7 +28,6 @@ export const ICON_OUTLINE: IconGlyph[] = [
 		{ name: 'compass', unicode: '\uea79' },
 		{ name: 'diamond', unicode: '\ueb65' },
 		{ name: 'dice', unicode: '\ueb66' },
-		{ name: 'dots', unicode: '\uea95' },
 		{ name: 'edit', unicode: '\uea98' },
 		{ name: 'gift', unicode: '\ueb68' },
 		{ name: 'heart', unicode: '\ueabe' },
@@ -39,6 +38,7 @@ export const ICON_OUTLINE: IconGlyph[] = [
 		{ name: 'logout', unicode: '\ueba8' },
 		{ name: 'message', unicode: '\ueaef' },
 		{ name: 'message-circle', unicode: '\ueaed' },
+		{ name: 'moon', unicode: '\ueaf8' },
 		{ name: 'paperclip', unicode: '\ueb02' },
 		{ name: 'paw', unicode: '\ueff9' },
 		{ name: 'pencil', unicode: '\ueb04' },
@@ -52,6 +52,7 @@ export const ICON_OUTLINE: IconGlyph[] = [
 		{ name: 'shield', unicode: '\ueb24' },
 		{ name: 'sparkles', unicode: '\uf6d7' },
 		{ name: 'star', unicode: '\ueb2e' },
+		{ name: 'sun', unicode: '\ueb30' },
 		{ name: 'sword', unicode: '\uf030' },
 		{ name: 'tag', unicode: '\ud800\udc96' },
 		{ name: 'thumb-up', unicode: '\ueb3c' },
@@ -61,7 +62,7 @@ export const ICON_OUTLINE: IconGlyph[] = [
 		{ name: 'x', unicode: '\ueb55' },
 ]
 
-/** 面性图标（tabler-icons-filled.ttf），共 34 个 */
+/** 面性图标（tabler-icons-filled.ttf），共 35 个 */
 export const ICON_FILLED: IconGlyph[] = [
 		{ name: 'bell', unicode: '\uf669' },
 		{ name: 'book', unicode: '\ufa87' },
@@ -73,7 +74,6 @@ export const ICON_FILLED: IconGlyph[] = [
 		{ name: 'compass', unicode: '\ufd10' },
 		{ name: 'diamond', unicode: '\uf73d' },
 		{ name: 'dice', unicode: '\uf744' },
-		{ name: 'dots', unicode: '\ud800\udddd' },
 		{ name: 'edit', unicode: '\ud800\udddb' },
 		{ name: 'gift', unicode: '\ufd14' },
 		{ name: 'heart', unicode: '\uf67c' },
@@ -81,6 +81,7 @@ export const ICON_FILLED: IconGlyph[] = [
 		{ name: 'link', unicode: '\ud800\uddd5' },
 		{ name: 'message', unicode: '\ufecd' },
 		{ name: 'message-circle', unicode: '\ufecf' },
+		{ name: 'moon', unicode: '\uf684' },
 		{ name: 'paw', unicode: '\uf689' },
 		{ name: 'pencil', unicode: '\ud800\uddcf' },
 		{ name: 'pin', unicode: '\uf68d' },
@@ -91,6 +92,7 @@ export const ICON_FILLED: IconGlyph[] = [
 		{ name: 'shield', unicode: '\uf69f' },
 		{ name: 'sparkles', unicode: '\ud800\uddb2' },
 		{ name: 'star', unicode: '\uf6a6' },
+		{ name: 'sun', unicode: '\uf6a9' },
 		{ name: 'tag', unicode: '\uff02' },
 		{ name: 'thumb-up', unicode: '\uf6ab' },
 		{ name: 'trash', unicode: '\uf783' },

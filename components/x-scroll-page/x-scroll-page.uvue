@@ -124,6 +124,6 @@ function onToLower(): void {
 
 .x-scroll-footer-t {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 </style>

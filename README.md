@@ -15,7 +15,8 @@ blog-x/
 ├── pages-rpg/        # 分包：抽奖 / 排行 / 日历 / 充值
 ├── pages-tool/       # 分包：实用工具（占位）
 ├── components/       # x-tab-* / x-scroll-page / x-navbar / x-toast / x-empty / x-tip-sheet
-├── composables/      # useListScroll / useMockStore / useApiOrMock
+├── composables/      # useTheme / useListScroll / useMockStore
+├── constants/        # theme（6 套莫兰迪色 + 明暗令牌）
 ├── store/            # Pinia：user（登录态 / 资料 / 自动登录）
 ├── mock/             # 原型静态数据与失败回落
 ├── types/            # TS 类型
@@ -96,6 +97,13 @@ await apis.getAllTag()
 | tipSheet | 详情页内 `x-tip-sheet`（钻石 tip + 站点赞赏） | 组件 |
 
 底栏：`uni_modules/uni-tab-bar` 的 **tab-bar-blur**。切 Tab 用 `utils/tabNav.goTab`，**不要**用 `uni.switchTab`。
+
+### 外观主题（莫兰迪 + 暗黑）
+
+- 入口：「我的」Tab 内 `x-theme-picker`（6 色系可切换 + 深/浅色）。
+- 色系：青苔 / 雾蓝 / 豆沙 / 燕麦 / 藤紫 / 杏茶（`constants/theme.ts`）。
+- 实现：`composables/useTheme` 持久化 storage，页面根 `:style="themeCssVars"` 写入 CSS 变量；`styles/x-base.css` 与各页样式用 `var(--x-bg)` 等。
+- 冷启动：`App.uvue` → `initTheme()`；二级页 `onShow` 调 `syncNativeChrome()` 刷导航栏/窗口底色。
 
 长页/长列表统一用 `x-scroll-page` + `useListScroll`（下拉刷新、上滑加载更多）；`pages.json` 对应页开 `disableScroll`。约定见 [`docs/page-development-guide.md`](docs/page-development-guide.md) §2。
 

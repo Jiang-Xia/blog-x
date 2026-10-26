@@ -1,6 +1,6 @@
 <template>
 	<!-- 搜索：可输入关键词 + 结果 + 本地搜索历史 chip -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="搜索"></x-navbar>
 		<view class="query-row">
 			<input
@@ -77,12 +77,15 @@
 import type { ArticleSummary } from '../../types/article'
 import { fetchArticleList } from '../../api/modules/article'
 import { useListScroll } from '../../composables/useListScroll'
+import { useTheme } from '../../composables/useTheme'
 import {
 	clearSearchHistory,
 	getSearchHistory,
 	pushSearchHistory,
 } from '../../utils/storage'
 import { showXToast } from '../../utils/toast'
+
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const query = ref('')
 const results = ref([] as ArticleSummary[])
@@ -208,6 +211,10 @@ function onClearHistory(): void {
 function goDetail(id: string): void {
 	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -216,7 +223,7 @@ function goDetail(id: string): void {
 .query-row {
 	flex-direction: row;
 	align-items: center;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 999px;
 	padding: 8px 12px;
 	margin-bottom: 12px;
@@ -225,19 +232,19 @@ function goDetail(id: string): void {
 .query-input {
 	flex: 1;
 	font-size: 14px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	font-weight: 600;
 	height: 28px;
 }
 
 .query-ph {
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	font-weight: 400;
 }
 
 .search-btn {
 	font-size: 12px;
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 	font-weight: 600;
 	margin-left: 8px;
 	margin-right: 8px;
@@ -245,7 +252,7 @@ function goDetail(id: string): void {
 
 .clear {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .hist-block {
@@ -262,12 +269,12 @@ function goDetail(id: string): void {
 .hist-title {
 	font-size: 12px;
 	font-weight: 600;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 }
 
 .hist-clear {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .chip-row {
@@ -277,7 +284,7 @@ function goDetail(id: string): void {
 
 .chip-t {
 	font-size: 11px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	font-weight: 500;
 }
 

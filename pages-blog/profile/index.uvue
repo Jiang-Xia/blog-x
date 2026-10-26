@@ -1,6 +1,6 @@
 <template>
 	<!-- 公开主页：资料 + RPG 装扮/成就 + 文章/收藏/点赞 Tab；路由 ?uid= -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="主页"></x-navbar>
 		<x-scroll-page
 			:refreshing="refreshing"
@@ -105,6 +105,8 @@ import { mapArticleSummary } from '../../api/adapters/article'
 import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
 import { resolveStaticUrl } from '../../utils/static-url'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 type ProfileTab = 'article' | 'collect' | 'like'
 
@@ -419,6 +421,10 @@ onLoad((options) => {
 function goDetail(id: string): void {
 	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -433,7 +439,7 @@ function goDetail(id: string): void {
 	width: 72px;
 	height: 72px;
 	border-radius: 36px;
-	background-color: #ffe8d6;
+	background-color: var(--x-warm-tint, #ffe8d6);
 	align-items: center;
 	justify-content: center;
 	margin-bottom: 10px;
@@ -448,25 +454,25 @@ function goDetail(id: string): void {
 .name {
 	font-size: 18px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 4px;
 }
 
 .bio {
 	font-size: 12px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 }
 
 .sec {
 	font-size: 13px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 8px;
 }
 
 .line {
 	font-size: 12px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	margin-bottom: 4px;
 }
 
@@ -487,16 +493,16 @@ function goDetail(id: string): void {
 
 .tab {
 	font-size: 13px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	font-weight: 600;
 	margin-right: 16px;
 	padding-bottom: 4px;
 }
 
 .tab-on {
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	border-bottom-width: 2px;
-	border-bottom-color: #3db89a;
+	border-bottom-color: var(--x-accent, #3db89a);
 	border-bottom-style: solid;
 }
 

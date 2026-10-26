@@ -1,6 +1,6 @@
 <template>
 	<!-- 登录：账号密码 + 微信一键；成功后由 Pinia 统一写态 -->
-	<view class="x-page">
+	<view class="x-page" :style="themeCssVars">
 		<x-navbar title="登录"></x-navbar>
 		<view class="brand">
 			<view class="brand-em">
@@ -103,6 +103,8 @@ import { fetchAuthCode } from '../../api/modules/auth'
 import { useUserStore } from '../../store/user'
 import { showXToast } from '../../utils/toast'
 import { goTab, TAB_ME } from '../../utils/tabNav'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const userStore = useUserStore()
 const { submitting } = storeToRefs(userStore)
@@ -245,6 +247,10 @@ onLoad(() => {
 		loadCaptcha()
 	}
 })
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -262,13 +268,13 @@ onLoad(() => {
 .brand-name {
 	font-size: 20px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 6px;
 }
 
 .brand-sub {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .mode-row {
@@ -280,22 +286,22 @@ onLoad(() => {
 .mode-chip {
 	padding: 8px 18px;
 	border-radius: 999px;
-	background-color: #ebe6df;
+	background-color: var(--x-bg-2, #ebe6df);
 	margin: 0 6px;
 }
 
 .mode-on {
-	background-color: #1c1a17;
+	background-color: var(--x-ink, #1c1a17);
 }
 
 .mode-t {
 	font-size: 13px;
 	font-weight: 600;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 }
 
 .mode-t-on {
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 
 .form {
@@ -306,16 +312,16 @@ onLoad(() => {
 
 .field {
 	height: 44px;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 14px;
 	padding: 0 14px;
 	font-size: 14px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 10px;
 }
 
 .ph {
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	font-size: 14px;
 }
 
@@ -335,7 +341,7 @@ onLoad(() => {
 	width: 110px;
 	height: 44px;
 	border-radius: 14px;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	align-items: center;
 	justify-content: center;
 	overflow: hidden;
@@ -348,11 +354,11 @@ onLoad(() => {
 
 .captcha-tip {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .submit-btn {
-	background-color: #3db89a;
+	background-color: var(--x-accent, #3db89a);
 	border-radius: 999px;
 	padding: 13px;
 	align-items: center;
@@ -362,7 +368,7 @@ onLoad(() => {
 .submit-t {
 	font-size: 14px;
 	font-weight: 600;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 
 .wx-wrap {
@@ -383,12 +389,12 @@ onLoad(() => {
 .wx-text {
 	font-size: 14px;
 	font-weight: 600;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 
 .wx-hint {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	text-align: center;
 	line-height: 1.5;
 	padding: 0 24px;
@@ -407,7 +413,7 @@ onLoad(() => {
 
 .proto {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	text-align: center;
 	line-height: 1.5;
 }

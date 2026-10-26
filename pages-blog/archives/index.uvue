@@ -1,6 +1,6 @@
 <template>
 	<!-- 文章归档：按年→月→文章，对齐 Nest /article/archives -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="归档"></x-navbar>
 		<x-scroll-page
 			:enable-load-more="false"
@@ -56,6 +56,8 @@
 import type { ArchiveYear } from '../../types/notify'
 import { fetchArchives } from '../../api/modules/article'
 import { useListScroll } from '../../composables/useListScroll'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const years = ref([] as ArchiveYear[])
 const {
@@ -97,6 +99,10 @@ onMounted(() => {
 function goDetail(id: string): void {
 	uni.navigateTo({ url: '/pages/detail/detail?id=' + id })
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -109,7 +115,7 @@ function goDetail(id: string): void {
 .year {
 	font-size: 18px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 12px;
 }
 
@@ -122,7 +128,7 @@ function goDetail(id: string): void {
 	width: 8px;
 	height: 8px;
 	border-radius: 4px;
-	background-color: #3db89a;
+	background-color: var(--x-accent, #3db89a);
 	margin-right: 10px;
 }
 
@@ -139,24 +145,24 @@ function goDetail(id: string): void {
 .m-label {
 	font-size: 13px;
 	font-weight: 600;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .m-count {
 	font-size: 13px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .bar {
 	height: 8px;
-	background-color: #ebe6df;
+	background-color: var(--x-bg-2, #ebe6df);
 	border-radius: 999px;
 	overflow: hidden;
 }
 
 .bar-i {
 	height: 8px;
-	background-color: #3db89a;
+	background-color: var(--x-accent, #3db89a);
 	border-radius: 999px;
 }
 
@@ -171,7 +177,7 @@ function goDetail(id: string): void {
 .art-t {
 	flex: 1;
 	font-size: 13px;
-	color: #2a8f76;
+	color: var(--x-accent-deep, #2a8f76);
 	margin-right: 8px;
 	lines: 1;
 	text-overflow: ellipsis;
@@ -179,7 +185,7 @@ function goDetail(id: string): void {
 
 .art-time {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .empty {

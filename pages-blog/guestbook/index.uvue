@@ -1,6 +1,6 @@
 <template>
 	<!-- 留言板：真实发布/回复；头像可进公开主页或复制外链 -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="留言板">
 			<template v-slot:right>
 				<text class="pub" @click="openCompose">发布</text>
@@ -116,6 +116,8 @@ import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
 import { goPublicProfile } from '../../utils/nav-profile'
 import { showXToast } from '../../utils/toast'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 /** 留言楼层展示行（nameLine 预拼，避免模板拼接） */
 type GuestbookRow = {
@@ -417,6 +419,10 @@ async function onSubmitReply(): Promise<void> {
 		submitting.value = false
 	}
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -424,13 +430,13 @@ async function onSubmitReply(): Promise<void> {
 
 .pub {
 	font-size: 12px;
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 	font-weight: 600;
 }
 
 .count {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-bottom: 10px;
 }
 
@@ -444,7 +450,7 @@ async function onSubmitReply(): Promise<void> {
 	width: 32px;
 	height: 32px;
 	border-radius: 16px;
-	background-color: #ffe8d6;
+	background-color: var(--x-warm-tint, #ffe8d6);
 	align-items: center;
 	justify-content: center;
 	margin-right: 8px;
@@ -472,17 +478,17 @@ async function onSubmitReply(): Promise<void> {
 	flex: 1;
 	font-size: 13px;
 	font-weight: 600;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .floor {
 	font-size: 10px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .content {
 	font-size: 13px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	line-height: 1.45;
 }
 
@@ -493,7 +499,7 @@ async function onSubmitReply(): Promise<void> {
 
 .c-act {
 	font-size: 11px;
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 	font-weight: 600;
 }
 
@@ -501,7 +507,7 @@ async function onSubmitReply(): Promise<void> {
 	margin-top: 8px;
 	margin-left: 8px;
 	padding: 8px 10px;
-	background-color: #ebe6df;
+	background-color: var(--x-bg-2, #ebe6df);
 	border-radius: 10px;
 }
 
@@ -515,7 +521,7 @@ async function onSubmitReply(): Promise<void> {
 	width: 22px;
 	height: 22px;
 	border-radius: 11px;
-	background-color: #ffe8d6;
+	background-color: var(--x-warm-tint, #ffe8d6);
 	align-items: center;
 	justify-content: center;
 	margin-right: 6px;
@@ -531,12 +537,12 @@ async function onSubmitReply(): Promise<void> {
 	flex: 1;
 	font-size: 11px;
 	font-weight: 600;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .reply-t {
 	font-size: 12px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	line-height: 1.4;
 }
 
@@ -548,24 +554,24 @@ async function onSubmitReply(): Promise<void> {
 	width: 100%;
 	min-height: 72px;
 	border-radius: 12px;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	padding: 10px 12px;
 	font-size: 13px;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 8px;
 }
 
 /* 与卡片/弹层底色区分，明确是输入框 */
 .compose-area-box {
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-width: 1px;
 	border-style: solid;
 	border-color: #d9d3c9;
 }
 
 .compose-inline .compose-area-box {
-	background-color: #f4f1ec;
-	border-color: #ebe6df;
+	background-color: var(--x-bg, #f4f1ec);
+	border-color: var(--x-bg-2, #ebe6df);
 }
 
 .compose-actions {
@@ -575,7 +581,7 @@ async function onSubmitReply(): Promise<void> {
 }
 
 .ph {
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .sheet-mask {
@@ -590,7 +596,7 @@ async function onSubmitReply(): Promise<void> {
 }
 
 .sheet {
-	background-color: #f4f1ec;
+	background-color: var(--x-bg, #f4f1ec);
 	border-top-left-radius: 18px;
 	border-top-right-radius: 18px;
 	padding: 16px 16px 28px;
@@ -599,7 +605,7 @@ async function onSubmitReply(): Promise<void> {
 .sheet-title {
 	font-size: 15px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 12px;
 }
 </style>

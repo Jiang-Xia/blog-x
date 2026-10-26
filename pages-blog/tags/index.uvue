@@ -1,6 +1,6 @@
 <template>
 	<!-- 标签墙：GET /tag 列表，点击进搜索 -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="标签墙"></x-navbar>
 		<x-scroll-page
 			:enable-load-more="false"
@@ -35,6 +35,8 @@
  */
 import { fetchTags, type TagWallItem } from '../../api/modules/article'
 import { useListScroll } from '../../composables/useListScroll'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const tags = ref([] as TagWallItem[])
 const {
@@ -73,6 +75,10 @@ function goSearch(label: string): void {
 		url: '/pages/search/search?q=' + encodeURIComponent(label),
 	})
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -80,7 +86,7 @@ function goSearch(label: string): void {
 
 .count {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-bottom: 12px;
 }
 
@@ -92,10 +98,10 @@ function goSearch(label: string): void {
 .tag-chip {
 	padding: 8px 14px;
 	border-radius: 999px;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-width: 1px;
 	border-style: solid;
-	border-color: #ebe6df;
+	border-color: var(--x-bg-2, #ebe6df);
 	margin-right: 8px;
 	margin-bottom: 10px;
 }
@@ -103,6 +109,6 @@ function goSearch(label: string): void {
 .tag-t {
 	font-size: 13px;
 	font-weight: 500;
-	color: #2a8f76;
+	color: var(--x-accent-deep, #2a8f76);
 }
 </style>

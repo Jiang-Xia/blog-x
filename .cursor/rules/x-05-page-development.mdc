@@ -36,7 +36,7 @@ alwaysApply: false
 | 选择器 | 仅用 class 选择器；App 端不支持标签/后代/通配等复杂选择器 |
 | 单位 | `rpx` / `px`；避免 `em/rem/vh/vw` 等 web 单位 |
 | 布局 | 默认 flex；行布局显式声明 `flex-direction: row`（或复用 `App.uvue` 的 `.uni-row`） |
-| 颜色 | 页面独有色值可写死；主题变量走 `uni.scss`（`$uni-*`） |
+| 颜色 | 主题色用 `var(--x-*)`（页面根挂 `themeCssVars`）；页面独有色才写死；`$uni-*` / `$x-*` 为编译期兜底 |
 | 不支持 | `float` 布局、复杂伪元素/伪类；`position: fixed` 行为差异需真机验证 |
 | 样式隔离 | manifest `styleIsolationVersion: 2`；组件用 `x-*` 基类须 `@import styles/x-base.css`；跨组件用 externalClass |
 

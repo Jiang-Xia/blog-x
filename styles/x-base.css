@@ -1,6 +1,7 @@
 /**
  * 小卡风格共享基类
  * 须在使用方 <style> 中 @import：App.uvue（页面）+ 各组件（styleIsolation v2 不继承 App）
+ * 颜色走 CSS 变量（页面根 :style="themeCssVars"）；fallback 为默认青苔浅色
  */
 
 /*
@@ -33,7 +34,7 @@
 	flex: 1;
 	width: 100%;
 	height: 100%;
-	background-color: #f4f1ec;
+	background-color: var(--x-bg, #f4f1ec);
 	padding: 0 16px 24px;
 }
 
@@ -46,7 +47,7 @@
 	width: 100%;
 	height: 100%;
 	flex-direction: column;
-	background-color: #f4f1ec;
+	background-color: var(--x-bg, #f4f1ec);
 	padding: 0 16px 0;
 }
 
@@ -69,7 +70,7 @@
 	flex: 1;
 	width: 100%;
 	height: 100%;
-	background-color: #f4f1ec;
+	background-color: var(--x-bg, #f4f1ec);
 	/* 无左右 padding，滚动条贴边；内边距放 x-page-tab-inner */
 	padding: 0;
 }
@@ -81,7 +82,7 @@
 }
 
 .x-card {
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 22px;
 	padding: 14px;
 	margin-bottom: 12px;
@@ -91,8 +92,8 @@
 	font-size: 11px;
 	padding: 5px 10px;
 	border-radius: 999px;
-	background-color: rgba(61, 184, 154, 0.12);
-	color: #2a8f76;
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
+	color: var(--x-accent-deep, #2a8f76);
 	font-weight: 500;
 	margin-right: 6px;
 	margin-bottom: 6px;
@@ -109,19 +110,19 @@
 }
 
 .x-chip-dark {
-	background-color: #1c1a17;
-	color: #ffffff;
+	background-color: var(--x-ink, #1c1a17);
+	color: var(--x-on-ink, #ffffff);
 }
 
 .x-chip-plain {
-	background-color: #ffffff;
-	color: #5c574f;
+	background-color: var(--x-surface, #ffffff);
+	color: var(--x-ink-2, #5c574f);
 }
 
 .x-btn {
 	border-radius: 999px;
 	padding: 8px 14px;
-	background-color: #3db89a;
+	background-color: var(--x-accent, #3db89a);
 	align-items: center;
 	justify-content: center;
 }
@@ -129,17 +130,17 @@
 .x-btn-text {
 	font-size: 12px;
 	font-weight: 600;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 }
 
 .x-btn-ghost {
-	background-color: rgba(61, 184, 154, 0.12);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 }
 
 .x-btn-ghost-text {
 	font-size: 12px;
 	font-weight: 600;
-	color: #2a8f76;
+	color: var(--x-accent-deep, #2a8f76);
 }
 
 .x-section-head {
@@ -152,29 +153,29 @@
 .x-section-title {
 	font-size: 15px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 }
 
 .x-link {
 	font-size: 12px;
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 	font-weight: 500;
 }
 
 .x-avatar {
 	border-radius: 999px;
-	background-color: #ffe8d6;
+	background-color: var(--x-warm-tint, #ffe8d6);
 	align-items: center;
 	justify-content: center;
 }
 
 .x-meta {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .x-tile {
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 22px;
 	padding: 14px;
 	min-height: 88px;
@@ -190,13 +191,13 @@
 .x-tile-title {
 	font-size: 13px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 2px;
 }
 
 .x-tile-desc {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .x-grid-2 {
@@ -212,7 +213,7 @@
 
 .x-seg {
 	flex-direction: row;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-radius: 999px;
 	padding: 3px;
 	margin-bottom: 12px;
@@ -226,23 +227,23 @@
 }
 
 .x-seg-item-on {
-	background-color: #1c1a17;
+	background-color: var(--x-ink, #1c1a17);
 }
 
 .x-seg-text {
 	font-size: 11px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 	font-weight: 500;
 }
 
 .x-seg-text-on {
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 	font-weight: 600;
 }
 
 .x-page-title {
 	font-size: 22px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 12px;
 }

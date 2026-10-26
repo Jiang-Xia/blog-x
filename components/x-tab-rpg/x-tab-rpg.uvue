@@ -301,7 +301,7 @@ function onBag(): void {
 .hero-lv {
 	font-size: 18px;
 	font-weight: 700;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 	margin-bottom: 10px;
 	line-height: 1.3;
 }
@@ -316,7 +316,7 @@ function onBag(): void {
 
 .bar-i {
 	height: 8px;
-	background-color: #f6d9a8;
+	background-color: var(--x-warm, #f6d9a8);
 	border-radius: 999px;
 }
 
@@ -346,7 +346,7 @@ function onBag(): void {
 	width: 42px;
 	height: 42px;
 	border-radius: 14px;
-	background-color: rgba(61, 184, 154, 0.12);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 	align-items: center;
 	justify-content: center;
 	margin-right: 12px;
@@ -367,13 +367,13 @@ function onBag(): void {
 .q-title {
 	font-size: 13px;
 	font-weight: 650;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 2px;
 }
 
 .q-desc {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .disabled {
@@ -389,6 +389,6 @@ function onBag(): void {
 
 .recharge-tip {
 	font-size: 13px;
-	color: #5c574f;
+	color: var(--x-ink-2, #5c574f);
 }
 </style>

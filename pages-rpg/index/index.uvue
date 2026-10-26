@@ -1,6 +1,6 @@
 <template>
 	<!-- 分包入口兼容：切回主壳冒险 Tab -->
-	<view class="x-page shell">
+	<view class="x-page shell" :style="themeCssVars">
 		<text class="tip">返回冒险…</text>
 	</view>
 </template>
@@ -10,8 +10,11 @@
  * 分包 index：直达时切回主壳冒险 Tab（UI 在 x-tab-rpg）
  */
 import { goTab, TAB_RPG } from '../../utils/tabNav'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 onShow(() => {
+	syncNativeChrome()
 	goTab(TAB_RPG)
 })
 </script>
@@ -25,6 +28,6 @@ onShow(() => {
 
 .tip {
 	font-size: 13px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 </style>

@@ -165,7 +165,7 @@ App 端为原生渲染，CSS 是**子集**：
 | 单位 | `rpx`（750 设计稿基准）/ `px`；避免 em/rem/vh/vw |
 | 布局 | 默认 flex；行布局显式 `flex-direction: row`（或复用 `App.uvue` 的 `.uni-row`） |
 | 不支持 | `float`、复杂伪元素；`position: fixed` 差异需真机验证 |
-| 主题 | 颜色/字号/间距变量用 `uni.scss` 的 `$uni-*`；页面独有色值才写死 |
+| 主题 | **运行时**莫兰迪色 + 暗黑：页面根 `:style="themeCssVars"`（`useTheme`）；样式用 `var(--x-bg)` 等；编译期 `$uni-*` / `$x-*` 仅作兜底默认值 |
 
 组件间样式隔离由 manifest `styleIsolationVersion: 2` 管理：
 

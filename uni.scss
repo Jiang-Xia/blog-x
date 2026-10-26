@@ -1,5 +1,7 @@
 /**
  * uni-app 内置常用样式变量 + blog-x 小卡风格主题（对齐 prototypes/blog-app-xiaoka-style.html）
+ * 运行时主题（6 套莫兰迪 + 暗黑）见 constants/theme.ts / composables/useTheme；
+ * 下列 $x-* 为编译期默认（青苔浅色），与 CSS 变量 fallback 一致。
  */
 
 /* 行为相关颜色 */

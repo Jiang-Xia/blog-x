@@ -46,21 +46,21 @@ function onAction(): void {
 
 .x-empty-text {
 	font-size: 13px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	line-height: 1.55;
 	text-align: center;
 	margin-bottom: 16px;
 }
 
 .x-empty-btn {
-	background-color: #3db89a;
+	background-color: var(--x-accent, #3db89a);
 	border-radius: 999px;
 	padding: 10px 20px;
 }
 
 .x-empty-btn-text {
 	font-size: 13px;
-	color: #ffffff;
+	color: var(--x-on-ink, #ffffff);
 	font-weight: 600;
 }
 </style>

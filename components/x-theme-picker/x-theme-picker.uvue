@@ -1,0 +1,136 @@
+<template>
+	<!-- 莫兰迪色系 + 暗黑模式切换（「我的」等设置入口） -->
+	<view class="x-card theme-card">
+		<view class="theme-head">
+			<text class="theme-title">外观主题</text>
+			<view class="mode-btn" @click="onToggleMode">
+				<!-- sun / moon 已写入引用，须跑 subset-icons.py -->
+				<x-icon v-if="isDark" name="sun" :size="14" :color="tokens.ink2"></x-icon>
+				<x-icon v-else name="moon" :size="14" :color="tokens.ink2"></x-icon>
+				<text class="mode-btn-t">{{ isDark ? '浅色' : '深色' }}</text>
+			</view>
+		</view>
+		<text class="theme-desc">{{ paletteMeta.label }} · {{ paletteMeta.desc }}</text>
+		<view class="swatch-row">
+			<view
+				v-for="item in paletteList"
+				:key="item.id"
+				:class="paletteId === item.id ? 'swatch swatch-on' : 'swatch'"
+				@click="onPick(item.id)"
+			>
+				<view class="swatch-dot" :style="'background-color:' + item.swatch"></view>
+				<text :class="paletteId === item.id ? 'swatch-label swatch-label-on' : 'swatch-label'">
+					{{ item.label }}
+				</text>
+			</view>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 主题选择器：6 套莫兰迪色 + 明暗切换
+ * 状态来自 composables/useTheme（storage 持久化）
+ */
+import { useTheme } from '../../composables/useTheme'
+import type { ThemePaletteId } from '../../constants/theme'
+
+const { paletteId, paletteList, paletteMeta, isDark, tokens, setPalette, toggleMode } = useTheme()
+
+/**
+ * 选中莫兰迪色系
+ */
+function onPick(id: ThemePaletteId): void {
+	setPalette(id)
+}
+
+/**
+ * 切换深/浅色
+ */
+function onToggleMode(): void {
+	toggleMode()
+}
+</script>
+
+<style>
+@import '../../styles/x-base.css';
+
+.theme-card {
+	margin-bottom: 12px;
+}
+
+.theme-head {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 4px;
+}
+
+.theme-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--x-ink, #1c1a17);
+}
+
+.mode-btn {
+	flex-direction: row;
+	align-items: center;
+	padding: 6px 10px;
+	border-radius: 999px;
+	background-color: var(--x-bg-2, #ebe6df);
+}
+
+.mode-btn-t {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--x-ink-2, #5c574f);
+	margin-left: 4px;
+}
+
+.theme-desc {
+	font-size: 11px;
+	color: var(--x-ink-3, #9a948a);
+	margin-bottom: 12px;
+}
+
+.swatch-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+}
+
+.swatch {
+	width: 30%;
+	align-items: center;
+	padding: 10px 4px;
+	border-radius: 14px;
+	margin-bottom: 8px;
+	background-color: var(--x-bg, #f4f1ec);
+	border-width: 1.5px;
+	border-style: solid;
+	border-color: transparent;
+}
+
+.swatch-on {
+	border-color: var(--x-accent, #3db89a);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
+}
+
+.swatch-dot {
+	width: 28px;
+	height: 28px;
+	border-radius: 14px;
+	margin-bottom: 6px;
+}
+
+.swatch-label {
+	font-size: 11px;
+	color: var(--x-ink-2, #5c574f);
+	font-weight: 500;
+}
+
+.swatch-label-on {
+	color: var(--x-accent-deep, #2a8f76);
+	font-weight: 700;
+}
+</style>

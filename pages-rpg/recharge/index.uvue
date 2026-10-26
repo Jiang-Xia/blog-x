@@ -1,6 +1,6 @@
 <template>
 	<!-- 钻石充值：SKU + 支付下单轮询 -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="钻石充值"></x-navbar>
 		<x-scroll-page
 			:enable-load-more="false"
@@ -47,6 +47,8 @@ import { createRpgRecharge, getRpgRechargeStatus, fetchRpgHero } from '../../api
 import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const skus: RechargeSku[] = [
 	{ id: '60', diamonds: 60, priceYuan: 6 },
@@ -165,6 +167,10 @@ async function onPay(): Promise<void> {
 		paying.value = false
 	}
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -177,7 +183,7 @@ async function onPay(): Promise<void> {
 
 .bal-label {
 	font-size: 12px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-bottom: 6px;
 }
 
@@ -189,7 +195,7 @@ async function onPay(): Promise<void> {
 .bal-n {
 	font-size: 22px;
 	font-weight: 700;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-left: 6px;
 }
 
@@ -204,7 +210,7 @@ async function onPay(): Promise<void> {
 	width: 48%;
 	border-radius: 16px;
 	padding: 12px;
-	background-color: #ffffff;
+	background-color: var(--x-surface, #ffffff);
 	border-width: 1.5px;
 	border-style: solid;
 	border-color: transparent;
@@ -212,20 +218,20 @@ async function onPay(): Promise<void> {
 }
 
 .on {
-	border-color: #3db89a;
+	border-color: var(--x-accent, #3db89a);
 	background-color: rgba(61, 184, 154, 0.08);
 }
 
 .sku-strong {
 	font-size: 16px;
 	font-weight: 600;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 2px;
 }
 
 .sku-span {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 }
 
 .pay {

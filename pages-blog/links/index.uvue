@@ -1,6 +1,6 @@
 <template>
 	<!-- 友情链接：列表 + 申请示意 -->
-	<view class="x-page-flex">
+	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="友情链接">
 			<template v-slot:right>
 				<text class="apply" @click="onApply">申请</text>
@@ -34,6 +34,8 @@ import type { FriendLink } from '../../types/notify'
 import { createLink, fetchLinks } from '../../api/modules/interact'
 import { useListScroll } from '../../composables/useListScroll'
 import { showXToast } from '../../utils/toast'
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars, syncNativeChrome } = useTheme()
 
 const links = ref([] as FriendLink[])
 const {
@@ -74,6 +76,10 @@ async function onApply(): Promise<void> {
 		await onRefresh()
 	} catch (_) {}
 }
+
+onShow(() => {
+	syncNativeChrome()
+})
 </script>
 
 <style>
@@ -81,25 +87,25 @@ async function onApply(): Promise<void> {
 
 .apply {
 	font-size: 12px;
-	color: #3db89a;
+	color: var(--x-accent, #3db89a);
 	font-weight: 600;
 }
 
 .name {
 	font-size: 14px;
 	font-weight: 650;
-	color: #1c1a17;
+	color: var(--x-ink, #1c1a17);
 	margin-bottom: 4px;
 }
 
 .url {
 	font-size: 12px;
-	color: #2a8f76;
+	color: var(--x-accent-deep, #2a8f76);
 }
 
 .hint {
 	font-size: 11px;
-	color: #9a948a;
+	color: var(--x-ink-3, #9a948a);
 	margin-top: 8px;
 	line-height: 1.5;
 }
