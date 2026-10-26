@@ -312,3 +312,27 @@ export function equipLoadout(slot: string, itemCode: string = '', petId: number 
 export function unequipLoadout(slot: string): Promise<any> {
 	return post('/rpg/loadout/unequip', { slot })
 }
+
+/**
+ * 社交加油（免费，每日上限；目标 +HP）
+ * 对齐 Nuxt socialCheer → POST /rpg/social/cheer
+ */
+export function socialCheer(targetUid: number): Promise<any> {
+	return post('/rpg/social/cheer', { targetUid })
+}
+
+/**
+ * 扔鸡蛋（耗钻，每日上限；目标 -HP）
+ * 对齐 Nuxt socialEgg → POST /rpg/social/egg
+ */
+export function socialEgg(targetUid: number): Promise<any> {
+	return post('/rpg/social/egg', { targetUid })
+}
+
+/**
+ * 送鲜花（耗钻，每日上限；目标声望）
+ * 对齐 Nuxt socialFlower → POST /rpg/social/flower
+ */
+export function socialFlower(targetUid: number): Promise<any> {
+	return post('/rpg/social/flower', { targetUid })
+}

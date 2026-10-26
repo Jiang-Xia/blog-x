@@ -85,6 +85,9 @@ const RPG_ROWS: ApiRow[] = [
 	{ name: 'equipLoadout', label: '穿戴装备', method: 'POST', path: '/rpg/loadout/equip' },
 	{ name: 'unequipLoadout', label: '卸下装备', method: 'POST', path: '/rpg/loadout/unequip' },
 	{ name: 'getMyPets', label: '我的宠物', method: 'GET', path: '/rpg/pets' },
+	{ name: 'socialCheer', label: '社交加油', method: 'POST', path: '/rpg/social/cheer' },
+	{ name: 'socialEgg', label: '扔鸡蛋', method: 'POST', path: '/rpg/social/egg' },
+	{ name: 'socialFlower', label: '送鲜花', method: 'POST', path: '/rpg/social/flower' },
 ]
 
 /** 通知 / AI / 审核 */

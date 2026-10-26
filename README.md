@@ -95,6 +95,7 @@ await apis.getAllTag()
 | archive / guestbook / links / favorites / inbox / profile / audit / ai / tags / write | `/pages-blog/<模块>/index` | 博客分包 |
 | lottery / rank / calendar / recharge / backpack | `/pages-rpg/<模块>/index` | RPG 分包 |
 | tipSheet | 详情页内 `x-tip-sheet`（钻石 tip + 站点赞赏） | 组件 |
+| profile 社交 | 公开主页 `x-social-bar`（加油 / 扔鸡蛋 / 送鲜花） | 组件 |
 
 底栏：`uni_modules/uni-tab-bar` 的 **tab-bar-blur**。切 Tab 用 `utils/tabNav.goTab`，**不要**用 `uni.switchTab`。
 
@@ -107,7 +108,7 @@ await apis.getAllTag()
 
 长页/长列表统一用 `x-scroll-page` + `useListScroll`（下拉刷新、上滑加载更多）；`pages.json` 对应页开 `disableScroll`。约定见 [`docs/page-development-guide.md`](docs/page-development-guide.md) §2。
 
-已联调：详情评论、收件箱回复、任务领奖、标签墙、钻石/站点打赏、AI 流式、签到日历网格（sign-info 推算）、消息分段过滤、首页今日进度（签到+任务）、写文章（封面 + 分类/标签/定时 + Markdown 工具栏/插图 + `/article/create`）、背包装扮（inventory/loadout + 宠物槽 `/rpg/pets`）、审核台（`/sensitive-word/hit` 通过/拒绝）。工具箱分包仍占位。
+已联调：详情评论、收件箱回复、任务领奖、标签墙、钻石/站点打赏、AI 流式、签到日历网格（sign-info 推算）、消息分段过滤、首页今日进度（签到+任务）、写文章（封面 + 分类/标签/定时 + Markdown 工具栏/插图 + `/article/create`）、背包装扮（inventory/loadout + 宠物槽 `/rpg/pets`）、审核台（`/sensitive-word/hit` 通过/拒绝）、公开主页社交（`/rpg/social/cheer|egg|flower`）。工具箱分包仍占位。
 
 ## 分包约定
 

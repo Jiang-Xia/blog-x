@@ -1,0 +1,124 @@
+<template>
+	<!-- 标签筛选：标准两行 + 横向滚动；文字/边框用标签自带 color -->
+	<scroll-view v-if="items.length > 0" class="tag-scroll" scroll-x="true" show-scrollbar="false">
+		<view class="tag-row">
+			<view
+				v-for="(t, i) in items"
+				:key="tagKey(t, i)"
+				class="tag-chip"
+				:style="chipStyle(t)"
+				@click="onTap(t)"
+			>
+				<text class="tag-t" :style="textStyle(t)">{{ t.label }}</text>
+			</view>
+		</view>
+	</scroll-view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 标签筛选横滑业务组件（标准两行）
+ * - 数据：TagWallItem[]（id/label/color 来自 GET /tag，勿本地调色）
+ * - 布局：与 x-category-chips 同高 26px（border-box，边框不撑高）
+ * - 交互：多选；抛 toggle(id)；selectedIds 由父组件控制
+ */
+import type { TagWallItem } from '../../api/modules/article'
+
+const props = defineProps({
+	/** 标签列表 */
+	items: {
+		type: Array,
+		default: () => [] as TagWallItem[],
+	},
+	/** 已选标签 UUID 列表 */
+	selectedIds: {
+		type: Array,
+		default: () => [] as string[],
+	},
+})
+
+const emit = defineEmits(['toggle'])
+
+/**
+ * 稳定 key
+ */
+function tagKey(t: TagWallItem, i: number): string {
+	if (t != null && t.id != null && ('' + t.id).length > 0) return '' + t.id
+	if (t != null && t.label != null) return t.label + '-' + i
+	return '' + i
+}
+
+/**
+ * 是否选中
+ */
+function isOn(id: string): boolean {
+	const ids = props.selectedIds as string[]
+	return ids.indexOf(id) >= 0
+}
+
+/**
+ * 胶囊边框/底色（选中浅底，未选白底；色来自标签）
+ */
+function chipStyle(t: TagWallItem): string {
+	const c = t.color != null && t.color.length > 0 ? t.color : '#2a8f76'
+	if (isOn(t.id)) {
+		return 'border-color:' + c + ';background-color:' + c + '22'
+	}
+	return 'border-color:' + c + '88;background-color:#ffffff'
+}
+
+/**
+ * 文字色（始终用标签色）
+ */
+function textStyle(t: TagWallItem): string {
+	const c = t.color != null && t.color.length > 0 ? t.color : '#2a8f76'
+	return 'color:' + c
+}
+
+/**
+ * 切换某一标签选中态
+ */
+function onTap(t: TagWallItem): void {
+	if (t == null || t.id == null) return
+	emit('toggle', t.id)
+}
+</script>
+
+<style>
+.tag-scroll {
+	width: 100%;
+	height: 68px;
+	margin-bottom: 8px;
+	flex-direction: row;
+}
+
+.tag-row {
+	flex-direction: column;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	height: 60px;
+	padding-right: 8px;
+}
+
+.tag-chip {
+	flex-shrink: 0;
+	/* 与分类胶囊同高；边框计入高度，避免 28px */
+	height: 26px;
+	padding-left: 12px;
+	padding-right: 12px;
+	border-radius: 999px;
+	border-width: 1px;
+	border-style: solid;
+	margin-right: 8px;
+	margin-bottom: 8px;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+}
+
+.tag-t {
+	font-size: 11px;
+	font-weight: 600;
+	lines: 1;
+}
+</style>

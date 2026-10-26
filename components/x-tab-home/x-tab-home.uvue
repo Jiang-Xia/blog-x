@@ -56,12 +56,17 @@
 			</view>
 		</view>
 
-		<!-- 分类横滑：点击按 category.id 筛选 -->
+		<!-- 分类 / 标签：标准两行横滑；精确 category / tags[] -->
 		<x-category-chips
 			:items="categories"
 			:active-index="catIndex"
 			@select="onSelectCat"
 		></x-category-chips>
+		<x-tag-chips
+			:items="tagOptions"
+			:selected-ids="selectedTagIds"
+			@toggle="onToggleTag"
+		></x-tag-chips>
 
 		<view class="x-section-head">
 			<text class="x-section-title">最新文章</text>
@@ -88,12 +93,19 @@
 <script setup lang="ts">
 /**
  * 首页 Tab 面板：对齐小卡原型 home
- * 数据来源：联调 article/list、category、未读、sign-info、my-quests
+ * 数据来源：联调 article/list、category、tag、未读、sign-info、my-quests
+ * 筛选：分类单选 + 标签多选（标准两行横滑组件）
  * 滚动：x-scroll-page(variant=tab) 下拉刷新 + 文章上滑加载更多
  */
 import type { ArticleSummary, CategoryChip } from '../../types/article'
 import type { RpgQuest } from '../../types/rpg'
-import { fetchArticleList, fetchCategories, type CategoryOption } from '../../api/modules/article'
+import {
+	fetchArticleList,
+	fetchCategories,
+	fetchTags,
+	type CategoryOption,
+	type TagWallItem,
+} from '../../api/modules/article'
 import { fetchUnreadCount } from '../../api/modules/notification'
 import { fetchMyQuests, fetchSignInfo } from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
@@ -107,6 +119,10 @@ const categories = ref([
 	{ id: '', label: '全部' },
 ] as CategoryChip[])
 const catIndex = ref(0)
+/** 标签筛选项（GET /tag） */
+const tagOptions = ref([] as TagWallItem[])
+/** 已选标签 UUID（多选精确筛选） */
+const selectedTagIds = ref([] as string[])
 const store = useMockStore()
 const userStore = useUserStore()
 const notifyBadge = store.notifyBadge
@@ -152,6 +168,7 @@ async function fetchArticlesPage(page: number): Promise<{ list: ArticleSummary[]
 			pageSize,
 			client: true,
 			category: currentCatId(),
+			tags: selectedTagIds.value.length > 0 ? selectedTagIds.value.slice() : undefined,
 		})
 		return { list: res.list, total: res.total }
 	} catch (_) {
@@ -173,6 +190,12 @@ async function loadHomeMeta(): Promise<void> {
 		categories.value = chips
 	} catch (_) {
 		categories.value = [{ id: '', label: '全部' }]
+	}
+
+	try {
+		tagOptions.value = await fetchTags()
+	} catch (_) {
+		tagOptions.value = []
 	}
 
 	try {
@@ -258,7 +281,21 @@ function onSelectCat(i: number): void {
 }
 
 /**
- * 仅刷新文章（分类切换，不重复拉签到等）
+ * 切换标签多选并重新拉列表
+ */
+function onToggleTag(id: string): void {
+	const idx = selectedTagIds.value.indexOf(id)
+	if (idx >= 0) {
+		selectedTagIds.value.splice(idx, 1)
+	} else {
+		selectedTagIds.value.push(id)
+	}
+	resetPaging()
+	onRefreshArticlesOnly()
+}
+
+/**
+ * 仅刷新文章（分类/标签切换，不重复拉签到等）
  */
 async function onRefreshArticlesOnly(): Promise<void> {
 	beginRefresh()

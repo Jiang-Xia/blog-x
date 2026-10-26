@@ -25,6 +25,8 @@
 				</view>
 				<text class="name">{{ nickname }}</text>
 				<text class="bio">{{ bio }}</text>
+				<!-- 非本人：加油 / 扔鸡蛋 / 送鲜花（对齐 Nuxt ProfileSocialBar） -->
+				<x-social-bar v-if="showSocialBar" :target-uid="uid"></x-social-bar>
 			</view>
 
 			<view class="x-card">
@@ -94,6 +96,7 @@
  * 公开主页：对齐 Nuxt /user/[uid]
  * 数据：GET /user/public/:uid（含 loadout/成就）+ /rpg/public/:uid/status（签到）
  * Tab：articles / collects / likes 分页列表
+ * 社交：非本人展示 x-social-bar（cheer / egg / flower）
  * 路由：?uid= 必填；无参时回退当前登录用户
  */
 import type { ArticleSummary } from '../../types/article'
@@ -174,6 +177,15 @@ const emptyLabel = computed((): string => {
 	if (activeTab.value == 'collect') return '暂无公开收藏'
 	if (activeTab.value == 'like') return '暂无公开点赞'
 	return '暂无公开文章'
+})
+
+/**
+ * 非本人主页才展示社交栏（不能对自己加油/砸蛋/送花）
+ */
+const showSocialBar = computed((): boolean => {
+	if (uid.value <= 0) return false
+	if (userStore.loggedIn && userStore.profile.id == uid.value) return false
+	return true
 })
 
 /**

@@ -1,5 +1,5 @@
 <template>
-	<!-- 分类筛选横滑：chip 过多时横向滚动，不换行 -->
+	<!-- 分类筛选：标准两行 + 横向滚动 -->
 	<scroll-view class="cat-scroll" scroll-x="true" show-scrollbar="false">
 		<view class="cat-row">
 			<view
@@ -17,8 +17,9 @@
 
 <script setup lang="ts">
 /**
- * 分类筛选横滑业务组件
+ * 分类筛选横滑业务组件（标准两行）
  * - 数据：父组件传入 CategoryChip[]（id + label，展示用后端 label）
+ * - 布局：column + wrap 固定两行高度，超出横向滚动
  * - 交互：点击抛 select(index, chip)；activeIndex 由父组件控制选中态
  */
 import type { CategoryChip } from '../../types/article'
@@ -61,27 +62,33 @@ function onTap(i: number): void {
 <style>
 .cat-scroll {
 	width: 100%;
-	height: 40px;
-	margin-bottom: 12px;
-	/* 横向滚动：避免被纵向布局压成换行 */
+	/* 两行区 + 底边距 */
+	height: 68px;
+	margin-bottom: 8px;
 	flex-direction: row;
 }
 
 .cat-row {
-	flex-direction: row;
-	flex-wrap: nowrap;
-	align-items: center;
-	height: 40px;
+	/* column + wrap：先竖排满 2 行，再向右开新列 → 横滑 */
+	flex-direction: column;
+	flex-wrap: wrap;
+	align-content: flex-start;
+	height: 60px;
 	padding-right: 8px;
 }
 
 .cat-chip {
 	flex-shrink: 0;
-	padding: 5px 12px;
+	height: 26px;
+	padding-left: 12px;
+	padding-right: 12px;
 	border-radius: 999px;
 	margin-right: 8px;
+	margin-bottom: 8px;
 	align-items: center;
 	justify-content: center;
+	/* 无边框；高度与带边框的标签胶囊一致 */
+	box-sizing: border-box;
 }
 
 .cat-chip-on {

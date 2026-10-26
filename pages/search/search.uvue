@@ -16,34 +16,17 @@
 			<text class="clear" @click="onClear">清除</text>
 		</view>
 
-		<!-- 分类精确筛选 -->
-		<scroll-view class="filter-scroll" scroll-x="true" :show-scrollbar="false">
-			<view class="filter-row">
-				<view
-					v-for="(c, ci) in categories"
-					:key="'c' + ci"
-					:class="catId == c.id ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
-					@click="onPickCat(c.id)"
-				>
-					<text :class="catId == c.id ? 'chip-t-dark' : 'chip-t'">{{ c.label }}</text>
-				</view>
-			</view>
-		</scroll-view>
-
-		<!-- 标签精确筛选（可多选，对齐 Nuxt tags[]） -->
-		<scroll-view v-if="tagOptions.length > 0" class="filter-scroll" scroll-x="true" :show-scrollbar="false">
-			<view class="filter-row">
-				<view
-					v-for="(t, ti) in tagOptions"
-					:key="'t' + ti"
-					class="tag-filter"
-					:style="tagFilterStyle(t)"
-					@click="onToggleTag(t.id)"
-				>
-					<text class="tag-filter-t" :style="{ color: t.color }">{{ t.label }}</text>
-				</view>
-			</view>
-		</scroll-view>
+		<!-- 分类 / 标签：标准两行横滑；精确筛选 -->
+		<x-category-chips
+			:items="categories"
+			:active-index="catActiveIndex"
+			@select="onSelectCatChip"
+		></x-category-chips>
+		<x-tag-chips
+			:items="tagOptions"
+			:selected-ids="selectedTagIds"
+			@toggle="onToggleTag"
+		></x-tag-chips>
 
 		<x-scroll-page
 			:enable-refresh="searched"
@@ -101,11 +84,11 @@
 /**
  * 搜索页：对齐 Nuxt ArticleList
  * - 关键词同时写入 title/description/content（服务端 OR 模糊）
- * - 分类 category UUID 精确；标签 tags[] UUID 精确
+ * - 分类/标签：x-category-chips / x-tag-chips 标准两行横滑；UUID 精确
  * - 空关键词点击搜索 → 返回全部（可叠加分类/标签）
  * 数据来源：POST /article/list；筛选选项 GET /category、/tag
  */
-import type { ArticleSummary } from '../../types/article'
+import type { ArticleSummary, CategoryChip } from '../../types/article'
 import {
 	fetchArticleList,
 	fetchCategories,
@@ -158,16 +141,15 @@ function reloadHistory(): void {
 }
 
 /**
- * 标签筛选 chip 边框色（未选中浅边框，选中用标签色）
+ * 当前分类在 chips 中的下标（供 x-category-chips）
  */
-function tagFilterStyle(t: TagWallItem): string {
-	const on = selectedTagIds.value.indexOf(t.id) >= 0
-	const c = t.color.length > 0 ? t.color : '#2a8f76'
-	if (on) {
-		return 'border-color:' + c + ';background-color:' + c + '22'
+const catActiveIndex = computed((): number => {
+	const list = categories.value
+	for (let i = 0; i < list.length; i++) {
+		if (list[i].id == catId.value) return i
 	}
-	return 'border-color:' + c + '88;background-color:#ffffff'
-}
+	return 0
+})
 
 /**
  * 按页拉取（空关键词不传 title/description/content）
@@ -300,10 +282,11 @@ function onChip(h: string): void {
 }
 
 /**
- * 切换分类精确筛选并重搜
+ * 分类 chip 选中（x-category-chips → index + chip）
  */
-function onPickCat(id: string): void {
-	catId.value = id
+function onSelectCatChip(i: number, chip: CategoryChip): void {
+	if (chip == null) return
+	catId.value = chip.id != null ? chip.id : ''
 	resetPaging()
 	doSearch(query.value)
 }
@@ -383,35 +366,6 @@ onShow(() => {
 .clear {
 	font-size: 12px;
 	color: var(--x-ink-3, #9a948a);
-}
-
-.filter-scroll {
-	width: 100%;
-	margin-bottom: 8px;
-	/* 横滑高度 */
-	height: 36px;
-}
-
-.filter-row {
-	flex-direction: row;
-	align-items: center;
-	flex-wrap: nowrap;
-	padding-right: 8px;
-}
-
-.tag-filter {
-	padding: 5px 12px;
-	border-radius: 999px;
-	border-width: 1px;
-	border-style: solid;
-	margin-right: 8px;
-	align-items: center;
-	justify-content: center;
-}
-
-.tag-filter-t {
-	font-size: 11px;
-	font-weight: 600;
 }
 
 .hist-block {

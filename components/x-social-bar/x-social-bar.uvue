@@ -1,0 +1,158 @@
+<template>
+	<!-- 公开主页社交栏：加油 / 扔鸡蛋 / 送鲜花（对齐 Nuxt ProfileSocialBar） -->
+	<view class="social-bar">
+		<view
+			class="social-btn"
+			:class="loading ? 'social-btn-off' : ''"
+			@click="onCheer"
+		>
+			<text class="social-btn-t">加油</text>
+		</view>
+		<view
+			class="social-btn social-btn-warn"
+			:class="loading ? 'social-btn-off' : ''"
+			@click="onEgg"
+		>
+			<text class="social-btn-t social-btn-t-warn">扔鸡蛋 (-15钻)</text>
+		</view>
+		<view
+			class="social-btn social-btn-lav"
+			:class="loading ? 'social-btn-off' : ''"
+			@click="onFlower"
+		>
+			<text class="social-btn-t social-btn-t-lav">送鲜花 (-10钻)</text>
+		</view>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 公开主页社交栏：加油 / 扔鸡蛋 / 送鲜花
+ * 数据：POST /rpg/social/cheer|egg|flower（body.targetUid）
+ * 对齐 blog-home-nuxt components/rpg/ProfileSocialBar.vue
+ * 仅非本人主页展示；需登录
+ */
+import { socialCheer, socialEgg, socialFlower } from '../../api/modules/rpg'
+import { useUserStore } from '../../store/user'
+import { showXToast } from '../../utils/toast'
+
+const props = defineProps({
+	/** 目标用户 uid */
+	targetUid: { type: Number, default: 0 },
+})
+
+const userStore = useUserStore()
+const loading = ref(false)
+
+/**
+ * 未登录则引导登录页
+ * @returns 已登录 true
+ */
+function ensureLogin(): boolean {
+	if (userStore.loggedIn && userStore.profile.id > 0) return true
+	showXToast('login', '请先登录', '')
+	uni.navigateTo({ url: '/pages/login/login' })
+	return false
+}
+
+/**
+ * 加油：免费，对方 +HP（hpDelta 来自接口）
+ */
+async function onCheer(): Promise<void> {
+	if (!ensureLogin()) return
+	if (props.targetUid <= 0 || loading.value) return
+	loading.value = true
+	try {
+		const res = await socialCheer(props.targetUid)
+		let hp = 10
+		if (res != null && res.hpDelta != null) {
+			const n = Number(res.hpDelta)
+			if (!isNaN(n)) hp = Math.abs(n)
+		}
+		showXToast('mood-smile', '加油成功', '对方 +' + hp + ' 生命')
+	} catch (_) {
+		// request 已 toast 业务错误
+	} finally {
+		loading.value = false
+	}
+}
+
+/**
+ * 扔鸡蛋：耗 15 钻
+ */
+async function onEgg(): Promise<void> {
+	if (!ensureLogin()) return
+	if (props.targetUid <= 0 || loading.value) return
+	loading.value = true
+	try {
+		await socialEgg(props.targetUid)
+		showXToast('mood-smile', '扔鸡蛋成功', '')
+	} catch (_) {
+		// request 已 toast
+	} finally {
+		loading.value = false
+	}
+}
+
+/**
+ * 送鲜花：耗 10 钻
+ */
+async function onFlower(): Promise<void> {
+	if (!ensureLogin()) return
+	if (props.targetUid <= 0 || loading.value) return
+	loading.value = true
+	try {
+		await socialFlower(props.targetUid)
+		showXToast('mood-smile', '送鲜花成功', '')
+	} catch (_) {
+		// request 已 toast
+	} finally {
+		loading.value = false
+	}
+}
+</script>
+
+<style>
+.social-bar {
+	flex-direction: row;
+	flex-wrap: wrap;
+	margin-top: 12px;
+	margin-bottom: 4px;
+}
+
+.social-btn {
+	padding: 8px 12px;
+	border-radius: 999px;
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
+	margin-right: 8px;
+	margin-bottom: 8px;
+	align-items: center;
+	justify-content: center;
+}
+
+.social-btn-warn {
+	background-color: rgba(240, 160, 122, 0.16);
+}
+
+.social-btn-lav {
+	background-color: rgba(169, 154, 212, 0.18);
+}
+
+.social-btn-off {
+	opacity: 0.55;
+}
+
+.social-btn-t {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--x-accent-deep, #2a8f76);
+}
+
+.social-btn-t-warn {
+	color: #c06a45;
+}
+
+.social-btn-t-lav {
+	color: #6d5fa0;
+}
+</style>
