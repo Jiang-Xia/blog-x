@@ -1,5 +1,5 @@
 <template>
-	<!-- 公开主页：资料 + RPG 公开信息 + 文章；路由 ?uid= -->
+	<!-- 公开主页：资料 + RPG 装扮/成就 + 文章/收藏/点赞 Tab；路由 ?uid= -->
 	<view class="x-page-flex">
 		<x-navbar title="主页"></x-navbar>
 		<x-scroll-page
@@ -26,19 +26,49 @@
 				<text class="name">{{ nickname }}</text>
 				<text class="bio">{{ bio }}</text>
 			</view>
+
 			<view class="x-card">
 				<text class="sec">公开 RPG</text>
-				<text class="line">称号「{{ rpg.titleName }}」</text>
-				<text class="line">公会 {{ rpg.guildName }}</text>
-				<text class="line">{{ rpg.rankLabel }}</text>
-				<text class="line">宠物 {{ rpg.petLabel }}</text>
-				<text class="line">连续签到 {{ rpg.streakDays }} 天</text>
+				<text class="line">LV{{ rpg.level }} · 声望 {{ rpg.reputation }}</text>
+				<text class="line">
+					称号「{{ rpg.titleName.length > 0 ? rpg.titleName : '暂无' }}」
+				</text>
+				<text class="line">
+					头像框 {{ rpg.frameName.length > 0 ? rpg.frameName : '暂无' }}
+				</text>
+				<text class="line">
+					宠物 {{ rpg.petLabel.length > 0 ? rpg.petLabel : '暂无' }}
+				</text>
+				<text class="line">累计签到 {{ rpg.streakDays }} 天</text>
+				<view v-if="rpg.achievements.length > 0" class="ach-row">
+					<text
+						v-for="(ach, ai) in rpg.achievements"
+						:key="ai"
+						class="x-chip ach-chip"
+					>{{ ach }}</text>
+				</view>
 			</view>
-			<view class="x-section-head">
-				<text class="x-section-title">TA 的文章</text>
+
+			<view class="tabs">
+				<text
+					class="tab"
+					:class="activeTab == 'article' ? 'tab-on' : ''"
+					@click="switchTab('article')"
+				>已发布 {{ tabTotals.article >= 0 ? tabTotals.article : '' }}</text>
+				<text
+					class="tab"
+					:class="activeTab == 'collect' ? 'tab-on' : ''"
+					@click="switchTab('collect')"
+				>收藏 {{ tabTotals.collect >= 0 ? tabTotals.collect : '' }}</text>
+				<text
+					class="tab"
+					:class="activeTab == 'like' ? 'tab-on' : ''"
+					@click="switchTab('like')"
+				>点赞 {{ tabTotals.like >= 0 ? tabTotals.like : '' }}</text>
 			</view>
+
 			<x-article-card
-				v-for="art in articleList"
+				v-for="art in currentList"
 				:key="art.id"
 				:id="art.id"
 				:title="art.title"
@@ -52,8 +82,8 @@
 				:show-stat="false"
 				@open="goDetail"
 			></x-article-card>
-			<view v-if="articleList.length == 0 && uid > 0" class="empty">
-				<text class="x-meta">暂无公开文章</text>
+			<view v-if="currentList.length == 0 && uid > 0" class="empty">
+				<text class="x-meta">{{ emptyLabel }}</text>
 			</view>
 		</x-scroll-page>
 	</view>
@@ -61,24 +91,31 @@
 
 <script setup lang="ts">
 /**
- * 公开主页：联调 /user/public/:uid + /rpg/public/:uid/status + 文章列表
- * 路由：?uid= 必填（对齐 Nuxt /user/[uid]）；无参时回退当前登录用户
+ * 公开主页：对齐 Nuxt /user/[uid]
+ * 数据：GET /user/public/:uid（含 loadout/成就）+ /rpg/public/:uid/status（签到）
+ * Tab：articles / collects / likes 分页列表
+ * 路由：?uid= 必填；无参时回退当前登录用户
  */
 import type { ArticleSummary } from '../../types/article'
 import type { PublicRpgCard } from '../../types/user'
 import { fetchPublicProfile, fetchPublicRpg } from '../../api/modules/auth'
+import { mapPublicRpg } from '../../api/adapters/user'
 import { get } from '../../api/request'
 import { mapArticleSummary } from '../../api/adapters/article'
 import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
 import { resolveStaticUrl } from '../../utils/static-url'
 
+type ProfileTab = 'article' | 'collect' | 'like'
+
 const emptyPublicRpg: PublicRpgCard = {
+	level: 1,
+	reputation: 0,
 	titleName: '',
-	guildName: '',
-	rankLabel: '',
+	frameName: '',
 	petLabel: '',
 	streakDays: 0,
+	achievements: [],
 }
 
 const userStore = useUserStore()
@@ -87,13 +124,28 @@ const bio = ref('')
 /** 公开主页头像 */
 const avatarUrl = ref('')
 const rpg = ref(emptyPublicRpg)
-const articleList = ref([] as ArticleSummary[])
 /** 目标用户 uid（来自路由或本人） */
 const uid = ref(0)
-const articleTotal = ref(-1)
+const activeTab = ref('article' as ProfileTab)
+
+const articleList = ref([] as ArticleSummary[])
+const collectList = ref([] as ArticleSummary[])
+const likeList = ref([] as ArticleSummary[])
+const tabTotals = ref({
+	article: -1,
+	collect: -1,
+	like: -1,
+})
+const tabLoaded = ref({
+	article: false,
+	collect: false,
+	like: false,
+})
 
 const {
 	pageSize,
+	page,
+	hasMore,
 	refreshing,
 	pullingDistance,
 	footerText,
@@ -105,7 +157,22 @@ const {
 	endRefresh,
 	beginLoadMore,
 	endLoadMore,
+	resetPaging,
 } = useListScroll(10)
+
+/** 当前 Tab 列表 */
+const currentList = computed((): ArticleSummary[] => {
+	if (activeTab.value == 'collect') return collectList.value
+	if (activeTab.value == 'like') return likeList.value
+	return articleList.value
+})
+
+/** 空态文案 */
+const emptyLabel = computed((): string => {
+	if (activeTab.value == 'collect') return '暂无公开收藏'
+	if (activeTab.value == 'like') return '暂无公开点赞'
+	return '暂无公开文章'
+})
 
 /**
  * 解析目标 uid：优先路由 query，其次本人 Pinia
@@ -123,37 +190,123 @@ function applyRouteUid(options: any): void {
 }
 
 /**
- * 拉取一页公开文章
+ * 列表行映射（articles / collects / likes 行可能包一层 article）
  */
-async function fetchArticles(page: number): Promise<{ list: ArticleSummary[]; total: number }> {
+function mapPublicArticleRows(arr: any[]): ArticleSummary[] {
+	const out: ArticleSummary[] = []
+	for (let i = 0; i < arr.length; i++) {
+		const row = arr[i]
+		if (row == null) continue
+		const raw = row.article != null ? row.article : row
+		const mapped = mapArticleSummary(raw)
+		if (mapped.id.length == 0 || mapped.title.length == 0) continue
+		out.push(mapped)
+	}
+	return out
+}
+
+/**
+ * 拉取一页公开列表
+ */
+async function fetchTabPage(
+	tab: ProfileTab,
+	page: number,
+): Promise<{ list: ArticleSummary[]; total: number }> {
 	if (uid.value <= 0) {
 		return { list: [], total: 0 }
 	}
+	let path = '/user/public/' + uid.value + '/articles'
+	if (tab == 'collect') path = '/user/public/' + uid.value + '/collects'
+	if (tab == 'like') path = '/user/public/' + uid.value + '/likes'
 	try {
-		const res = await get(
-			'/user/public/' + uid.value + '/articles',
-			{ page, pageSize },
-			{ silent: true },
-		)
+		const res = await get(path, { page, pageSize }, { silent: true })
 		const arr = res != null && res.list != null ? res.list : []
-		const out: ArticleSummary[] = []
-		for (let i = 0; i < arr.length; i++) {
-			out.push(mapArticleSummary(arr[i]))
-		}
+		const list = mapPublicArticleRows(arr)
 		let total = -1
 		if (res != null && res.pagination != null && res.pagination.total != null) {
 			total = Number(res.pagination.total)
 		} else if (res != null && res.total != null) {
 			total = Number(res.total)
 		}
-		return { list: out, total }
+		return { list, total }
 	} catch (_) {
 		return { list: [], total: 0 }
 	}
 }
 
 /**
- * 下拉刷新：资料 + 文章第一页
+ * 写入当前 Tab 列表与 total
+ */
+function setTabList(tab: ProfileTab, list: ArticleSummary[], total: number, append: boolean): void {
+	if (tab == 'collect') {
+		if (append) {
+			for (let i = 0; i < list.length; i++) collectList.value.push(list[i])
+		} else {
+			collectList.value = list
+		}
+	} else if (tab == 'like') {
+		if (append) {
+			for (let i = 0; i < list.length; i++) likeList.value.push(list[i])
+		} else {
+			likeList.value = list
+		}
+	} else {
+		if (append) {
+			for (let i = 0; i < list.length; i++) articleList.value.push(list[i])
+		} else {
+			articleList.value = list
+		}
+	}
+	if (total >= 0) {
+		if (tab == 'collect') tabTotals.value.collect = total
+		else if (tab == 'like') tabTotals.value.like = total
+		else tabTotals.value.article = total
+	}
+	if (tab == 'collect') tabLoaded.value.collect = true
+	else if (tab == 'like') tabLoaded.value.like = true
+	else tabLoaded.value.article = true
+}
+
+/**
+ * 当前 Tab 列表长度
+ */
+function currentLen(): number {
+	return currentList.value.length
+}
+
+/**
+ * 当前 Tab total
+ */
+function currentTotal(): number {
+	if (activeTab.value == 'collect') return tabTotals.value.collect
+	if (activeTab.value == 'like') return tabTotals.value.like
+	return tabTotals.value.article
+}
+
+/**
+ * 合并公开资料与 RPG status（status 补 totalSignDays；资料优先 loadout/成就）
+ */
+function mergeRpg(fromProfile: PublicRpgCard, fromStatus: PublicRpgCard): PublicRpgCard {
+	return {
+		level: fromProfile.level > 1 ? fromProfile.level : fromStatus.level,
+		reputation:
+			fromProfile.reputation > 0 ? fromProfile.reputation : fromStatus.reputation,
+		titleName:
+			fromProfile.titleName.length > 0 ? fromProfile.titleName : fromStatus.titleName,
+		frameName:
+			fromProfile.frameName.length > 0 ? fromProfile.frameName : fromStatus.frameName,
+		petLabel: fromProfile.petLabel.length > 0 ? fromProfile.petLabel : fromStatus.petLabel,
+		streakDays:
+			fromStatus.streakDays > 0 ? fromStatus.streakDays : fromProfile.streakDays,
+		achievements:
+			fromProfile.achievements.length > 0
+				? fromProfile.achievements
+				: fromStatus.achievements,
+	}
+}
+
+/**
+ * 下拉刷新：资料 + 当前 Tab 第一页；顺带预拉另外两个 Tab 的 total
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
@@ -161,6 +314,7 @@ async function onRefresh(): Promise<void> {
 		uid.value = userStore.profile.id
 	}
 	if (uid.value > 0) {
+		let fromProfile = emptyPublicRpg
 		try {
 			const pub = await fetchPublicProfile(uid.value)
 			if (pub != null) {
@@ -168,32 +322,93 @@ async function onRefresh(): Promise<void> {
 				if (pub.intro != null) bio.value = '' + pub.intro
 				const av = pub.avatar != null ? ('' + pub.avatar).trim() : ''
 				if (av.length > 0) avatarUrl.value = resolveStaticUrl(av)
+				fromProfile = mapPublicRpg(pub)
 			}
 		} catch (_) {}
 		try {
-			rpg.value = await fetchPublicRpg(uid.value)
+			const fromStatus = await fetchPublicRpg(uid.value)
+			rpg.value = mergeRpg(fromProfile, fromStatus)
 		} catch (_) {
-			rpg.value = emptyPublicRpg
+			rpg.value = fromProfile
 		}
 	}
-	const res = await fetchArticles(1)
-	articleList.value = res.list
-	articleTotal.value = res.total
-	endRefresh(res.list.length, articleList.value.length, res.total)
+
+	const tab = activeTab.value
+	const res = await fetchTabPage(tab, 1)
+	setTabList(tab, res.list, res.total, false)
+	endRefresh(res.list.length, currentLen(), res.total)
+
+	// 预拉其他 Tab 的总数（不阻塞首屏）
+	prefetchOtherTotals(tab)
 }
 
 /**
- * 上滑加载更多文章
+ * 预取另外两个 Tab 的第一页仅取 total（列表不覆盖已有）
+ */
+async function prefetchOtherTotals(except: ProfileTab): Promise<void> {
+	const tabs: ProfileTab[] = ['article', 'collect', 'like']
+	for (let i = 0; i < tabs.length; i++) {
+		const t = tabs[i]
+		if (t == except) continue
+		if (t == 'article' && tabLoaded.value.article) continue
+		if (t == 'collect' && tabLoaded.value.collect) continue
+		if (t == 'like' && tabLoaded.value.like) continue
+		try {
+			const res = await fetchTabPage(t, 1)
+			setTabList(t, res.list, res.total, false)
+		} catch (_) {}
+	}
+}
+
+/**
+ * 按已加载条数同步分页页码与 hasMore（切换已缓存 Tab 时避免重复拉第 2 页）
+ */
+function syncPagingFromList(): void {
+	const len = currentLen()
+	const total = currentTotal()
+	resetPaging()
+	// 已加载 len 条 → 下一页页码
+	const next = Math.floor(len / pageSize) + 1
+	page.value = next > 1 ? next : 1
+	if (total >= 0) {
+		hasMore.value = len < total
+	} else {
+		hasMore.value = len >= pageSize
+	}
+}
+
+/**
+ * 切换 Tab；未加载过则拉第一页并重置滚动分页
+ */
+async function switchTab(tab: ProfileTab): Promise<void> {
+	if (activeTab.value == tab) return
+	activeTab.value = tab
+	const loaded =
+		tab == 'collect'
+			? tabLoaded.value.collect
+			: tab == 'like'
+				? tabLoaded.value.like
+				: tabLoaded.value.article
+	if (!loaded) {
+		beginRefresh()
+		const res = await fetchTabPage(tab, 1)
+		setTabList(tab, res.list, res.total, false)
+		endRefresh(res.list.length, currentLen(), res.total)
+	} else {
+		syncPagingFromList()
+	}
+}
+
+/**
+ * 上滑加载更多（当前 Tab）
  */
 async function onLoadMore(): Promise<void> {
 	const p = beginLoadMore()
 	if (p <= 0) return
-	const res = await fetchArticles(p)
-	for (let i = 0; i < res.list.length; i++) {
-		articleList.value.push(res.list[i])
-	}
-	if (res.total >= 0) articleTotal.value = res.total
-	endLoadMore(res.list.length, articleList.value.length, articleTotal.value)
+	const tab = activeTab.value
+	const res = await fetchTabPage(tab, p)
+	setTabList(tab, res.list, res.total >= 0 ? res.total : currentTotal(), true)
+	endLoadMore(res.list.length, currentLen(), currentTotal())
 }
 
 onLoad((options) => {
@@ -253,6 +468,36 @@ function goDetail(id: string): void {
 	font-size: 12px;
 	color: #5c574f;
 	margin-bottom: 4px;
+}
+
+.ach-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+	margin-top: 8px;
+}
+
+.ach-chip {
+	margin-bottom: 6px;
+}
+
+.tabs {
+	flex-direction: row;
+	margin-bottom: 12px;
+}
+
+.tab {
+	font-size: 13px;
+	color: #9a948a;
+	font-weight: 600;
+	margin-right: 16px;
+	padding-bottom: 4px;
+}
+
+.tab-on {
+	color: #1c1a17;
+	border-bottom-width: 2px;
+	border-bottom-color: #3db89a;
+	border-bottom-style: solid;
 }
 
 .empty {

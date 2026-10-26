@@ -164,11 +164,13 @@ export const meProfile: UserProfile = {
 }
 
 export const publicRpg: PublicRpgCard = {
+	level: 12,
+	reputation: 420,
 	titleName: '像素匠',
-	guildName: '摸鱼协会',
-	rankLabel: '经验榜 #18',
+	frameName: '赛博边框',
 	petLabel: '皮卡丘 Lv.4',
 	streakDays: 33,
+	achievements: ['初来乍到', '连续签到'],
 }
 
 /** 冒险英雄初始值（可变状态见 useMockStore） */
@@ -302,7 +304,16 @@ export const guestbookItems: GuestbookItem[] = [
 		content: '博客越来越好看了～',
 		uid: 3,
 		address: '/user/3',
-		reply: '酱：谢谢支持！',
+		replies: [
+			{
+				id: 'g128r1',
+				author: '酱',
+				content: '谢谢支持！',
+				uid: 1,
+				address: '/user/1',
+				respondent: '摸鱼大师',
+			},
+		],
 	},
 	{
 		id: 'g127',
@@ -311,6 +322,7 @@ export const guestbookItems: GuestbookItem[] = [
 		content: '求 uni-app x 入门路线',
 		uid: 0,
 		address: '',
+		replies: [],
 	},
 ]
 

@@ -36,15 +36,45 @@ export async function fetchArticleList(params: {
 	return { list, total }
 }
 
+/** 详情接口附带的相邻文章 */
+export type AdjacentArticle = {
+	id: string
+	title: string
+}
+
+/** 详情 + 上一篇/下一篇 */
+export type ArticleInfoBundle = {
+	article: ArticleDetail
+	prev: AdjacentArticle | null
+	next: AdjacentArticle | null
+}
+
+/**
+ * 解析 prev/next 简要行
+ */
+function mapAdjacent(raw: any): AdjacentArticle | null {
+	if (raw == null || raw.id == null) return null
+	const id = '' + raw.id
+	if (id.length == 0) return null
+	return {
+		id,
+		title: raw.title != null ? '' + raw.title : '',
+	}
+}
+
 /**
  * 文章详情（404 静默）：data 为 { info, prev?, next? }，正文在 info
  */
-export async function fetchArticleInfo(id: string | number): Promise<ArticleDetail | null> {
+export async function fetchArticleInfo(id: string | number): Promise<ArticleInfoBundle | null> {
 	if (id == null || id === '') return null
 	try {
 		const res = await get('/article/info', { id }, { silent: true })
 		if (res == null || res.info == null) return null
-		return mapArticleDetail(res.info)
+		return {
+			article: mapArticleDetail(res.info),
+			prev: mapAdjacent(res.prev),
+			next: mapAdjacent(res.next),
+		}
 	} catch (_) {
 		return null
 	}
@@ -106,11 +136,16 @@ export async function fetchArchives(): Promise<ArchiveYear[]> {
 }
 
 /**
- * 相关文章（裸数组）
+ * 相关文章（Nest：{ list }，同作者优先；兼容偶发裸数组）
  */
 export async function fetchRelatedArticles(id: string | number, limit = 6): Promise<ArticleSummary[]> {
 	const res = await get('/article/related', { id, limit }, { silent: true })
-	const arr = Array.isArray(res) ? res : []
+	const arr =
+		res != null && res.list != null && Array.isArray(res.list)
+			? res.list
+			: Array.isArray(res)
+				? res
+				: []
 	const list: ArticleSummary[] = []
 	for (let i = 0; i < arr.length; i++) {
 		list.push(mapArticleSummary(arr[i]))

@@ -5,11 +5,24 @@
 			<x-navbar title="文章">
 				<template v-slot:right>
 					<view class="nav-more">
-						<x-icon name="dots" :size="18" color="#5c574f"></x-icon>
-						<x-icon name="share" :size="18" color="#5c574f"></x-icon>
+						<view v-if="tocItems.length > 0" class="nav-ico" @click="tocOpen = !tocOpen">
+							<x-icon name="books" :size="18" color="#5c574f"></x-icon>
+						</view>
+						<view class="nav-ico" @click="onShare">
+							<x-icon name="share" :size="18" color="#5c574f"></x-icon>
+						</view>
 					</view>
 				</template>
 			</x-navbar>
+
+			<view v-if="tocOpen && tocItems.length > 0" class="toc-panel">
+				<text class="toc-title">目录</text>
+				<text
+					v-for="(h, hi) in tocItems"
+					:key="hi"
+					:class="h.cls"
+				>{{ h.text }}</text>
+			</view>
 
 			<view class="author-row" @click="goAuthor">
 				<view class="av">
@@ -62,6 +75,25 @@
 				<text class="ai-body">{{ article.aiSummary }}</text>
 			</view>
 
+			<view v-if="adjacentPrev != null || adjacentNext != null" class="adj-row">
+				<view
+					v-if="adjacentPrev != null"
+					class="adj-card"
+					@click="goDetail(adjacentPrev.id)"
+				>
+					<text class="adj-label">上一篇</text>
+					<text class="adj-t">{{ adjacentPrev.title }}</text>
+				</view>
+				<view
+					v-if="adjacentNext != null"
+					class="adj-card adj-next"
+					@click="goDetail(adjacentNext.id)"
+				>
+					<text class="adj-label">下一篇</text>
+					<text class="adj-t">{{ adjacentNext.title }}</text>
+				</view>
+			</view>
+
 			<view class="x-section-head">
 				<text class="x-section-title">相关阅读</text>
 			</view>
@@ -101,19 +133,23 @@
 			</view>
 			<view class="cmt-compose">
 				<input
-					class="cmt-field"
+					class="cmt-field cmt-field-box"
 					type="text"
 					v-model="commentDraft"
+					:focus="composeFocus"
 					placeholder="说点什么…"
 					placeholder-class="cmt-ph"
 					confirm-type="send"
+					cursor-spacing="80"
 					@confirm="onSubmitComment"
+					@blur="composeFocus = false"
 				/>
 				<view class="cmt-send" @click="onSubmitComment">
 					<text class="cmt-send-t">发送</text>
 				</view>
 			</view>
-			<view v-for="(c, idx) in comments" :key="idx" class="comment">
+			<!-- 评论列表：展示字段已在 map 中拼好，模板避免三元/拼接以免 uvue 渲染报错 -->
+			<view v-for="c in comments" :key="c.id" class="comment">
 				<view class="cav" @click="goPublicProfile(c.uid)">
 					<image
 						v-if="c.avatarUrl.length > 0"
@@ -124,10 +160,13 @@
 					<x-icon v-else :name="c.icon" :size="16" color="#1c1a17"></x-icon>
 				</view>
 				<view class="bubble">
-					<text class="c-name">{{ c.name }}{{ c.tag.length > 0 ? ' ' + c.tag : '' }}</text>
+					<text class="c-name" @click="goPublicProfile(c.uid)">{{ c.nameLine }}</text>
 					<text class="c-text">{{ c.text }}</text>
+					<view class="c-actions">
+						<text class="c-act" @click="onStartReply(c)">回复</text>
+					</view>
 					<!-- 回复：后端字段 replys（comment.findAll enrich） -->
-					<view v-for="(r, ri) in c.replies" :key="ri" class="reply">
+					<view v-for="r in c.replies" :key="r.id" class="reply">
 						<view class="rav" @click="goPublicProfile(r.uid)">
 							<image
 								v-if="r.avatarUrl.length > 0"
@@ -138,10 +177,31 @@
 							<x-icon v-else :name="r.icon" :size="14" color="#1c1a17"></x-icon>
 						</view>
 						<view class="reply-body">
-							<text class="r-name">
-								{{ r.name }}{{ r.replyToName.length > 0 ? ' @ ' + r.replyToName : '' }}
-							</text>
+							<text class="r-name" @click="goPublicProfile(r.uid)">{{ r.nameLine }}</text>
 							<text class="r-text">{{ r.text }}</text>
+							<text class="c-act" @click="onStartReplyTo(c, r)">回复</text>
+						</view>
+					</view>
+					<view v-if="replyingParentId == c.id" class="inline-reply">
+						<input
+							class="cmt-field cmt-field-box reply-field"
+							type="text"
+							v-model="replyDraft"
+							:focus="replyFocus"
+							:placeholder="replyPlaceholder"
+							placeholder-class="cmt-ph"
+							confirm-type="send"
+							cursor-spacing="80"
+							@confirm="onSubmitReply"
+							@blur="replyFocus = false"
+						/>
+						<view class="reply-btns">
+							<view class="x-btn x-btn-ghost" @click="cancelReply">
+								<text class="x-btn-ghost-text">取消</text>
+							</view>
+							<view class="cmt-send" @click="onSubmitReply">
+								<text class="cmt-send-t">发送</text>
+							</view>
 						</view>
 					</view>
 				</view>
@@ -149,24 +209,27 @@
 			<view v-if="comments.length == 0" class="cmt-empty">
 				<text class="x-meta">暂无评论</text>
 			</view>
+			<view v-if="commentHasMore" class="cmt-more" @click="onLoadMoreComments">
+				<text class="cmt-more-t">{{ commentMoreLabel }}</text>
+			</view>
 			<view class="bottom-pad"></view>
 		</scroll-view>
 
 		<view class="action-bar">
 			<view class="cmt-input" @click="focusCompose">
-				<text class="cmt-ph">{{ commentDraft.length > 0 ? commentDraft : '说点什么…' }}</text>
+				<text class="cmt-ph">{{ barComposeHint }}</text>
 			</view>
 			<view class="act" @click="onLike">
 				<view :class="liked ? 'ic ic-on' : 'ic'">
-					<x-icon name="heart" :size="14" :filled="liked" :color="liked ? '#e8897a' : '#5c574f'"></x-icon>
+					<x-icon name="heart" :size="14" :filled="liked" :color="likeIconColor"></x-icon>
 				</view>
-				<text class="act-t">赞</text>
+				<text :class="liked ? 'act-t act-t-on' : 'act-t'">赞</text>
 			</view>
 			<view class="act" @click="onFav">
 				<view :class="faved ? 'ic ic-fav' : 'ic'">
-					<x-icon name="star" :size="14" :filled="faved" :color="faved ? '#c9a227' : '#5c574f'"></x-icon>
+					<x-icon name="star" :size="14" :filled="faved" :color="favIconColor"></x-icon>
 				</view>
-				<text class="act-t">藏</text>
+				<text :class="faved ? 'act-t act-t-fav' : 'act-t'">藏</text>
 			</view>
 			<view class="act" @click="tipOpen = true">
 				<view class="ic tip">
@@ -182,11 +245,12 @@
 
 <script setup lang="ts">
 /**
- * 文章详情：联调 info/views/related/comment + 赞藏 + 发表评论 + 钻石打赏
- * 展示：作者真实头像、封面/正文/标签、相关阅读横滑全标题、评论头像
+ * 文章详情：联调 info/views/related/comment + 赞藏 + 发表评论/回复 + 钻石打赏
+ * 展示：作者真实头像、封面/正文/标签、相邻文、相关阅读、评论头像可跳主页
  * 失败留空；赏打开 tip-sheet（paid 带 amount）
  */
 import type { ArticleDetail, ArticleSummary } from '../../types/article'
+import type { AdjacentArticle } from '../../api/modules/article'
 import {
 	fetchArticleInfo,
 	fetchRelatedArticles,
@@ -194,6 +258,7 @@ import {
 } from '../../api/modules/article'
 import {
 	addComment,
+	addReply,
 	checkCollected,
 	checkLiked,
 	fetchComments,
@@ -211,29 +276,43 @@ import { goPublicProfile } from '../../utils/nav-profile'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
 
+/** 目录项（从正文 HTML 抽 h1–h3） */
+type TocItem = {
+	level: number
+	text: string
+	/** 预拼 class，避免模板嵌套三元 */
+	cls: string
+}
+
 /** 单条回复展示行（来自评论 replys[]） */
 type ReplyRow = {
-	/** 回复者 uid，点头像进公开主页 */
+	id: string
+	/** 回复者 uid，点头像/昵称进公开主页 */
 	uid: number
 	avatarUrl: string
 	icon: string
 	name: string
-	/** 被回复者昵称（tUserInfo.nickname）；无则空 */
-	replyToName: string
+	/** 昵称行（已拼好 @ 被回复者，避免模板三元） */
+	nameLine: string
 	text: string
 }
 
 /** 顶层评论 + 嵌套回复 */
 type CommentRow = {
+	/** 评论 id，回复时作 parentId */
+	id: string
 	/** 评论者 uid */
 	uid: number
 	avatarUrl: string
 	icon: string
 	name: string
-	tag: string
+	/** 昵称+标签展示行 */
+	nameLine: string
 	text: string
 	replies: ReplyRow[]
 }
+
+const COMMENT_PAGE_SIZE = 20
 
 const emptyArticle: ArticleDetail = {
 	id: '',
@@ -270,6 +349,24 @@ const submitting = ref(false)
 const userStore = useUserStore()
 /** 正文 HTML（contentHtml 或 uni-cmark 渲染结果） */
 const bodyHtml = ref('')
+const adjacentPrev = ref(null as AdjacentArticle | null)
+const adjacentNext = ref(null as AdjacentArticle | null)
+const tocItems = ref([] as TocItem[])
+const tocOpen = ref(false)
+/** 评论分页 */
+const commentPage = ref(1)
+const commentTotal = ref(0)
+const commentHasMore = ref(false)
+const commentsLoading = ref(false)
+/** 内联回复：parentId = 顶层评论 id */
+const replyingParentId = ref('')
+const replyDraft = ref('')
+const replyUid = ref('0')
+const replyTargetName = ref('')
+/** 点击回复后自动聚焦内联输入框 */
+const replyFocus = ref(false)
+/** 底栏点输入区时聚焦顶部评论框 */
+const composeFocus = ref(false)
 
 /** 作者行副文案：阅读量 */
 const authorSubLine = computed((): string => {
@@ -287,6 +384,57 @@ const articleMetaLine = computed((): string => {
 	return parts.join(' · ')
 })
 
+/** 内联回复 placeholder（脚本拼好，模板勿拼接） */
+const replyPlaceholder = computed((): string => {
+	const n = replyTargetName.value
+	if (n.length == 0) return '写下回复…'
+	return '回复 @' + n + '…'
+})
+
+/** 加载更多按钮文案 */
+const commentMoreLabel = computed((): string => {
+	return commentsLoading.value ? '加载中…' : '加载更多评论'
+})
+
+/** 底栏输入区提示 */
+const barComposeHint = computed((): string => {
+	const d = commentDraft.value
+	return d.length > 0 ? d : '说点什么…'
+})
+
+/** 已赞图标色 */
+const likeIconColor = computed((): string => {
+	return liked.value ? '#e8897a' : '#5c574f'
+})
+
+/** 已藏图标色 */
+const favIconColor = computed((): string => {
+	return faved.value ? '#c9a227' : '#5c574f'
+})
+
+/**
+ * 从 HTML 抽取 h1–h3 文本作目录（rich-text 无法锚点滚动，仅作概览）
+ */
+function extractToc(html: string): TocItem[] {
+	const out: TocItem[] = []
+	if (html == null || html.length == 0) return out
+	const re = /<h([1-3])[^>]*>([\s\S]*?)<\/h\1>/gi
+	let m: RegExpExecArray | null = re.exec(html)
+	while (m != null) {
+		const level = parseInt(m[1], 10)
+		const raw = m[2] != null ? m[2] : ''
+		const text = raw.replace(/<[^>]+>/g, '').trim()
+		if (text.length > 0 && !isNaN(level)) {
+			let cls = 'toc-item toc-h3'
+			if (level == 1) cls = 'toc-item toc-h1'
+			else if (level == 2) cls = 'toc-item toc-h2'
+			out.push({ level, text, cls })
+		}
+		m = re.exec(html)
+	}
+	return out
+}
+
 /**
  * 刷新正文展示：优先 contentHtml（仍做代码高亮后处理），否则 uni-cmark 转 Markdown
  */
@@ -294,14 +442,17 @@ async function refreshBodyHtml(): Promise<void> {
 	const a = article.value
 	if (a.contentHtml.length > 0) {
 		bodyHtml.value = enhanceArticleHtml(a.contentHtml)
+		tocItems.value = extractToc(bodyHtml.value)
 		return
 	}
 	if (a.content.length > 0) {
 		await ensureMarkdownReady()
 		bodyHtml.value = renderMarkdownToHtml(a.content)
+		tocItems.value = extractToc(bodyHtml.value)
 		return
 	}
 	bodyHtml.value = ''
+	tocItems.value = []
 }
 
 /**
@@ -330,15 +481,19 @@ function avatarFromUser(u: any): string {
 /**
  * 映射单条回复（replys 项：userInfo / tUserInfo / content）
  */
-function mapReplyRow(r: any): ReplyRow {
+function mapReplyRow(r: any, fallbackKey: string): ReplyRow {
 	const u = r != null ? r.userInfo : null
 	const t = r != null ? r.tUserInfo : null
+	const name = u != null && u.nickname != null ? '' + u.nickname : '用户'
+	const replyTo = t != null && t.nickname != null ? '' + t.nickname : ''
+	const idRaw = r != null && r.id != null ? '' + r.id : ''
 	return {
+		id: idRaw.length > 0 ? idRaw : fallbackKey,
 		uid: uidFromComment(r, u),
 		avatarUrl: avatarFromUser(u),
 		icon: 'arrow-back',
-		name: u != null && u.nickname != null ? '' + u.nickname : '用户',
-		replyToName: t != null && t.nickname != null ? '' + t.nickname : '',
+		name,
+		nameLine: replyTo.length > 0 ? name + ' @ ' + replyTo : name,
 		text: r != null && r.content != null ? '' + r.content : '',
 	}
 }
@@ -346,6 +501,7 @@ function mapReplyRow(r: any): ReplyRow {
 /**
  * 将服务端评论列表映射为展示行
  * 头像取 userInfo.avatar；回复取后端 enrich 的 replys；uid 供跳公开主页
+ * nameLine 在脚本拼好，避免 uvue 模板三元/字符串拼接渲染报错
  */
 function mapCommentRows(res: any): CommentRow[] {
 	const arr = res != null && res.list != null ? res.list : []
@@ -356,15 +512,18 @@ function mapCommentRows(res: any): CommentRow[] {
 		const u = c.userInfo
 		const rawReplies = c.replys != null && Array.isArray(c.replys) ? c.replys : []
 		const replies: ReplyRow[] = []
+		const parentId = c.id != null ? '' + c.id : 'c' + i
 		for (let j = 0; j < rawReplies.length; j++) {
-			replies.push(mapReplyRow(rawReplies[j]))
+			replies.push(mapReplyRow(rawReplies[j], parentId + '-r' + j))
 		}
+		const name = u != null && u.nickname != null ? '' + u.nickname : '用户'
 		out.push({
+			id: parentId,
 			uid: uidFromComment(c, u),
 			avatarUrl: avatarFromUser(u),
 			icon: 'message',
-			name: u != null && u.nickname != null ? '' + u.nickname : '用户',
-			tag: '',
+			name,
+			nameLine: name,
 			text: c.content != null ? '' + c.content : '',
 			replies,
 		})
@@ -373,14 +532,60 @@ function mapCommentRows(res: any): CommentRow[] {
 }
 
 /**
- * 重新拉取评论列表
+ * 从评论接口结果更新分页状态
+ */
+function applyCommentPagination(res: any, loadedLen: number): void {
+	let total = -1
+	if (res != null && res.pagination != null && res.pagination.total != null) {
+		total = Number(res.pagination.total)
+	} else if (res != null && res.total != null) {
+		total = Number(res.total)
+	}
+	commentTotal.value = total
+	if (total >= 0) {
+		commentHasMore.value = loadedLen < total
+	} else {
+		commentHasMore.value = loadedLen >= COMMENT_PAGE_SIZE
+	}
+}
+
+/**
+ * 重新拉取评论第一页
  */
 async function reloadComments(id: string): Promise<void> {
+	commentPage.value = 1
+	commentsLoading.value = true
 	try {
-		const res = await fetchComments(id)
+		const res = await fetchComments(id, 1, COMMENT_PAGE_SIZE)
 		comments.value = mapCommentRows(res)
+		applyCommentPagination(res, comments.value.length)
 	} catch (_) {
 		comments.value = []
+		commentHasMore.value = false
+		commentTotal.value = 0
+	} finally {
+		commentsLoading.value = false
+	}
+}
+
+/**
+ * 加载更多顶层评论
+ */
+async function onLoadMoreComments(): Promise<void> {
+	if (commentsLoading.value || !commentHasMore.value) return
+	commentsLoading.value = true
+	const next = commentPage.value + 1
+	try {
+		const res = await fetchComments(articleId.value, next, COMMENT_PAGE_SIZE)
+		const rows = mapCommentRows(res)
+		for (let i = 0; i < rows.length; i++) {
+			comments.value.push(rows[i])
+		}
+		commentPage.value = next
+		applyCommentPagination(res, comments.value.length)
+	} catch (_) {
+	} finally {
+		commentsLoading.value = false
 	}
 }
 
@@ -388,9 +593,15 @@ async function reloadComments(id: string): Promise<void> {
  * 加载详情、相关、评论与赞藏状态
  */
 async function loadDetail(id: string): Promise<void> {
+	adjacentPrev.value = null
+	adjacentNext.value = null
 	try {
-		const info = await fetchArticleInfo(id)
-		if (info != null) article.value = info
+		const bundle = await fetchArticleInfo(id)
+		if (bundle != null) {
+			article.value = bundle.article
+			adjacentPrev.value = bundle.prev
+			adjacentNext.value = bundle.next
+		}
 	} catch (_) {}
 	await refreshBodyHtml()
 	reportArticleViews(id).catch(() => {})
@@ -402,12 +613,26 @@ async function loadDetail(id: string): Promise<void> {
 	}
 
 	await reloadComments(id)
+	await refreshLikeCollect(id)
+}
 
+/**
+ * 刷新赞/藏高亮（需登录；未登录视为未操作）
+ */
+async function refreshLikeCollect(id: string): Promise<void> {
+	if (!userStore.loggedIn) {
+		liked.value = false
+		faved.value = false
+		return
+	}
 	try {
 		liked.value = await checkLiked(id)
-		faved.value = await checkCollected(id)
 	} catch (_) {
 		liked.value = false
+	}
+	try {
+		faved.value = await checkCollected(id)
+	} catch (_) {
 		faved.value = false
 	}
 }
@@ -416,6 +641,13 @@ onLoad((options) => {
 	const id = options != null && options['id'] != null ? '' + options['id'] : '0'
 	articleId.value = id
 	loadDetail(id)
+})
+
+/** 从登录页返回时补拉赞藏状态 */
+onShow(() => {
+	if (articleId.value.length > 0 && articleId.value != '0') {
+		refreshLikeCollect(articleId.value)
+	}
 })
 
 function goAi(): void {
@@ -438,9 +670,118 @@ function previewCover(): void {
 	uni.previewImage({ urls: [url] })
 }
 
-/** 底栏点输入区时提示滚动到评论框 */
+/** 底栏点输入区：取消内联回复并聚焦顶部评论框 */
 function focusCompose(): void {
-	showXToast('message', '评论', '请在上方评论框输入')
+	cancelReply()
+	composeFocus.value = false
+	setTimeout(() => {
+		composeFocus.value = true
+	}, 50)
+}
+
+/**
+ * 确保已登录；未登录跳转登录页
+ */
+function ensureLoggedIn(): boolean {
+	if (userStore.loggedIn) return true
+	showXToast('lock', '请先登录', '')
+	uni.navigateTo({ url: '/pages/login/login' })
+	return false
+}
+
+/**
+ * 下一帧聚焦内联回复框（先 false 再 true，保证重复点回复也能聚焦）
+ */
+function focusReplyInput(): void {
+	replyFocus.value = false
+	setTimeout(() => {
+		replyFocus.value = true
+	}, 50)
+}
+
+/** 复制分享文案（跨端统一，避免 App/小程序 share 差异） */
+function onShare(): void {
+	const a = article.value
+	const title = a.title.length > 0 ? a.title : '文章'
+	const text = title + ' #id=' + articleId.value
+	uni.setClipboardData({
+		data: text,
+		success: () => {
+			showXToast('share', '已复制分享文案', title)
+		},
+	})
+}
+
+/**
+ * 展开回复某条顶层评论并聚焦输入框
+ */
+function onStartReply(c: CommentRow): void {
+	if (!ensureLoggedIn()) return
+	if (c.id.length == 0) {
+		showXToast('message', '无法回复', '评论缺少 id')
+		return
+	}
+	composeFocus.value = false
+	replyingParentId.value = c.id
+	replyUid.value = c.uid > 0 ? '' + c.uid : '0'
+	replyTargetName.value = c.name
+	replyDraft.value = ''
+	focusReplyInput()
+}
+
+/**
+ * 回复某条子回复（parentId 仍为顶层评论 id，replyUid 为被回复者）
+ */
+function onStartReplyTo(c: CommentRow, r: ReplyRow): void {
+	if (!ensureLoggedIn()) return
+	if (c.id.length == 0) {
+		showXToast('message', '无法回复', '评论缺少 id')
+		return
+	}
+	composeFocus.value = false
+	replyingParentId.value = c.id
+	replyUid.value = r.uid > 0 ? '' + r.uid : '0'
+	replyTargetName.value = r.name
+	replyDraft.value = ''
+	focusReplyInput()
+}
+
+/** 取消内联回复 */
+function cancelReply(): void {
+	replyingParentId.value = ''
+	replyDraft.value = ''
+	replyUid.value = '0'
+	replyTargetName.value = ''
+	replyFocus.value = false
+}
+
+/**
+ * 提交回复：POST /reply/create
+ */
+async function onSubmitReply(): Promise<void> {
+	const text = replyDraft.value.trim()
+	const parentId = replyingParentId.value
+	if (text.length == 0 || parentId.length == 0 || submitting.value) return
+	if (!ensureLoggedIn()) return
+	submitting.value = true
+	try {
+		const res = await addReply({
+			parentId,
+			content: text,
+			replyUid: replyUid.value,
+		})
+		const status = res != null && res.status != null ? '' + res.status : ''
+		if (status == 'pending') {
+			showXToast('hourglass', '已提交', '待审核后展示')
+		} else {
+			showXToast('message', '回复成功', '')
+		}
+		cancelReply()
+		await reloadComments(articleId.value)
+	} catch (_) {
+	} finally {
+		submitting.value = false
+	}
 }
 
 /**
@@ -449,15 +790,12 @@ function focusCompose(): void {
 async function onSubmitComment(): Promise<void> {
 	const text = commentDraft.value.trim()
 	if (text.length == 0 || submitting.value) return
-	if (!userStore.loggedIn) {
-		showXToast('lock', '请先登录', '')
-		uni.navigateTo({ url: '/pages/login/login' })
-		return
-	}
+	if (!ensureLoggedIn()) return
 	submitting.value = true
 	try {
 		const res = await addComment(articleId.value, text)
 		commentDraft.value = ''
+		composeFocus.value = false
 		const status = res != null && res.status != null ? '' + res.status : ''
 		if (status == 'pending') {
 			showXToast('hourglass', '已提交', '待审核后展示')
@@ -472,25 +810,52 @@ async function onSubmitComment(): Promise<void> {
 }
 
 /**
- * 点赞：联调 POST /like
+ * 点赞：POST /like（须传 status+uid；对齐 Nuxt）
  */
 async function onLike(): Promise<void> {
+	if (!ensureLoggedIn()) return
+	const next = liked.value ? 0 : 1
 	try {
-		await toggleLike(articleId.value)
-		liked.value = await checkLiked(articleId.value)
+		await toggleLike({
+			articleId: articleId.value,
+			uid: userStore.profile.id,
+			status: next,
+		})
+		liked.value = next == 1
+		const cur = article.value.likeCount
+		if (liked.value) {
+			article.value.likeCount = cur + 1
+		} else if (cur > 0) {
+			article.value.likeCount = cur - 1
+		}
 		showXToast('heart', liked.value ? '已点赞' : '取消点赞', '')
-	} catch (_) {}
+	} catch (_) {
+		try {
+			liked.value = await checkLiked(articleId.value)
+		} catch (__) {}
+	}
 }
 
 /**
- * 收藏：联调 POST /collect
+ * 收藏：POST /collect（toggle；用返回 collected 高亮）
  */
 async function onFav(): Promise<void> {
+	if (!ensureLoggedIn()) return
 	try {
-		await toggleCollect(articleId.value)
-		faved.value = await checkCollected(articleId.value)
+		const res = await toggleCollect(articleId.value)
+		if (res != null && res.collected === true) {
+			faved.value = true
+		} else if (res != null && res.collected === false) {
+			faved.value = false
+		} else {
+			faved.value = await checkCollected(articleId.value)
+		}
 		showXToast('star', faved.value ? '已收藏' : '取消收藏', '')
-	} catch (_) {}
+	} catch (_) {
+		try {
+			faved.value = await checkCollected(articleId.value)
+		} catch (__) {}
+	}
 }
 
 /**
@@ -521,6 +886,78 @@ async function onTipPaid(amount: number): Promise<void> {
 .nav-more {
 	flex-direction: row;
 	align-items: center;
+}
+
+.nav-ico {
+	padding: 4px 6px;
+}
+
+.toc-panel {
+	background-color: #ffffff;
+	border-radius: 14px;
+	padding: 12px 14px;
+	margin-bottom: 12px;
+}
+
+.toc-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 8px;
+}
+
+.toc-item {
+	font-size: 12px;
+	color: #5c574f;
+	line-height: 1.5;
+	margin-bottom: 4px;
+}
+
+.toc-h1 {
+	font-weight: 650;
+	color: #1c1a17;
+}
+
+.toc-h2 {
+	padding-left: 10px;
+}
+
+.toc-h3 {
+	padding-left: 20px;
+	font-size: 11px;
+	color: #9a948a;
+}
+
+.adj-row {
+	flex-direction: row;
+	margin-bottom: 14px;
+}
+
+.adj-card {
+	flex: 1;
+	background-color: #ffffff;
+	border-radius: 14px;
+	padding: 10px 12px;
+	margin-right: 8px;
+}
+
+.adj-next {
+	margin-right: 0;
+	margin-left: 0;
+}
+
+.adj-label {
+	font-size: 10px;
+	color: #9a948a;
+	margin-bottom: 4px;
+}
+
+.adj-t {
+	font-size: 13px;
+	font-weight: 650;
+	color: #1c1a17;
+	lines: 2;
+	text-overflow: ellipsis;
 }
 
 .author-row {
@@ -707,6 +1144,14 @@ async function onTipPaid(amount: number): Promise<void> {
 	margin-right: 8px;
 }
 
+/* 输入框与白底气泡区分，看起来像可输入区域 */
+.cmt-field-box {
+	background-color: #f4f1ec;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #ebe6df;
+}
+
 .cmt-send {
 	padding: 10px 14px;
 	border-radius: 14px;
@@ -758,6 +1203,49 @@ async function onTipPaid(amount: number): Promise<void> {
 	font-size: 13px;
 	color: #5c574f;
 	line-height: 1.45;
+}
+
+.c-actions {
+	flex-direction: row;
+	margin-top: 6px;
+}
+
+.c-act {
+	font-size: 11px;
+	color: #3db89a;
+	font-weight: 600;
+	margin-top: 4px;
+}
+
+.inline-reply {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top-width: 1px;
+	border-top-color: #ebe6df;
+	border-top-style: solid;
+}
+
+.reply-field {
+	margin-right: 0;
+	margin-bottom: 8px;
+	width: 100%;
+}
+
+.reply-btns {
+	flex-direction: row;
+	align-items: center;
+	justify-content: flex-end;
+}
+
+.cmt-more {
+	align-items: center;
+	padding: 12px 0 4px;
+}
+
+.cmt-more-t {
+	font-size: 13px;
+	color: #3db89a;
+	font-weight: 600;
 }
 
 .reply {
@@ -875,5 +1363,15 @@ async function onTipPaid(amount: number): Promise<void> {
 .act-t {
 	font-size: 10px;
 	color: #9a948a;
+}
+
+.act-t-on {
+	color: #e8897a;
+	font-weight: 650;
+}
+
+.act-t-fav {
+	color: #c9a227;
+	font-weight: 650;
 }
 </style>

@@ -3,6 +3,8 @@
 	<scroll-view
 		:class="scrollClass"
 		scroll-y="true"
+		:scroll-into-view="scrollIntoView"
+		:scroll-with-animation="scrollWithAnimation"
 		:refresher-enabled="enableRefresh"
 		:refresher-triggered="refreshing"
 		refresher-default-style="none"
@@ -57,6 +59,13 @@ const props = defineProps({
 	footerDoneText: { type: String, default: '— 已经到底了 —' },
 	/** 是否展示底栏 */
 	showFooter: { type: Boolean, default: false },
+	/**
+	 * 滚动到指定子节点 id（写文章等键盘顶起时把正文滚入可视区）
+	 * 对应 scroll-view 的 scroll-into-view
+	 */
+	scrollIntoView: { type: String, default: '' },
+	/** 是否带动画滚动到 scrollIntoView */
+	scrollWithAnimation: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['refresh', 'loadmore', 'refresherpulling', 'refresherrestore', 'refresherabort'])

@@ -1,9 +1,9 @@
 <template>
-	<!-- 留言板：头像可进公开主页（address=/user/:uid）或打开外链 -->
+	<!-- 留言板：真实发布/回复；头像可进公开主页或复制外链 -->
 	<view class="x-page-flex">
 		<x-navbar title="留言板">
 			<template v-slot:right>
-				<text class="pub" @click="onPublish">发布</text>
+				<text class="pub" @click="openCompose">发布</text>
 			</template>
 		</x-navbar>
 		<text class="count">{{ totalLabel }}</text>
@@ -20,7 +20,7 @@
 		>
 			<view v-for="item in items" :key="item.id" class="x-card">
 				<view class="row">
-					<view class="av" @click="onAvatar(item)">
+					<view class="av" @click="onAvatar(item.uid, item.address)">
 						<image
 							v-if="item.avatarUrl != null && item.avatarUrl.length > 0"
 							class="av-img"
@@ -29,34 +29,136 @@
 						></image>
 						<text v-else class="av-fall">{{ authorInitial(item.author) }}</text>
 					</view>
-					<text class="author" @click="onAvatar(item)">{{ item.author }}</text>
+					<text class="author" @click="onAvatar(item.uid, item.address)">{{ item.author }}</text>
 					<text class="floor">#{{ item.floor }}</text>
 				</view>
 				<text class="content">{{ item.content }}</text>
-				<view v-if="item.reply != null" class="reply-nest">
-					<text class="reply-t">{{ item.reply }}</text>
+				<view class="c-actions">
+					<text class="c-act" @click="openReply(item)">回复</text>
+				</view>
+				<view v-for="r in item.replies" :key="r.id" class="reply-nest">
+					<view class="reply-head">
+						<view class="rav" @click="onAvatar(r.uid, r.address)">
+							<image
+								v-if="r.avatarUrl != null && r.avatarUrl.length > 0"
+								class="rav-img"
+								:src="r.avatarUrl"
+								mode="aspectFill"
+							></image>
+							<text v-else class="av-fall-sm">{{ authorInitial(r.author) }}</text>
+						</view>
+						<text class="reply-author" @click="onAvatar(r.uid, r.address)">{{ r.nameLine }}</text>
+					</view>
+					<text class="reply-t">{{ r.content }}</text>
+				</view>
+				<view v-if="replyingId == item.id" class="compose-inline">
+					<textarea
+						class="compose-area compose-area-box"
+						v-model="replyDraft"
+						:focus="replyFocus"
+						maxlength="300"
+						:placeholder="replyPlaceholder"
+						placeholder-class="ph"
+						cursor-spacing="100"
+						@blur="replyFocus = false"
+					></textarea>
+					<view class="compose-actions">
+						<view class="x-btn x-btn-ghost" @click="cancelReply">
+							<text class="x-btn-ghost-text">取消</text>
+						</view>
+						<view class="x-btn" @click="onSubmitReply">
+							<text class="x-btn-text">发送</text>
+						</view>
+					</view>
 				</view>
 			</view>
 		</x-scroll-page>
+
+		<!-- 发布主楼弹层 -->
+		<view v-if="composeOpen" class="sheet-mask" @click="closeCompose">
+			<view class="sheet" @click.stop="noop">
+				<text class="sheet-title">发表留言</text>
+				<textarea
+					class="compose-area compose-area-box"
+					v-model="composeDraft"
+					:focus="composeFocus"
+					maxlength="500"
+					placeholder="说点什么…"
+					placeholder-class="ph"
+					auto-height="true"
+					cursor-spacing="100"
+					@blur="composeFocus = false"
+				></textarea>
+				<view class="compose-actions">
+					<view class="x-btn x-btn-ghost" @click="closeCompose">
+						<text class="x-btn-ghost-text">取消</text>
+					</view>
+					<view class="x-btn" @click="onPublish">
+						<text class="x-btn-text">{{ submitting ? '发布中…' : '发布' }}</text>
+					</view>
+				</view>
+			</view>
+		</view>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
  * 留言板：联调 GET/POST /msgboard
- * 头像跳转：有站内 uid（address=/user/:uid）→ 公开主页；否则有 http(s) address → 外链
- * 登录发布时 address 写成 /user/{uid}，便于跳公开主页
+ * - 主楼发布：真实内容；登录时 address=/user/{uid}
+ * - 嵌套回复：pId + replyId + respondent（对齐 Nuxt）
+ * - 头像跳转：站内 uid → 公开主页；http(s) → 复制外链
+ * - 总数取 pagination.total
  */
-import type { GuestbookItem } from '../../types/notify'
+import type { GuestbookItem, GuestbookReply } from '../../types/notify'
 import { fetchMsgboard, postMsgboard } from '../../api/modules/interact'
 import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
 import { goPublicProfile } from '../../utils/nav-profile'
 import { showXToast } from '../../utils/toast'
 
-const items = ref([] as GuestbookItem[])
+/** 留言楼层展示行（nameLine 预拼，避免模板拼接） */
+type GuestbookRow = {
+	id: string
+	floor: number
+	author: string
+	content: string
+	avatarUrl: string
+	uid: number
+	address: string
+	replies: GuestbookReplyRow[]
+}
+
+/** 子回复展示行 */
+type GuestbookReplyRow = {
+	id: string
+	author: string
+	content: string
+	uid: number
+	address: string
+	avatarUrl: string
+	nameLine: string
+}
+
+const items = ref([] as GuestbookRow[])
+const serverTotal = ref(0)
 const totalLabel = ref('共 0 条留言')
 const userStore = useUserStore()
+const composeOpen = ref(false)
+const composeDraft = ref('')
+const composeFocus = ref(false)
+const replyingId = ref('')
+const replyDraft = ref('')
+const replyTargetName = ref('')
+const replyFocus = ref(false)
+const submitting = ref(false)
+
+/** 回复框 placeholder */
+const replyPlaceholder = computed((): string => {
+	const n = replyTargetName.value
+	if (n.length == 0) return '写下回复…'
+	return '回复 @' + n + '…'
+})
 
 const {
 	pageSize,
@@ -74,6 +176,14 @@ const {
 } = useListScroll(20)
 
 /**
+ * 刷新顶部「共 N 条」
+ */
+function refreshTotalLabel(): void {
+	const n = serverTotal.value > 0 ? serverTotal.value : items.value.length
+	totalLabel.value = '共 ' + n + ' 条留言'
+}
+
+/**
  * 昵称首字兜底（无头像时）
  */
 function authorInitial(name: string): string {
@@ -82,16 +192,15 @@ function authorInitial(name: string): string {
 }
 
 /**
- * 头像/昵称点击：站内 uid → 公开主页；外链 address → 打开浏览器
+ * 头像/昵称点击：站内 uid → 公开主页；外链 address → 复制
  */
-function onAvatar(item: GuestbookItem): void {
-	if (item.uid > 0) {
-		goPublicProfile(item.uid)
+function onAvatar(uid: number, address: string): void {
+	if (uid > 0) {
+		goPublicProfile(uid)
 		return
 	}
-	const addr = item.address != null ? item.address.trim() : ''
+	const addr = address != null ? address.trim() : ''
 	if (addr.indexOf('http://') == 0 || addr.indexOf('https://') == 0) {
-		// 跨端统一复制外链，避免 App/小程序 openURL 差异
 		uni.setClipboardData({
 			data: addr,
 			success: () => {
@@ -104,13 +213,59 @@ function onAvatar(item: GuestbookItem): void {
 }
 
 /**
- * 拉取一页留言
+ * 映射子回复展示行
  */
-async function fetchPage(page: number): Promise<GuestbookItem[]> {
+function mapReplyRow(r: GuestbookReply, fallbackId: string): GuestbookReplyRow {
+	const id = r.id.length > 0 ? r.id : fallbackId
+	const av = r.avatarUrl != null ? r.avatarUrl : ''
+	const nameLine =
+		r.respondent.length > 0 ? r.author + ' @ ' + r.respondent : r.author
+	return {
+		id,
+		author: r.author,
+		content: r.content,
+		uid: r.uid,
+		address: r.address,
+		avatarUrl: av,
+		nameLine,
+	}
+}
+
+/**
+ * 映射主楼展示行
+ */
+function mapItemRow(item: GuestbookItem): GuestbookRow {
+	const replies: GuestbookReplyRow[] = []
+	const raw = item.replies != null ? item.replies : []
+	for (let i = 0; i < raw.length; i++) {
+		replies.push(mapReplyRow(raw[i], item.id + '-r' + i))
+	}
+	const av = item.avatarUrl != null ? item.avatarUrl : ''
+	return {
+		id: item.id,
+		floor: item.floor,
+		author: item.author,
+		content: item.content,
+		avatarUrl: av,
+		uid: item.uid,
+		address: item.address,
+		replies,
+	}
+}
+
+/**
+ * 拉取一页留言并映射展示行
+ */
+async function fetchPage(page: number): Promise<{ list: GuestbookRow[]; total: number }> {
 	try {
-		return await fetchMsgboard(page, pageSize)
+		const res = await fetchMsgboard(page, pageSize)
+		const list: GuestbookRow[] = []
+		for (let i = 0; i < res.list.length; i++) {
+			list.push(mapItemRow(res.list[i]))
+		}
+		return { list, total: res.total }
 	} catch (_) {
-		return []
+		return { list: [], total: 0 }
 	}
 }
 
@@ -119,10 +274,11 @@ async function fetchPage(page: number): Promise<GuestbookItem[]> {
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
-	const rows = await fetchPage(1)
-	items.value = rows
-	totalLabel.value = '共 ' + items.value.length + ' 条留言'
-	endRefresh(rows.length, items.value.length)
+	const res = await fetchPage(1)
+	items.value = res.list
+	serverTotal.value = res.total
+	refreshTotalLabel()
+	endRefresh(res.list.length, items.value.length, res.total)
 }
 
 /**
@@ -131,22 +287,76 @@ async function onRefresh(): Promise<void> {
 async function onLoadMore(): Promise<void> {
 	const p = beginLoadMore()
 	if (p <= 0) return
-	const rows = await fetchPage(p)
-	for (let i = 0; i < rows.length; i++) {
-		items.value.push(rows[i])
+	const res = await fetchPage(p)
+	for (let i = 0; i < res.list.length; i++) {
+		items.value.push(res.list[i])
 	}
-	totalLabel.value = '共 ' + items.value.length + ' 条留言'
-	endLoadMore(rows.length, items.value.length)
+	if (res.total > 0) serverTotal.value = res.total
+	refreshTotalLabel()
+	endLoadMore(res.list.length, items.value.length, serverTotal.value)
 }
 
 onMounted(() => {
 	onRefresh()
 })
 
+/** 阻止弹层冒泡关闭（sheet 点击） */
+function noop(): void {}
+
+/** 打开发布弹层并聚焦 */
+function openCompose(): void {
+	if (!userStore.loggedIn) {
+		showXToast('lock', '请先登录', '')
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	composeDraft.value = ''
+	composeOpen.value = true
+	cancelReply()
+	composeFocus.value = false
+	setTimeout(() => {
+		composeFocus.value = true
+	}, 80)
+}
+
+function closeCompose(): void {
+	composeOpen.value = false
+	composeDraft.value = ''
+	composeFocus.value = false
+}
+
 /**
- * 发布留言：登录用户写入 address=/user/{uid}，便于头像跳公开主页
+ * 展开回复某楼并自动聚焦输入框
+ */
+function openReply(item: GuestbookRow): void {
+	if (!userStore.loggedIn) {
+		showXToast('lock', '请先登录', '')
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	replyingId.value = item.id
+	replyTargetName.value = item.author
+	replyDraft.value = ''
+	composeOpen.value = false
+	replyFocus.value = false
+	setTimeout(() => {
+		replyFocus.value = true
+	}, 50)
+}
+
+function cancelReply(): void {
+	replyingId.value = ''
+	replyDraft.value = ''
+	replyTargetName.value = ''
+	replyFocus.value = false
+}
+
+/**
+ * 发布主楼留言
  */
 async function onPublish(): Promise<void> {
+	const text = composeDraft.value.trim()
+	if (text.length == 0 || submitting.value) return
 	if (!userStore.loggedIn) {
 		showXToast('lock', '请先登录', '')
 		uni.navigateTo({ url: '/pages/login/login' })
@@ -154,15 +364,58 @@ async function onPublish(): Promise<void> {
 	}
 	const uid = userStore.profile.id
 	const name = userStore.profile.nickname
+	const avatar = userStore.profile.avatar
+	submitting.value = true
 	try {
 		await postMsgboard({
 			name: name.length > 0 ? name : '访客',
-			comment: '来自 blog-x 的留言',
+			comment: text,
 			address: uid > 0 ? '/user/' + uid : '',
+			avatar: avatar.length > 0 ? avatar : '',
 		})
 		showXToast('message', '已发布', '')
+		closeCompose()
 		await onRefresh()
-	} catch (_) {}
+	} catch (_) {
+	} finally {
+		submitting.value = false
+	}
+}
+
+/**
+ * 提交楼中回复
+ */
+async function onSubmitReply(): Promise<void> {
+	const text = replyDraft.value.trim()
+	const parentId = replyingId.value
+	if (text.length == 0 || parentId.length == 0 || submitting.value) return
+	if (!userStore.loggedIn) {
+		showXToast('lock', '请先登录', '')
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	const uid = userStore.profile.id
+	const name = userStore.profile.nickname
+	const avatar = userStore.profile.avatar
+	const pIdNum = parseInt(parentId, 10)
+	submitting.value = true
+	try {
+		await postMsgboard({
+			name: name.length > 0 ? name : '访客',
+			comment: text,
+			address: uid > 0 ? '/user/' + uid : '',
+			avatar: avatar.length > 0 ? avatar : '',
+			pId: isNaN(pIdNum) ? 0 : pIdNum,
+			replyId: parentId,
+			respondent: replyTargetName.value,
+		})
+		showXToast('message', '回复成功', '')
+		cancelReply()
+		await onRefresh()
+	} catch (_) {
+	} finally {
+		submitting.value = false
+	}
 }
 </script>
 
@@ -209,6 +462,12 @@ async function onPublish(): Promise<void> {
 	color: #c06a45;
 }
 
+.av-fall-sm {
+	font-size: 11px;
+	font-weight: 600;
+	color: #c06a45;
+}
+
 .author {
 	flex: 1;
 	font-size: 13px;
@@ -227,6 +486,17 @@ async function onPublish(): Promise<void> {
 	line-height: 1.45;
 }
 
+.c-actions {
+	flex-direction: row;
+	margin-top: 6px;
+}
+
+.c-act {
+	font-size: 11px;
+	color: #3db89a;
+	font-weight: 600;
+}
+
 .reply-nest {
 	margin-top: 8px;
 	margin-left: 8px;
@@ -235,8 +505,101 @@ async function onPublish(): Promise<void> {
 	border-radius: 10px;
 }
 
+.reply-head {
+	flex-direction: row;
+	align-items: center;
+	margin-bottom: 4px;
+}
+
+.rav {
+	width: 22px;
+	height: 22px;
+	border-radius: 11px;
+	background-color: #ffe8d6;
+	align-items: center;
+	justify-content: center;
+	margin-right: 6px;
+	overflow: hidden;
+}
+
+.rav-img {
+	width: 22px;
+	height: 22px;
+}
+
+.reply-author {
+	flex: 1;
+	font-size: 11px;
+	font-weight: 600;
+	color: #1c1a17;
+}
+
 .reply-t {
 	font-size: 12px;
 	color: #5c574f;
+	line-height: 1.4;
+}
+
+.compose-inline {
+	margin-top: 10px;
+}
+
+.compose-area {
+	width: 100%;
+	min-height: 72px;
+	border-radius: 12px;
+	background-color: #ffffff;
+	padding: 10px 12px;
+	font-size: 13px;
+	color: #1c1a17;
+	margin-bottom: 8px;
+}
+
+/* 与卡片/弹层底色区分，明确是输入框 */
+.compose-area-box {
+	background-color: #ffffff;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #d9d3c9;
+}
+
+.compose-inline .compose-area-box {
+	background-color: #f4f1ec;
+	border-color: #ebe6df;
+}
+
+.compose-actions {
+	flex-direction: row;
+	justify-content: flex-end;
+	align-items: center;
+}
+
+.ph {
+	color: #9a948a;
+}
+
+.sheet-mask {
+	position: fixed;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	background-color: rgba(28, 26, 23, 0.45);
+	justify-content: flex-end;
+	z-index: 80;
+}
+
+.sheet {
+	background-color: #f4f1ec;
+	border-top-left-radius: 18px;
+	border-top-right-radius: 18px;
+	padding: 16px 16px 28px;
+}
+
+.sheet-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: #1c1a17;
+	margin-bottom: 12px;
 }
 </style>

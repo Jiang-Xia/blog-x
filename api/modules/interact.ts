@@ -7,12 +7,21 @@ import type { FriendLink, GuestbookItem, InboxItem } from '../../types/notify'
 import type { ArticleSummary } from '../../types/article'
 import { mapArticleSummary } from '../adapters/article'
 
-/**
- * 切换点赞
- */
-export function toggleLike(articleId: string | number): Promise<any> {
-	return post('/like', { articleId: '' + articleId })
-}
+	/**
+	 * 点赞 / 取消点赞（对齐 Nuxt：须传 status 0|1 与 uid；缺 status 会被服务端当成取消）
+	 */
+	export function toggleLike(data: {
+		articleId: string | number
+		uid: number
+		/** 1=点赞，0=取消 */
+		status: number
+	}): Promise<any> {
+		return post('/like', {
+			articleId: '' + data.articleId,
+			uid: data.uid,
+			status: data.status,
+		})
+	}
 
 /**
  * 是否已赞
@@ -92,28 +101,49 @@ export function addReply(data: {
 }
 
 /**
- * 留言列表
+ * 留言列表（含服务端 total，供「共 N 条」）
  */
-export async function fetchMsgboard(page = 1, pageSize = 30): Promise<GuestbookItem[]> {
+export async function fetchMsgboard(
+	page = 1,
+	pageSize = 30,
+): Promise<{ list: GuestbookItem[]; total: number }> {
 	const res = await get('/msgboard', { page, pageSize })
-	return mapGuestbookItems(res)
+	const list = mapGuestbookItems(res)
+	let total = list.length
+	if (res != null && res.pagination != null && res.pagination.total != null) {
+		total = Number(res.pagination.total)
+	} else if (res != null && res.total != null) {
+		total = Number(res.total)
+	}
+	return { list, total: isNaN(total) ? list.length : total }
 }
 
 /**
- * 发表留言
+ * 发表留言 / 回复（对齐 Nuxt：回复带 pId + replyId + respondent）
  */
 export function postMsgboard(data: {
 	name: string
 	comment: string
 	eamil?: string
 	address?: string
+	avatar?: string
+	pId?: number
+	replyId?: number | string
+	respondent?: string
 }): Promise<any> {
-	return post('/msgboard', {
+	const body: Record<string, any> = {
 		name: data.name,
 		comment: data.comment,
 		eamil: data.eamil != null ? data.eamil : '',
 		address: data.address != null ? data.address : '',
-	})
+		avatar: data.avatar != null ? data.avatar : '',
+	}
+	if (data.pId != null && data.pId > 0) body.pId = data.pId
+	if (data.replyId != null) body.replyId = data.replyId
+	if (data.respondent != null && data.respondent.length > 0) {
+		body.respondent = data.respondent
+	}
+	return post('/msgboard', body)
 }
 
 /**

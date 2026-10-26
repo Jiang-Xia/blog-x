@@ -4,11 +4,12 @@
  */
 import type { PublicRpgCard, UserProfile } from '../../types/user'
 import type {
-	FriendLink,
-	GuestbookItem,
-	InboxItem,
-	NotifyItem,
-} from '../../types/notify'
+		FriendLink,
+		GuestbookItem,
+		GuestbookReply,
+		InboxItem,
+		NotifyItem,
+	} from '../../types/notify'
 import { parseUidFromAddress } from '../../utils/nav-profile'
 import { resolveStaticUrl } from '../../utils/static-url'
 
@@ -34,15 +35,58 @@ import { resolveStaticUrl } from '../../utils/static-url'
 	}
 
 /**
+ * 从 loadout 拼宠物展示名
+ */
+function petLabelOf(loadout: any): string {
+	if (loadout == null || loadout.pet == null) return ''
+	const pet = loadout.pet
+	const nick = pet.nickname != null ? ('' + pet.nickname).trim() : ''
+	if (nick.length > 0) return nick
+	const cfg = pet.config
+	if (cfg != null && cfg.name != null) return '' + cfg.name
+	return ''
+}
+
+/**
  * 公开 RPG → PublicRpgCard
+ * 对齐 Nest PublicRpgStatusVo：level / reputation / totalSignDays / loadout
+ * 亦可吞 /user/public 整包（含 completedAchievements）
  */
 export function mapPublicRpg(raw: any): PublicRpgCard {
+	const loadout = raw != null ? raw.loadout : null
+	const title = loadout != null ? loadout.title : null
+	const frame = loadout != null ? loadout.avatarFrame : null
+	const levelRaw = raw != null && raw.level != null ? Number(raw.level) : 1
+	const repRaw = raw != null && raw.reputation != null ? Number(raw.reputation) : 0
+	const signRaw =
+		raw != null && raw.totalSignDays != null
+			? Number(raw.totalSignDays)
+			: raw != null && raw.signDays != null
+				? Number(raw.signDays)
+				: 0
+	const achRaw =
+		raw != null && raw.completedAchievements != null && Array.isArray(raw.completedAchievements)
+			? raw.completedAchievements
+			: []
+	const achievements: string[] = []
+	for (let i = 0; i < achRaw.length && achievements.length < 6; i++) {
+		const a = achRaw[i]
+		const name =
+			a != null && a.name != null
+				? '' + a.name
+				: a != null && a.title != null
+					? '' + a.title
+					: ''
+		if (name.length > 0) achievements.push(name)
+	}
 	return {
-		titleName: raw != null && raw.titleName != null ? '' + raw.titleName : '旅行者',
-		guildName: raw != null && raw.guildName != null ? '' + raw.guildName : '暂无公会',
-		rankLabel: raw != null && raw.rankLabel != null ? '' + raw.rankLabel : '',
-		petLabel: raw != null && raw.petLabel != null ? '' + raw.petLabel : '',
-		streakDays: raw != null && raw.signDays != null ? Number(raw.signDays) : 0,
+		level: isNaN(levelRaw) || levelRaw < 1 ? 1 : levelRaw,
+		reputation: isNaN(repRaw) ? 0 : repRaw,
+		titleName: title != null && title.name != null ? '' + title.name : '',
+		frameName: frame != null && frame.name != null ? '' + frame.name : '',
+		petLabel: petLabelOf(loadout),
+		streakDays: isNaN(signRaw) ? 0 : signRaw,
+		achievements,
 	}
 }
 
@@ -118,7 +162,24 @@ export function mapNotifyItems(raw: any): NotifyItem[] {
 }
 
 /**
- * 留言 → GuestbookItem[]（Nest：{ list }，扁平 pId=0 为主楼）
+ * 单条留言子回复映射
+ */
+function mapGuestbookReply(c: any): GuestbookReply {
+	const address = c != null && c.address != null ? ('' + c.address).trim() : ''
+	const avatarRaw = c != null && c.avatar != null ? '' + c.avatar : ''
+	return {
+		id: c != null && c.id != null ? '' + c.id : '',
+		author: c != null && c.name != null ? '' + c.name : '访客',
+		content: c != null && c.comment != null ? '' + c.comment : '',
+		uid: parseUidFromAddress(address),
+		address,
+		avatarUrl: avatarRaw.length > 0 ? resolveStaticUrl(avatarRaw) : '',
+		respondent: c != null && c.respondent != null ? '' + c.respondent : '',
+	}
+}
+
+/**
+ * 留言 → GuestbookItem[]（Nest：{ list }，扁平 pId=0 为主楼；子回复全部挂入 replies）
  */
 export function mapGuestbookItems(raw: any): GuestbookItem[] {
 	const list: GuestbookItem[] = []
@@ -129,12 +190,12 @@ export function mapGuestbookItems(raw: any): GuestbookItem[] {
 		const pId = m.pId != null ? Number(m.pId) : 0
 		if (pId > 0) continue
 		floor++
-		let reply: string | undefined
+		const rootId = m.id != null ? Number(m.id) : 0
+		const replies: GuestbookReply[] = []
 		for (let j = 0; j < arr.length; j++) {
 			const c = arr[j]
-			if (Number(c.pId) === Number(m.id)) {
-				reply = (c.name != null ? c.name + '：' : '') + (c.comment != null ? c.comment : '')
-				break
+			if (Number(c.pId) === rootId && rootId > 0) {
+				replies.push(mapGuestbookReply(c))
 			}
 		}
 		const avatarRaw = m.avatar != null ? '' + m.avatar : ''
@@ -147,7 +208,7 @@ export function mapGuestbookItems(raw: any): GuestbookItem[] {
 			avatarUrl: avatarRaw.length > 0 ? resolveStaticUrl(avatarRaw) : '',
 			uid: parseUidFromAddress(address),
 			address,
-			reply,
+			replies,
 		})
 	}
 	return list

@@ -12,6 +12,19 @@ export type NotifyItem = {
 	kind: string
 }
 
+/** 留言板子回复（pId>0） */
+export type GuestbookReply = {
+	id: string
+	author: string
+	content: string
+	/** 站内 uid（address 解析）；0=无 */
+	uid: number
+	address: string
+	avatarUrl?: string
+	/** 被回复者昵称（respondent） */
+	respondent: string
+}
+
 export type GuestbookItem = {
 	id: string
 	floor: number
@@ -26,7 +39,8 @@ export type GuestbookItem = {
 	uid: number
 	/** 用户填写的个人主页地址（外链或 /user/:uid） */
 	address: string
-	reply?: string
+	/** 嵌套回复列表（同页扁平 list 中 pId=本楼 id） */
+	replies: GuestbookReply[]
 }
 
 export type FriendLink = {

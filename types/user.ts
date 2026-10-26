@@ -38,11 +38,20 @@
 		avatar?: string
 	}
 
-/** 公开主页 RPG 展示块 */
+/** 公开主页 RPG 展示块（对齐 PublicRpgStatusVo /user/public loadout） */
 export type PublicRpgCard = {
+	/** 冒险等级 */
+	level: number
+	/** 声望 */
+	reputation: number
+	/** 装备称号名（loadout.title.name） */
 	titleName: string
-	guildName: string
-	rankLabel: string
+	/** 头像框名（loadout.avatarFrame.name） */
+	frameName: string
+	/** 宠物展示名（nickname 或 config.name） */
 	petLabel: string
+	/** 累计签到天数（totalSignDays） */
 	streakDays: number
+	/** 已完成成就名（最多若干条，来自 /user/public） */
+	achievements: string[]
 }

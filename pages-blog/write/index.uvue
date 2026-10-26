@@ -7,11 +7,13 @@
 			</template>
 		</x-navbar>
 
-		<!-- 表单页仅纵向滚动，不启下拉刷新/触底（避免编辑中误触发） -->
+		<!-- 表单页仅纵向滚动，不启下拉刷新/触底；正文聚焦时 scroll-into-view 顶起避开键盘 -->
 		<x-scroll-page
 			:enable-refresh="false"
 			:enable-load-more="false"
 			:show-footer="false"
+			:scroll-into-view="scrollInto"
+			:scroll-with-animation="true"
 		>
 			<view class="x-card field">
 				<input
@@ -118,7 +120,7 @@
 			</view>
 
 			<!-- Markdown 工具栏（uvue 无 md-editor，用插入语法 + 插图上传） -->
-			<view class="x-card md-wrap">
+			<view id="write-body" class="x-card md-wrap">
 				<view class="md-bar">
 					<view class="md-chip" @click="insertMd('**', '**', '加粗')">
 						<text class="md-chip-t">B</text>
@@ -152,11 +154,18 @@
 					placeholder="正文（Markdown；工具栏可插入格式/图片）"
 					placeholder-class="ph"
 					maxlength="20000"
+					:adjust-position="true"
+					:cursor-spacing="bodyCursorSpacing"
+					@focus="onBodyFocus"
+					@blur="onBodyBlur"
 				/>
 				<scroll-view v-else class="preview-box" scroll-y="true">
-					<text class="preview-t">{{ content.length > 0 ? content : '（暂无正文）' }}</text>
+					<text class="preview-t">{{ bodyPreviewText }}</text>
 				</scroll-view>
 			</view>
+
+			<!-- 键盘顶起时留白，便于把正文滚到可视区上方 -->
+			<view :class="bodyFocused ? 'kb-pad kb-pad-on' : 'kb-pad'"></view>
 
 			<view class="actions">
 				<view class="x-btn x-btn-ghost flex1" @click="onSubmit('draft')">
@@ -206,9 +215,19 @@ const schedTime = ref('12:00')
 const previewing = ref(false)
 const submitting = ref(false)
 const uploading = ref(false)
+/** 正文聚焦：滚到 #write-body 并加大底部留白，避免键盘挡住 */
+const bodyFocused = ref(false)
+const scrollInto = ref('')
+/** 光标与键盘间距（px） */
+const bodyCursorSpacing = 120
 
 const categories = ref([] as CategoryOption[])
 const tags = ref([] as TagWallItem[])
+
+/** 预览占位文案（模板勿三元拼接） */
+const bodyPreviewText = computed((): string => {
+	return content.value.length > 0 ? content.value : '（暂无正文）'
+})
 
 /** 封面展示完整 URL */
 const coverDisplay = computed((): string => {
@@ -411,6 +430,24 @@ function onSchedTimeChange(e: any): void {
  */
 function togglePreview(): void {
 	previewing.value = !previewing.value
+	if (previewing.value) onBodyBlur()
+}
+
+/**
+ * 正文聚焦：先清空再设 scroll-into-view，把大正文滚到可视区顶部附近
+ */
+function onBodyFocus(): void {
+	bodyFocused.value = true
+	scrollInto.value = ''
+	setTimeout(() => {
+		scrollInto.value = 'write-body'
+	}, 40)
+}
+
+/** 正文失焦：收起键盘留白 */
+function onBodyBlur(): void {
+	bodyFocused.value = false
+	scrollInto.value = ''
 }
 
 /**
@@ -744,10 +781,24 @@ async function onSubmit(submitStatus: string): Promise<void> {
 
 .ta {
 	width: 100%;
-	min-height: 200px;
+	min-height: 280px;
 	font-size: 14px;
 	color: #1c1a17;
 	line-height: 1.5;
+	background-color: #f4f1ec;
+	border-radius: 10px;
+	padding: 10px 12px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #ebe6df;
+}
+
+.kb-pad {
+	height: 24px;
+}
+
+.kb-pad-on {
+	height: 280px;
 }
 
 .preview-box {
