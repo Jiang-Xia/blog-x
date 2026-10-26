@@ -90,15 +90,17 @@ export function lotteryDraw(count = 1, currency: 'ticket' | 'currency' = 'ticket
 }
 
 /**
- * 排行榜
+ * 排行榜（对齐 Nuxt getRpgLeaderboard；默认总榜 + 经验）
+ * @param myUid 用于高亮「我」；0 不标记
  */
 export async function fetchLeaderboard(
 	type: string = 'exp',
-	limit = 20,
-	period: string = 'week',
+	limit = 50,
+	period: string = 'total',
+	myUid: number = 0,
 ): Promise<RankRow[]> {
 	const res = await get('/rpg/leaderboard', { type, limit, period })
-	return mapRankRows(res)
+	return mapRankRows(res, myUid, type)
 }
 
 /**

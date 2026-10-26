@@ -33,7 +33,9 @@
 
 - [ ] 首页文章列表来自 `POST /article/list`（非仅 mock 三篇）
 - [ ] 首页 / 收藏 / 搜索 / 留言 / 消息等长列表可纵向滚动；下拉刷新生效；有分页的上滑能加载更多
-- [ ] 详情 `GET /article/info`；赞/藏打到 `/like` `/collect`
+- [ ] 详情 `GET /article/info`；赞/藏打到 `/like` `/collect`；无 contentHtml 时经 uni-cmark `md2html` 渲染（非手写解析）
+- [ ] 详情评论/回复/作者头像 → `/pages-blog/profile/index?uid=`；留言板/排行榜头像同理
+- [ ] 排行榜：周期(总/赛季/周/月) × 维度(经验/声望/钻石/等级/签到)，对齐 Nuxt
 - [ ] 详情发表评论 `POST /comment/create`；未登录引导登录
 - [ ] 收件箱回复 `POST /reply/create`（parentId=评论 id，replyUid=评论者）
 - [ ] 搜索带 `title` 参数有结果或空列表；标签墙点击带 `q` 进搜索

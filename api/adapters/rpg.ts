@@ -109,22 +109,47 @@ export function mapLotteryCells(raw: any): LotteryCell[] {
 }
 
 /**
- * 排行榜 → RankRow[]（Nest：裸数组）
+ * 按维度拼分数展示文案（对齐 Nuxt LeaderboardPanel.getScoreText）
  */
-export function mapRankRows(raw: any, myUid: number = 0): RankRow[] {
+function scoreLabelOf(r: any, type: string): string {
+	if (r != null && r.score != null) return '' + Number(r.score)
+	switch (type) {
+		case 'exp':
+			return (r.exp != null ? Number(r.exp) : 0) + ' 经验'
+		case 'reputation':
+			return (r.reputation != null ? Number(r.reputation) : 0) + ' 声望'
+		case 'currency':
+			return (r.currency != null ? Number(r.currency) : 0) + ' 钻石'
+		case 'signDays':
+			return (r.totalSignDays != null ? Number(r.totalSignDays) : 0) + ' 天'
+		case 'level':
+			return 'LV' + (r.level != null ? Number(r.level) : 1)
+		default:
+			return r.score != null ? '' + Number(r.score) : '0'
+	}
+}
+
+/**
+ * 排行榜 → RankRow[]（Nest：裸数组）
+ * @param type 当前维度，用于无 score 时拼单位
+ */
+export function mapRankRows(raw: any, myUid: number = 0, type: string = 'exp'): RankRow[] {
 	const list: RankRow[] = []
 	const arr = Array.isArray(raw) ? raw : []
 	for (let i = 0; i < arr.length; i++) {
 		const r = arr[i]
 		const uid = r.uid != null ? Number(r.uid) : 0
 		const avatarRaw = r.avatar != null ? '' + r.avatar : ''
+		const score = r.score != null ? Number(r.score) : 0
 		list.push({
 			rank: r.rank != null ? Number(r.rank) : i + 1,
+			uid: isNaN(uid) ? 0 : uid,
 			name: r.nickname != null ? '' + r.nickname : '用户',
 			icon: 'paw',
 			avatarUrl: avatarRaw.length > 0 ? resolveStaticUrl(avatarRaw) : '',
 			level: r.level != null ? Number(r.level) : 1,
-			score: r.score != null ? Number(r.score) : 0,
+			score,
+			scoreLabel: scoreLabelOf(r, type),
 			isMe: myUid > 0 && uid === myUid,
 		})
 	}

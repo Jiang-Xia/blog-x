@@ -225,7 +225,9 @@ function goProfile(): void {
 		goLogin()
 		return
 	}
-	uni.navigateTo({ url: '/pages-blog/profile/index' })
+	const id = userStore.profile.id
+	const q = id > 0 ? '?uid=' + id : ''
+	uni.navigateTo({ url: '/pages-blog/profile/index' + q })
 }
 
 function goAudit(): void {

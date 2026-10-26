@@ -19,6 +19,13 @@ export type GuestbookItem = {
 	content: string
 	/** 真实头像完整 URL（无则空，UI 用首字兜底） */
 	avatarUrl?: string
+	/**
+	 * 站内用户 uid（从 address 解析 /user/:uid；0=无法跳公开主页）
+	 * 留言表无 uid 列，靠 address 约定
+	 */
+	uid: number
+	/** 用户填写的个人主页地址（外链或 /user/:uid） */
+	address: string
 	reply?: string
 }
 

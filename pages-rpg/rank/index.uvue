@@ -1,15 +1,25 @@
 <template>
-	<!-- 排行榜：真实头像 + 分段切换 type -->
+	<!-- 排行榜：周期 + 维度双 Tab，对齐 Nuxt LeaderboardPanel；头像进公开主页 -->
 	<view class="x-page-flex">
 		<x-navbar title="排行榜"></x-navbar>
 		<view class="x-seg">
 			<view
-				v-for="(s, i) in segs"
-				:key="s"
-				:class="segIndex === i ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
-				@click="setSeg(i)"
+				v-for="(s, i) in periodLabels"
+				:key="'p' + i"
+				:class="periodIndex === i ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
+				@click="setPeriod(i)"
 			>
-				<text :class="segIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
+				<text :class="periodIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
+			</view>
+		</view>
+		<view class="x-seg type-seg">
+			<view
+				v-for="(s, i) in typeLabels"
+				:key="'t' + i"
+				:class="typeIndex === i ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
+				@click="setType(i)"
+			>
+				<text :class="typeIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
 			</view>
 		</view>
 		<x-scroll-page
@@ -22,26 +32,29 @@
 			@refresherrestore="onRefresherRestore"
 			@refresherabort="onRefresherAbort"
 		>
+			<view v-if="rows.length == 0 && !refreshing" class="empty">
+				<text class="x-meta">暂无排行数据</text>
+			</view>
 			<view
 				v-for="row in rows"
-				:key="row.rank"
-				:class="row.isMe ? 'x-card row me' : 'x-card row'"
+				:key="row.rank + '-' + row.uid"
+				:class="rowClass(row)"
 			>
-				<text class="rank">#{{ row.rank }}</text>
-				<view class="av">
+				<text :class="rankClass(row.rank)">{{ rankText(row.rank) }}</text>
+				<view class="av" @click="onAvatar(row.uid)">
 					<image
 						v-if="row.avatarUrl != null && row.avatarUrl.length > 0"
 						class="av-img"
 						:src="row.avatarUrl"
 						mode="aspectFill"
 					></image>
-					<x-icon v-else :name="row.icon" :size="20" color="#1c1a17"></x-icon>
+					<text v-else class="av-fall">{{ nameInitial(row.name) }}</text>
 				</view>
-				<view class="body">
+				<view class="body" @click="onAvatar(row.uid)">
 					<text class="name">{{ row.name }}{{ row.isMe ? '（我）' : '' }}</text>
-					<text class="x-meta">Lv.{{ row.level }}</text>
+					<text class="x-meta">LV{{ row.level }}</text>
 				</view>
-				<text class="score">{{ row.score }}</text>
+				<text class="score">{{ row.scoreLabel }}</text>
 			</view>
 		</x-scroll-page>
 	</view>
@@ -49,17 +62,25 @@
 
 <script setup lang="ts">
 /**
- * 排行榜：联调 GET /rpg/leaderboard；头像用接口 avatar 字段
- * 滚动：接口一次返回 TopN，仅下拉刷新 + 纵向滚动
+ * 排行榜：联调 GET /rpg/leaderboard
+ * 展示对齐 Nuxt RpgLeaderboardPanel：周期(总/赛季/周/月) × 维度(经验/声望/钻石/等级/签到)
+ * 头像/昵称跳转公开主页
  */
 import type { RankRow } from '../../types/rpg'
 import { fetchLeaderboard } from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
+import { useUserStore } from '../../store/user'
+import { goPublicProfile } from '../../utils/nav-profile'
 
-const segs = ['本周经验', '钻石', '连续签到']
-const types = ['exp', 'currency', 'signDays']
-const segIndex = ref(0)
+const periodLabels = ['总榜', '赛季榜', '周榜', '月榜']
+const periodKeys = ['total', 'season', 'week', 'month']
+const typeLabels = ['经验', '声望', '钻石', '等级', '签到']
+const typeKeys = ['exp', 'reputation', 'currency', 'level', 'signDays']
+
+const periodIndex = ref(0)
+const typeIndex = ref(0)
 const rows = ref([] as RankRow[])
+const userStore = useUserStore()
 
 const {
 	refreshing,
@@ -70,24 +91,79 @@ const {
 	onRefresherAbort,
 	beginRefresh,
 	endRefresh,
-} = useListScroll(20)
+} = useListScroll(50)
 
 /**
- * 切换分段并刷新
+ * 行样式：本人高亮 / Top3
  */
-function setSeg(i: number): void {
-	segIndex.value = i
+function rowClass(row: RankRow): string {
+	let c = 'x-card row'
+	if (row.isMe == true) c = c + ' me'
+	if (row.rank <= 3) c = c + ' top'
+	return c
+}
+
+/**
+ * 名次样式
+ */
+function rankClass(rank: number): string {
+	if (rank == 1) return 'rank gold'
+	if (rank == 2) return 'rank silver'
+	if (rank == 3) return 'rank bronze'
+	return 'rank'
+}
+
+/**
+ * Top3 奖牌文案，其余数字
+ */
+function rankText(rank: number): string {
+	if (rank == 1) return '🥇'
+	if (rank == 2) return '🥈'
+	if (rank == 3) return '🥉'
+	return '#' + rank
+}
+
+/**
+ * 昵称首字兜底
+ */
+function nameInitial(name: string): string {
+	if (name == null || name.length == 0) return '?'
+	return name.substring(0, 1)
+}
+
+/**
+ * 切换周期并刷新
+ */
+function setPeriod(i: number): void {
+	periodIndex.value = i
 	onRefresh()
 }
 
 /**
- * 按分段拉榜
+ * 切换维度并刷新
+ */
+function setType(i: number): void {
+	typeIndex.value = i
+	onRefresh()
+}
+
+/**
+ * 头像/昵称 → 公开主页
+ */
+function onAvatar(uid: number): void {
+	goPublicProfile(uid)
+}
+
+/**
+ * 按当前 Tab 拉榜（limit=50，与 Nuxt RPG 页一致）
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
-	const type = types[segIndex.value]
+	const type = typeKeys[typeIndex.value]
+	const period = periodKeys[periodIndex.value]
+	const myUid = userStore.loggedIn ? userStore.profile.id : 0
 	try {
-		rows.value = await fetchLeaderboard(type, 20, 'week')
+		rows.value = await fetchLeaderboard(type, 50, period, myUid)
 	} catch (_) {
 		rows.value = []
 	}
@@ -102,6 +178,11 @@ onMounted(() => {
 <style>
 @import '../../styles/x-base.css';
 
+.type-seg {
+	margin-top: 0;
+	margin-bottom: 8px;
+}
+
 .row {
 	flex-direction: row;
 	align-items: center;
@@ -113,11 +194,28 @@ onMounted(() => {
 	border-color: #3db89a;
 }
 
+.top {
+	background-color: rgba(246, 217, 168, 0.28);
+}
+
 .rank {
 	font-size: 14px;
 	font-weight: 700;
 	color: #9a948a;
 	width: 40px;
+	text-align: center;
+}
+
+.gold {
+	color: #c9a227;
+}
+
+.silver {
+	color: #8a8580;
+}
+
+.bronze {
+	color: #b87333;
 }
 
 .av {
@@ -136,8 +234,10 @@ onMounted(() => {
 	height: 36px;
 }
 
-.em {
-	font-size: 18px;
+.av-fall {
+	font-size: 14px;
+	font-weight: 700;
+	color: #5c574f;
 }
 
 .body {
@@ -151,8 +251,13 @@ onMounted(() => {
 }
 
 .score {
-	font-size: 14px;
+	font-size: 13px;
 	font-weight: 700;
 	color: #2a8f76;
+}
+
+.empty {
+	padding: 24px 0;
+	align-items: center;
 }
 </style>

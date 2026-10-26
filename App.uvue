@@ -6,6 +6,7 @@
 	import { useUserStore } from './store/user'
 	import { onAuthCleared } from './utils/auth-events'
 	import { loadTablerFonts } from './utils/load-tabler-fonts'
+	import { ensureMarkdownReady } from './utils/markdown'
 
 	// #ifdef APP-ANDROID || APP-HARMONY
 	let firstBackTime = 0
@@ -14,6 +15,8 @@
 	onLaunch(() => {
 		// 小程序须在 App.onLaunch 调 loadFontFace 且 global:true，图标才全局可见
 		loadTablerFonts()
+		// uni-cmark：Web/小程序加载 WASM；详情 Markdown→HTML 依赖此初始化
+		ensureMarkdownReady().catch(() => {})
 		const userStore = useUserStore()
 		// request 层 clearToken（401）时同步 Pinia，避免 UI 仍显示已登录
 		onAuthCleared(() => {

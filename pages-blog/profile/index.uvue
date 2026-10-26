@@ -1,5 +1,5 @@
 <template>
-	<!-- 公开主页：资料 + RPG 公开信息 + 文章 -->
+	<!-- 公开主页：资料 + RPG 公开信息 + 文章；路由 ?uid= -->
 	<view class="x-page-flex">
 		<x-navbar title="主页"></x-navbar>
 		<x-scroll-page
@@ -52,6 +52,9 @@
 				:show-stat="false"
 				@open="goDetail"
 			></x-article-card>
+			<view v-if="articleList.length == 0 && uid > 0" class="empty">
+				<text class="x-meta">暂无公开文章</text>
+			</view>
 		</x-scroll-page>
 	</view>
 </template>
@@ -59,7 +62,7 @@
 <script setup lang="ts">
 /**
  * 公开主页：联调 /user/public/:uid + /rpg/public/:uid/status + 文章列表
- * 滚动：资料区随列表滚；文章分页加载更多
+ * 路由：?uid= 必填（对齐 Nuxt /user/[uid]）；无参时回退当前登录用户
  */
 import type { ArticleSummary } from '../../types/article'
 import type { PublicRpgCard } from '../../types/user'
@@ -81,10 +84,11 @@ const emptyPublicRpg: PublicRpgCard = {
 const userStore = useUserStore()
 const nickname = ref('')
 const bio = ref('')
-/** 公开主页头像（优先公开资料 avatar，其次本人 Pinia） */
+/** 公开主页头像 */
 const avatarUrl = ref('')
 const rpg = ref(emptyPublicRpg)
 const articleList = ref([] as ArticleSummary[])
+/** 目标用户 uid（来自路由或本人） */
 const uid = ref(0)
 const articleTotal = ref(-1)
 
@@ -104,25 +108,18 @@ const {
 } = useListScroll(10)
 
 /**
- * 解析 uid（优先 Pinia）
+ * 解析目标 uid：优先路由 query，其次本人 Pinia
  */
-async function resolveUid(): Promise<void> {
-	if (!userStore.loggedIn) return
-	if (userStore.profile.id > 0) {
-		uid.value = userStore.profile.id
-		nickname.value = userStore.profile.nickname
-		bio.value = userStore.profile.bio
-		avatarUrl.value =
-			userStore.profile.avatarUrl != null ? '' + userStore.profile.avatarUrl : ''
+function applyRouteUid(options: any): void {
+	const raw = options != null && options['uid'] != null ? '' + options['uid'] : ''
+	const n = parseInt(raw, 10)
+	if (!isNaN(n) && n > 0) {
+		uid.value = n
 		return
 	}
-	try {
-		const me = await userStore.refreshProfile()
-		nickname.value = me.nickname
-		bio.value = me.bio
-		avatarUrl.value = me.avatarUrl != null ? '' + me.avatarUrl : ''
-		uid.value = me.id
-	} catch (_) {}
+	if (userStore.loggedIn && userStore.profile.id > 0) {
+		uid.value = userStore.profile.id
+	}
 }
 
 /**
@@ -138,18 +135,16 @@ async function fetchArticles(page: number): Promise<{ list: ArticleSummary[]; to
 			{ page, pageSize },
 			{ silent: true },
 		)
-		const arr = res != null && res.list != null ? res.list : Array.isArray(res) ? res : []
+		const arr = res != null && res.list != null ? res.list : []
 		const out: ArticleSummary[] = []
 		for (let i = 0; i < arr.length; i++) {
 			out.push(mapArticleSummary(arr[i]))
 		}
-		let total = out.length
+		let total = -1
 		if (res != null && res.pagination != null && res.pagination.total != null) {
 			total = Number(res.pagination.total)
 		} else if (res != null && res.total != null) {
 			total = Number(res.total)
-		} else {
-			total = -1
 		}
 		return { list: out, total }
 	} catch (_) {
@@ -162,7 +157,9 @@ async function fetchArticles(page: number): Promise<{ list: ArticleSummary[]; to
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
-	await resolveUid()
+	if (uid.value <= 0 && userStore.loggedIn && userStore.profile.id > 0) {
+		uid.value = userStore.profile.id
+	}
 	if (uid.value > 0) {
 		try {
 			const pub = await fetchPublicProfile(uid.value)
@@ -199,7 +196,8 @@ async function onLoadMore(): Promise<void> {
 	endLoadMore(res.list.length, articleList.value.length, articleTotal.value)
 }
 
-onMounted(() => {
+onLoad((options) => {
+	applyRouteUid(options)
 	onRefresh()
 })
 
@@ -232,10 +230,6 @@ function goDetail(id: string): void {
 	height: 72px;
 }
 
-.em {
-	font-size: 30px;
-}
-
 .name {
 	font-size: 18px;
 	font-weight: 700;
@@ -259,5 +253,10 @@ function goDetail(id: string): void {
 	font-size: 12px;
 	color: #5c574f;
 	margin-bottom: 4px;
+}
+
+.empty {
+	padding: 16px 0;
+	align-items: center;
 }
 </style>

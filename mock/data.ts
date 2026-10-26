@@ -265,9 +265,9 @@ export const inboxItems: InboxItem[] = [
 ]
 
 export const rankRows: RankRow[] = [
-	{ rank: 1, name: '摸鱼会长', icon: 'dragon', level: 28, score: 4200 },
-	{ rank: 2, name: '摸鱼大师', icon: 'fish', level: 22, score: 3100 },
-	{ rank: 18, name: '江夏', icon: 'paw', level: 12, score: 860, isMe: true },
+	{ rank: 1, uid: 2, name: '摸鱼会长', icon: 'dragon', level: 28, score: 4200, scoreLabel: '4200' },
+	{ rank: 2, uid: 3, name: '摸鱼大师', icon: 'fish', level: 22, score: 3100, scoreLabel: '3100' },
+	{ rank: 18, uid: 1, name: '江夏', icon: 'paw', level: 12, score: 860, scoreLabel: '860', isMe: true },
 ]
 
 export const notifyItems: NotifyItem[] = [
@@ -300,6 +300,8 @@ export const guestbookItems: GuestbookItem[] = [
 		floor: 128,
 		author: '摸鱼大师',
 		content: '博客越来越好看了～',
+		uid: 3,
+		address: '/user/3',
 		reply: '酱：谢谢支持！',
 	},
 	{
@@ -307,6 +309,8 @@ export const guestbookItems: GuestbookItem[] = [
 		floor: 127,
 		author: '前端小萌新',
 		content: '求 uni-app x 入门路线',
+		uid: 0,
+		address: '',
 	},
 ]
 
@@ -386,6 +390,7 @@ export const relatedMinis: ArticleSummary[] = [
 /** 详情页 mock 评论（含 replies，对齐接口 replys） */
 export const detailComments = [
 	{
+		uid: 8,
 		avatarUrl: '',
 		icon: 'seedling',
 		name: '路过的读者',
@@ -393,6 +398,7 @@ export const detailComments = [
 		text: '写得很清楚，收藏了！',
 		replies: [
 			{
+				uid: 1,
 				avatarUrl: '',
 				icon: 'arrow-back',
 				name: '作者',
@@ -402,6 +408,7 @@ export const detailComments = [
 		],
 	},
 	{
+		uid: 3,
 		avatarUrl: '',
 		icon: 'coffee',
 		name: '咖啡因',

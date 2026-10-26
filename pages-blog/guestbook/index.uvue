@@ -1,5 +1,5 @@
 <template>
-	<!-- 留言板：真实头像 + 列表 + 发布示意 -->
+	<!-- 留言板：头像可进公开主页（address=/user/:uid）或打开外链 -->
 	<view class="x-page-flex">
 		<x-navbar title="留言板">
 			<template v-slot:right>
@@ -20,7 +20,7 @@
 		>
 			<view v-for="item in items" :key="item.id" class="x-card">
 				<view class="row">
-					<view class="av">
+					<view class="av" @click="onAvatar(item)">
 						<image
 							v-if="item.avatarUrl != null && item.avatarUrl.length > 0"
 							class="av-img"
@@ -29,7 +29,7 @@
 						></image>
 						<text v-else class="av-fall">{{ authorInitial(item.author) }}</text>
 					</view>
-					<text class="author">{{ item.author }}</text>
+					<text class="author" @click="onAvatar(item)">{{ item.author }}</text>
 					<text class="floor">#{{ item.floor }}</text>
 				</view>
 				<text class="content">{{ item.content }}</text>
@@ -43,16 +43,20 @@
 
 <script setup lang="ts">
 /**
- * 留言板：联调 GET/POST /msgboard；头像用接口 avatar 字段
- * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
+ * 留言板：联调 GET/POST /msgboard
+ * 头像跳转：有站内 uid（address=/user/:uid）→ 公开主页；否则有 http(s) address → 外链
+ * 登录发布时 address 写成 /user/{uid}，便于跳公开主页
  */
 import type { GuestbookItem } from '../../types/notify'
 import { fetchMsgboard, postMsgboard } from '../../api/modules/interact'
 import { useListScroll } from '../../composables/useListScroll'
+import { useUserStore } from '../../store/user'
+import { goPublicProfile } from '../../utils/nav-profile'
 import { showXToast } from '../../utils/toast'
 
 const items = ref([] as GuestbookItem[])
 const totalLabel = ref('共 0 条留言')
+const userStore = useUserStore()
 
 const {
 	pageSize,
@@ -75,6 +79,28 @@ const {
 function authorInitial(name: string): string {
 	if (name == null || name.length == 0) return '?'
 	return name.substring(0, 1)
+}
+
+/**
+ * 头像/昵称点击：站内 uid → 公开主页；外链 address → 打开浏览器
+ */
+function onAvatar(item: GuestbookItem): void {
+	if (item.uid > 0) {
+		goPublicProfile(item.uid)
+		return
+	}
+	const addr = item.address != null ? item.address.trim() : ''
+	if (addr.indexOf('http://') == 0 || addr.indexOf('https://') == 0) {
+		// 跨端统一复制外链，避免 App/小程序 openURL 差异
+		uni.setClipboardData({
+			data: addr,
+			success: () => {
+				showXToast('link', '已复制主页链接', addr)
+			},
+		})
+		return
+	}
+	showXToast('user', '暂无公开主页', '该留言未关联站内用户')
 }
 
 /**
@@ -118,11 +144,22 @@ onMounted(() => {
 })
 
 /**
- * 发布留言（联调真实接口；mock 仅 toast）
+ * 发布留言：登录用户写入 address=/user/{uid}，便于头像跳公开主页
  */
 async function onPublish(): Promise<void> {
+	if (!userStore.loggedIn) {
+		showXToast('lock', '请先登录', '')
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	const uid = userStore.profile.id
+	const name = userStore.profile.nickname
 	try {
-		await postMsgboard({ name: '访客', comment: '来自 blog-x 的留言' })
+		await postMsgboard({
+			name: name.length > 0 ? name : '访客',
+			comment: '来自 blog-x 的留言',
+			address: uid > 0 ? '/user/' + uid : '',
+		})
 		showXToast('message', '已发布', '')
 		await onRefresh()
 	} catch (_) {}

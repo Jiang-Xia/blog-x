@@ -48,9 +48,17 @@ export type RechargeSku = {
 	bonusLabel?: string
 }
 
+/** 排行榜周期（对齐 Nuxt LeaderboardPeriod） */
+export type LeaderboardPeriod = 'total' | 'week' | 'month' | 'season'
+
+/** 排行榜维度（对齐 Nuxt LeaderboardScoreType） */
+export type LeaderboardScoreType = 'exp' | 'signDays' | 'level' | 'reputation' | 'currency'
+
 /** 排行榜行 */
 export type RankRow = {
 	rank: number
+	/** 用户 uid，点头像进公开主页 */
+	uid: number
 	name: string
 	/** 无头像时的 Tabler 图标名 */
 	icon: string
@@ -58,5 +66,7 @@ export type RankRow = {
 	avatarUrl?: string
 	level: number
 	score: number
+	/** 分数旁展示文案（含单位，由 adapter 按 type 组装） */
+	scoreLabel: string
 	isMe?: boolean
 }

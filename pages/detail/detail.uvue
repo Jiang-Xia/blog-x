@@ -42,12 +42,9 @@
 				<image class="cover-hero-img" :src="article.coverUrl" mode="aspectFill"></image>
 			</view>
 
-			<!-- 正文：优先 HTML，否则 Markdown/纯文本 -->
-			<view v-if="article.contentHtml.length > 0" class="prose">
-				<rich-text :nodes="article.contentHtml"></rich-text>
-			</view>
-			<view v-else-if="article.content.length > 0" class="prose">
-				<text class="prose-text">{{ article.content }}</text>
+			<!-- 正文：uni-cmark + 排版/代码后处理；rich-text 用全局字号/行高作底 -->
+			<view v-if="bodyHtml.length > 0" class="prose">
+				<rich-text class="prose-rich" :nodes="bodyHtml"></rich-text>
 			</view>
 			<view v-else-if="article.description.length > 0" class="prose">
 				<text class="prose-text">{{ article.description }}</text>
@@ -117,7 +114,7 @@
 				</view>
 			</view>
 			<view v-for="(c, idx) in comments" :key="idx" class="comment">
-				<view class="cav">
+				<view class="cav" @click="goPublicProfile(c.uid)">
 					<image
 						v-if="c.avatarUrl.length > 0"
 						class="cav-img"
@@ -131,7 +128,7 @@
 					<text class="c-text">{{ c.text }}</text>
 					<!-- 回复：后端字段 replys（comment.findAll enrich） -->
 					<view v-for="(r, ri) in c.replies" :key="ri" class="reply">
-						<view class="rav">
+						<view class="rav" @click="goPublicProfile(r.uid)">
 							<image
 								v-if="r.avatarUrl.length > 0"
 								class="rav-img"
@@ -205,11 +202,19 @@ import {
 	toggleLike,
 } from '../../api/modules/interact'
 import { useUserStore } from '../../store/user'
+import {
+	enhanceArticleHtml,
+	ensureMarkdownReady,
+	renderMarkdownToHtml,
+} from '../../utils/markdown'
+import { goPublicProfile } from '../../utils/nav-profile'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
 
 /** 单条回复展示行（来自评论 replys[]） */
 type ReplyRow = {
+	/** 回复者 uid，点头像进公开主页 */
+	uid: number
 	avatarUrl: string
 	icon: string
 	name: string
@@ -220,6 +225,8 @@ type ReplyRow = {
 
 /** 顶层评论 + 嵌套回复 */
 type CommentRow = {
+	/** 评论者 uid */
+	uid: number
 	avatarUrl: string
 	icon: string
 	name: string
@@ -261,6 +268,8 @@ const articleId = ref('0')
 const commentDraft = ref('')
 const submitting = ref(false)
 const userStore = useUserStore()
+/** 正文 HTML（contentHtml 或 uni-cmark 渲染结果） */
+const bodyHtml = ref('')
 
 /** 作者行副文案：阅读量 */
 const authorSubLine = computed((): string => {
@@ -279,6 +288,38 @@ const articleMetaLine = computed((): string => {
 })
 
 /**
+ * 刷新正文展示：优先 contentHtml（仍做代码高亮后处理），否则 uni-cmark 转 Markdown
+ */
+async function refreshBodyHtml(): Promise<void> {
+	const a = article.value
+	if (a.contentHtml.length > 0) {
+		bodyHtml.value = enhanceArticleHtml(a.contentHtml)
+		return
+	}
+	if (a.content.length > 0) {
+		await ensureMarkdownReady()
+		bodyHtml.value = renderMarkdownToHtml(a.content)
+		return
+	}
+	bodyHtml.value = ''
+}
+
+/**
+ * 从 userInfo / 顶层字段解析 uid
+ */
+function uidFromComment(c: any, u: any): number {
+	if (c != null && c.uid != null) {
+		const n = Number(c.uid)
+		if (!isNaN(n) && n > 0) return n
+	}
+	if (u != null && u.id != null) {
+		const n = Number(u.id)
+		if (!isNaN(n) && n > 0) return n
+	}
+	return 0
+}
+
+/**
  * 从 userInfo 解析头像完整 URL
  */
 function avatarFromUser(u: any): string {
@@ -293,6 +334,7 @@ function mapReplyRow(r: any): ReplyRow {
 	const u = r != null ? r.userInfo : null
 	const t = r != null ? r.tUserInfo : null
 	return {
+		uid: uidFromComment(r, u),
 		avatarUrl: avatarFromUser(u),
 		icon: 'arrow-back',
 		name: u != null && u.nickname != null ? '' + u.nickname : '用户',
@@ -303,7 +345,7 @@ function mapReplyRow(r: any): ReplyRow {
 
 /**
  * 将服务端评论列表映射为展示行
- * 头像取 userInfo.avatar；回复取后端 enrich 的 replys
+ * 头像取 userInfo.avatar；回复取后端 enrich 的 replys；uid 供跳公开主页
  */
 function mapCommentRows(res: any): CommentRow[] {
 	const arr = res != null && res.list != null ? res.list : []
@@ -318,6 +360,7 @@ function mapCommentRows(res: any): CommentRow[] {
 			replies.push(mapReplyRow(rawReplies[j]))
 		}
 		out.push({
+			uid: uidFromComment(c, u),
 			avatarUrl: avatarFromUser(u),
 			icon: 'message',
 			name: u != null && u.nickname != null ? '' + u.nickname : '用户',
@@ -349,6 +392,7 @@ async function loadDetail(id: string): Promise<void> {
 		const info = await fetchArticleInfo(id)
 		if (info != null) article.value = info
 	} catch (_) {}
+	await refreshBodyHtml()
 	reportArticleViews(id).catch(() => {})
 
 	try {
@@ -384,9 +428,7 @@ function goDetail(id: string): void {
 
 /** 进作者公开主页 */
 function goAuthor(): void {
-	const uid = article.value.authorUid
-	if (uid <= 0) return
-	uni.navigateTo({ url: '/pages-blog/profile/index?uid=' + uid })
+	goPublicProfile(article.value.authorUid)
 }
 
 /** 预览封面大图 */
@@ -553,10 +595,17 @@ async function onTipPaid(amount: number): Promise<void> {
 	margin-bottom: 14px;
 }
 
+/* rich-text 仅支持有限全局样式；细排版靠 HTML 内联 style（md-prose） */
+.prose-rich {
+	font-size: 15px;
+	line-height: 1.75;
+	color: #1c1a17;
+}
+
 .prose-text {
 	font-size: 15px;
 	color: #1c1a17;
-	line-height: 1.7;
+	line-height: 1.75;
 }
 
 .ai-card {
