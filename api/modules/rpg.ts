@@ -27,6 +27,52 @@ export async function fetchRpgHero(): Promise<RpgHero> {
 	return hero
 }
 
+/** 活动海报摘要（对齐 /rpg/activities/current） */
+export type RpgActivityPoster = {
+	code: string
+	name: string
+	description: string
+	posterUrl: string
+	activityType: string
+	expBuffRate: number
+}
+
+/**
+ * 当前活动概览 → 优先赛季海报，否则取限时第一条有海报的
+ */
+export async function fetchActivityPoster(): Promise<RpgActivityPoster | null> {
+	try {
+		const res = await get('/rpg/activities/current', null, { silent: true })
+		if (res == null) return null
+		const pick = (a: any): RpgActivityPoster | null => {
+			if (a == null) return null
+			const url = a.posterUrl != null ? ('' + a.posterUrl).trim() : ''
+			return {
+				code: a.code != null ? '' + a.code : '',
+				name: a.name != null ? '' + a.name : '',
+				description: a.description != null ? '' + a.description : '',
+				posterUrl: url,
+				activityType: a.activityType != null ? '' + a.activityType : '',
+				expBuffRate: a.expBuffRate != null ? Number(a.expBuffRate) : 1,
+			}
+		}
+		const season = pick(res.season)
+		if (season != null && (season.posterUrl.length > 0 || season.name.length > 0)) {
+			return season
+		}
+		const limited = res.limitedTime
+		if (Array.isArray(limited)) {
+			for (let i = 0; i < limited.length; i++) {
+				const row = pick(limited[i])
+				if (row != null && row.name.length > 0) return row
+			}
+		}
+		return null
+	} catch (_) {
+		return null
+	}
+}
+
 /** 签到摘要（对齐 Nest getSignInfo） */
 export type SignInfoSummary = {
 	signedToday: boolean

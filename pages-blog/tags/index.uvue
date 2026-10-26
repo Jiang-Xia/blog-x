@@ -1,5 +1,5 @@
 <template>
-	<!-- 标签墙：GET /tag 列表，点击进搜索 -->
+	<!-- 标签墙：GET /tag；文字/边框用标签自带 color；点击精确 tagId 进搜索 -->
 	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="标签墙"></x-navbar>
 		<x-scroll-page
@@ -18,9 +18,10 @@
 					v-for="t in tags"
 					:key="t.id"
 					class="tag-chip"
-					@click="goSearch(t.label)"
+					:style="'border-color:' + t.color + ';'"
+					@click="goSearch(t)"
 				>
-					<text class="tag-t">{{ t.label }}</text>
+					<text class="tag-t" :style="'color:' + t.color + ';'">{{ t.label }}</text>
 				</view>
 			</view>
 			<x-empty v-if="tags.length == 0 && showFooter" text="暂无标签"></x-empty>
@@ -30,8 +31,8 @@
 
 <script setup lang="ts">
 /**
- * 标签墙：联调 GET /tag（isDelete）；点击带 title 进搜索页
- * 滚动：全量列表，仅下拉刷新
+ * 标签墙：联调 GET /tag（isDelete）；点击带 tagId 精确筛选进搜索页
+ * 颜色：后端 tag.color 直出，勿本地调色板
  */
 import { fetchTags, type TagWallItem } from '../../api/modules/article'
 import { useListScroll } from '../../composables/useListScroll'
@@ -68,11 +69,11 @@ onMounted(() => {
 })
 
 /**
- * 跳转搜索，用标签名作 title 参数
+ * 跳转搜索：精确 tags=[id]（不把 label 当模糊关键词）
  */
-function goSearch(label: string): void {
+function goSearch(t: TagWallItem): void {
 	uni.navigateTo({
-		url: '/pages/search/search?q=' + encodeURIComponent(label),
+		url: '/pages/search/search?tagId=' + encodeURIComponent(t.id),
 	})
 }
 
@@ -101,7 +102,6 @@ onShow(() => {
 	background-color: var(--x-surface, #ffffff);
 	border-width: 1px;
 	border-style: solid;
-	border-color: var(--x-bg-2, #ebe6df);
 	margin-right: 8px;
 	margin-bottom: 10px;
 }
@@ -109,6 +109,5 @@ onShow(() => {
 .tag-t {
 	font-size: 13px;
 	font-weight: 500;
-	color: var(--x-accent-deep, #2a8f76);
 }
 </style>

@@ -44,8 +44,8 @@
 		>
 			<view v-for="item in items" :key="item.id" class="audit-item">
 				<view class="meta-row">
-					<text class="kind">{{ item.sourceType }}</text>
-					<text class="status">{{ item.status }}</text>
+					<text class="kind">{{ sourceTypeLabel(item.sourceType) }}</text>
+					<text class="status">{{ statusLabel(item.status) }}</text>
 				</view>
 				<text class="summary">{{ item.content }}</text>
 				<text v-if="item.hitWords.length > 0" class="hl">命中「{{ item.hitWords }}」</text>
@@ -68,7 +68,7 @@
 <script setup lang="ts">
 /**
  * 审核台：GET /sensitive-word/hit + approve/reject（对齐 blog-admin 敏感词审核）
- * 展示字段来自命中记录实体；需登录（管理员权限）
+ * 展示：sourceType / status 枚举译为中文；仅超级管理员/管理员可进
  * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
 import {
@@ -100,6 +100,53 @@ const items = ref([] as AuditHit[])
 const total = ref(0)
 const acting = ref(false)
 const userStore = useUserStore()
+
+/**
+ * 来源枚举 → 中文（对齐 blog-admin 展示，勿直接刷英文）
+ */
+function sourceTypeLabel(raw: string): string {
+	if (raw == 'comment') return '评论'
+	if (raw == 'msgboard') return '留言'
+	if (raw == 'reply') return '回复'
+	if (raw == 'article') return '文章'
+	if (raw.length == 0) return '未知'
+	return raw
+}
+
+/**
+ * 审核状态枚举 → 中文
+ */
+function statusLabel(raw: string): string {
+	if (raw == 'pending') return '待审'
+	if (raw == 'approved') return '已通过'
+	if (raw == 'rejected') return '已拒绝'
+	if (raw.length == 0) return '未知'
+	return raw
+}
+
+/**
+ * 是否管理员（roleId 1/2 或角色名含管理员）
+ */
+function isAdminUser(): boolean {
+	const p = userStore.profile
+	const ids = p.roleIds != null ? p.roleIds : []
+	for (let i = 0; i < ids.length; i++) {
+		if (ids[i] == 1 || ids[i] == 2) return true
+	}
+	const names = p.roleNames != null ? p.roleNames : []
+	for (let i = 0; i < names.length; i++) {
+		const n = names[i].toLowerCase()
+		if (
+			n.indexOf('超级管理员') >= 0 ||
+			n.indexOf('管理员') >= 0 ||
+			n.indexOf('super') >= 0 ||
+			n.indexOf('admin') >= 0
+		) {
+			return true
+		}
+	}
+	return false
+}
 
 const {
 	pageSize,
@@ -169,9 +216,21 @@ async function onLoadMore(): Promise<void> {
 	endLoadMore(res.list.length, items.value.length, res.total)
 }
 
-onMounted(() => {
+onMounted(async () => {
 	if (!userStore.loggedIn) {
 		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
+	try {
+		await userStore.refreshProfile()
+	} catch (_) {}
+	if (!isAdminUser()) {
+		showXToast('shield', '无管理权限', '')
+		uni.navigateBack({
+			fail: () => {
+				uni.switchTab({ url: '/pages/index/index' })
+			},
+		})
 		return
 	}
 	onRefresh()

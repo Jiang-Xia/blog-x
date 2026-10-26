@@ -18,8 +18,12 @@
 				<x-icon name="search" :size="14" color="#9a948a"></x-icon>
 			</view>
 			<text class="search-ph">搜索文章、标签、作者</text>
-			<view class="bell" @click.stop="goNotify">
-				<text class="bell-text">{{ notifyBadge }}</text>
+			<!-- 右侧铃铛：未读通知入口；角标仅在有未读时显示 -->
+			<view class="bell-wrap" @click.stop="goNotify">
+				<x-icon name="bell" :size="16" color="#5c574f"></x-icon>
+				<view v-if="notifyBadge > 0" class="bell">
+					<text class="bell-text">{{ notifyBadge > 99 ? '99+' : notifyBadge }}</text>
+				</view>
 			</view>
 		</view>
 
@@ -34,7 +38,7 @@
 			</view>
 			<view class="ring">
 				<text class="ring-pct">{{ ringPct }}%</text>
-				<text class="ring-sub">签到</text>
+				<text class="ring-sub">任务</text>
 			</view>
 		</view>
 
@@ -46,7 +50,8 @@
 			<view class="x-chip x-chip-plain" @click="goRpg">
 				<text class="chip-t">{{ questChip }}</text>
 			</view>
-			<view class="x-chip x-chip-plain" @click="onWrite">
+			<view class="x-chip x-chip-plain chip-with-ico" @click="onWrite">
+				<x-icon name="pencil" :size="12" color="#5c574f"></x-icon>
 				<text class="chip-t">写文章</text>
 			</view>
 		</view>
@@ -208,7 +213,8 @@ async function loadHomeMeta(): Promise<void> {
 		(total > 0 ? total : 0)
 	store.homeStreakLabel.value =
 		'连续 ' + (sign.streakDays > 0 ? sign.streakDays : store.streakDays.value) + ' 天'
-	ringPct.value = sign.signedToday ? 100 : total > 0 ? Math.floor((done / total) * 100) : 40
+	// 圆环：今日任务完成百分比（与签到状态解耦）
+	ringPct.value = total > 0 ? Math.floor((done / total) * 100) : 0
 }
 
 /**
@@ -333,18 +339,34 @@ function goDetail(id: string): void {
 	margin-left: 4px;
 }
 
+.chip-with-ico .chip-t {
+	margin-left: 4px;
+}
+
 .search-ph {
 	flex: 1;
 	font-size: 13px;
 	color: var(--x-ink-3, #9a948a);
 }
 
+.bell-wrap {
+	position: relative;
+	width: 28px;
+	height: 28px;
+	align-items: center;
+	justify-content: center;
+	margin-left: 4px;
+}
+
 .bell {
-	min-width: 18px;
-	height: 18px;
-	border-radius: 9px;
+	position: absolute;
+	top: -2px;
+	right: -4px;
+	min-width: 14px;
+	height: 14px;
+	border-radius: 7px;
 	background-color: var(--x-danger, #e8897a);
-	padding: 0 4px;
+	padding: 0 3px;
 	align-items: center;
 	justify-content: center;
 }

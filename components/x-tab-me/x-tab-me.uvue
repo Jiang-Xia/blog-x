@@ -28,15 +28,18 @@
 			</view>
 
 			<view class="stat-row">
-				<view class="stat">
+				<view class="stat" @click="goMyArticles">
+					<x-icon name="book" :size="16" :color="tokens.accentDeep"></x-icon>
 					<text class="stat-n">{{ profile.articleCount }}</text>
 					<text class="stat-l">文章</text>
 				</view>
-				<view class="stat">
+				<view class="stat" @click="goFavorites">
+					<x-icon name="star" :size="16" :color="tokens.accentDeep"></x-icon>
 					<text class="stat-n">{{ profile.favoriteCount }}</text>
 					<text class="stat-l">收藏</text>
 				</view>
-				<view class="stat">
+				<view class="stat" @click="goProfile">
+					<x-icon name="heart" :size="16" :color="tokens.accentDeep"></x-icon>
 					<text class="stat-n">{{ profile.likeReceived }}</text>
 					<text class="stat-l">获赞</text>
 				</view>
@@ -69,7 +72,7 @@
 					<text class="m-label">公开主页</text>
 					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
-				<view class="mrow" @click="goAudit">
+				<view v-if="showAdminEntry" class="mrow" @click="goAudit">
 					<view class="m-ico"><x-icon name="shield" :size="16" :color="tokens.ink"></x-icon></view>
 					<view class="m-col">
 						<text class="m-label">切换管理模式</text>
@@ -104,7 +107,8 @@
  * 滚动：x-scroll-page 下拉刷新
  */
 import { storeToRefs } from 'pinia'
-import { fetchInbox } from '../../api/modules/interact'
+import { fetchAuthorStats } from '../../api/modules/article'
+import { fetchCollectPage, fetchInbox } from '../../api/modules/interact'
 import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
 import { useTheme } from '../../composables/useTheme'
@@ -116,6 +120,31 @@ const { profile, loggedIn } = storeToRefs(userStore)
 const store = useMockStore()
 const inboxBadge = store.inboxBadge
 const { tokens } = useTheme()
+
+/**
+ * 超级管理员 / 管理员才展示「切换管理模式」
+ * 判定：roleId=1（超管）或角色名含 超级管理员/管理员/admin/super
+ */
+const showAdminEntry = computed((): boolean => {
+	if (!loggedIn.value) return false
+	const ids = profile.value.roleIds != null ? profile.value.roleIds : []
+	for (let i = 0; i < ids.length; i++) {
+		if (ids[i] == 1 || ids[i] == 2) return true
+	}
+	const names = profile.value.roleNames != null ? profile.value.roleNames : []
+	for (let i = 0; i < names.length; i++) {
+		const n = names[i].toLowerCase()
+		if (
+			n.indexOf('超级管理员') >= 0 ||
+			n.indexOf('管理员') >= 0 ||
+			n.indexOf('super') >= 0 ||
+			n.indexOf('admin') >= 0
+		) {
+			return true
+		}
+	}
+	return false
+})
 
 /**
  * 个人主页展示文案（不依赖 URL 构造，兼容 App / 小程序）
@@ -150,13 +179,39 @@ const {
 } = useListScroll(10)
 
 /**
- * 已登录则刷新资料与收件箱角标
+ * 拉取公开 Tab 总数（收藏）；获赞用 author-stats.totalLikes
+ */
+async function loadProfileStats(): Promise<void> {
+	if (userStore.profile.id <= 0) return
+	let articleCount = userStore.profile.articleCount
+	let likeReceived = userStore.profile.likeReceived
+	let favoriteCount = userStore.profile.favoriteCount
+	try {
+		const stats = await fetchAuthorStats()
+		articleCount = stats.published
+		likeReceived = stats.totalLikes
+	} catch (_) {}
+	try {
+		const collect = await fetchCollectPage(1, 1)
+		favoriteCount = collect.total
+	} catch (_) {}
+	userStore.setProfile({
+		...userStore.profile,
+		articleCount: isNaN(articleCount) ? 0 : articleCount,
+		favoriteCount: isNaN(favoriteCount) ? 0 : favoriteCount,
+		likeReceived: isNaN(likeReceived) ? 0 : likeReceived,
+	})
+}
+
+/**
+ * 已登录则刷新资料、统计与收件箱角标
  */
 async function loadMe(): Promise<void> {
 	if (!userStore.loggedIn) return
 	try {
 		await userStore.refreshProfile()
 	} catch (_) {}
+	await loadProfileStats()
 	try {
 		const inbox = await fetchInbox(1, 20)
 		store.inboxBadge.value = inbox.length
@@ -207,6 +262,17 @@ function goEditProfile(): void {
 		return
 	}
 	uni.navigateTo({ url: '/pages-blog/profile-edit/index' })
+}
+
+/** 我的文章 → 公开主页已发布 Tab */
+function goMyArticles(): void {
+	if (!userStore.loggedIn) {
+		goLogin()
+		return
+	}
+	const id = userStore.profile.id
+	const q = id > 0 ? '?uid=' + id : ''
+	uni.navigateTo({ url: '/pages-blog/profile/index' + q })
 }
 
 function goFavorites(): void {
@@ -326,6 +392,7 @@ function goNotify(): void {
 	font-size: 17px;
 	font-weight: 700;
 	color: var(--x-ink, #1c1a17);
+	margin-top: 4px;
 	margin-bottom: 2px;
 }
 

@@ -45,6 +45,10 @@ export const articles: ArticleDetail[] = [
 		contentHtml: '',
 		description: 'uni-app x 上手踩坑笔记',
 		tagLabels: ['uni-app x', 'uts'],
+		tags: [
+			{ id: 't1', label: 'uni-app x', color: '#3db89a' },
+			{ id: 't2', label: 'uts', color: '#6f8fad' },
+		],
 	},
 	{
 		id: '1',
@@ -67,6 +71,10 @@ export const articles: ArticleDetail[] = [
 		contentHtml: '',
 		description: '微信支付 V3 接入笔记',
 		tagLabels: ['NestJS', '支付'],
+		tags: [
+			{ id: 't3', label: 'NestJS', color: '#c4908a' },
+			{ id: 't4', label: '支付', color: '#d4a07a' },
+		],
 	},
 	{
 		id: '2',
@@ -89,6 +97,10 @@ export const articles: ArticleDetail[] = [
 		contentHtml: '',
 		description: '多端分包策略',
 		tagLabels: ['工程', '分包'],
+		tags: [
+			{ id: 't5', label: '工程', color: '#9585b0' },
+			{ id: 't6', label: '分包', color: '#b89a72' },
+		],
 	},
 ]
 
@@ -161,6 +173,8 @@ export const meProfile: UserProfile = {
 	articleCount: 36,
 	favoriteCount: 128,
 	likeReceived: 562,
+	roleIds: [1],
+	roleNames: ['超级管理员'],
 }
 
 export const publicRpg: PublicRpgCard = {

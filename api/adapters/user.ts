@@ -14,12 +14,36 @@ import { parseUidFromAddress } from '../../utils/nav-profile'
 import { resolveStaticUrl } from '../../utils/static-url'
 
 	/**
+	 * 从 /user/info.roles 解析角色 id / 展示名
+	 */
+	function mapRoles(raw: any): { roleIds: number[]; roleNames: string[] } {
+		const roleIds: number[] = []
+		const roleNames: string[] = []
+		const arr = raw != null && Array.isArray(raw.roles) ? raw.roles : []
+		for (let i = 0; i < arr.length; i++) {
+			const r = arr[i]
+			if (r == null) continue
+			const idRaw = r.id != null ? Number(r.id) : 0
+			if (!isNaN(idRaw) && idRaw > 0) roleIds.push(idRaw)
+			const name =
+				r.roleName != null
+					? '' + r.roleName
+					: r.name != null
+						? '' + r.name
+						: ''
+			if (name.length > 0) roleNames.push(name)
+		}
+		return { roleIds, roleNames }
+	}
+
+	/**
 	 * /user/info → UserProfile（avatar / intro / homepage 直出；勿本地 dict 回显）
 	 */
 	export function mapUserProfile(raw: any, extras: Record<string, number> = {}): UserProfile {
 		const idRaw = raw != null && raw.id != null ? Number(raw.id) : 0
 		const avatarRaw =
 			raw != null && raw.avatar != null ? ('' + raw.avatar).trim() : ''
+		const roles = mapRoles(raw)
 		return {
 			id: isNaN(idRaw) ? 0 : idRaw,
 			nickname: raw != null && raw.nickname != null ? '' + raw.nickname : '游客',
@@ -31,6 +55,8 @@ import { resolveStaticUrl } from '../../utils/static-url'
 			articleCount: extras.articleCount != null ? extras.articleCount : 0,
 			favoriteCount: extras.favoriteCount != null ? extras.favoriteCount : 0,
 			likeReceived: extras.likeReceived != null ? extras.likeReceived : 0,
+			roleIds: roles.roleIds,
+			roleNames: roles.roleNames,
 		}
 	}
 
@@ -215,7 +241,7 @@ export function mapGuestbookItems(raw: any): GuestbookItem[] {
 }
 
 /**
- * 友链 → FriendLink[]（Nest：裸数组）
+ * 友链 → FriendLink[]（Nest：裸数组；title/url/desp/icon）
  */
 export function mapFriendLinks(raw: any): FriendLink[] {
 	const list: FriendLink[] = []
@@ -226,6 +252,8 @@ export function mapFriendLinks(raw: any): FriendLink[] {
 			id: l.id != null ? '' + l.id : '' + i,
 			name: l.title != null ? '' + l.title : '',
 			url: l.url != null ? '' + l.url : '',
+			desp: l.desp != null ? '' + l.desp : '',
+			icon: l.icon != null ? '' + l.icon : '',
 		})
 	}
 	return list

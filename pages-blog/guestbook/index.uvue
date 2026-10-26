@@ -74,16 +74,37 @@
 			</view>
 		</x-scroll-page>
 
-		<!-- 发布主楼弹层 -->
+		<!-- 发布主楼弹层（对齐 Nuxt：昵称 / 邮箱 / 主页 / 内容） -->
 		<view v-if="composeOpen" class="sheet-mask" @click="closeCompose">
 			<view class="sheet" @click.stop="noop">
 				<text class="sheet-title">发表留言</text>
+				<input
+					class="field"
+					type="text"
+					v-model="composeName"
+					placeholder="昵称 *"
+					placeholder-class="ph"
+				/>
+				<input
+					class="field"
+					type="text"
+					v-model="composeEmail"
+					placeholder="邮箱 *"
+					placeholder-class="ph"
+				/>
+				<input
+					class="field"
+					type="text"
+					v-model="composeAddress"
+					placeholder="个人主页 / 站点 *"
+					placeholder-class="ph"
+				/>
 				<textarea
 					class="compose-area compose-area-box"
 					v-model="composeDraft"
 					:focus="composeFocus"
 					maxlength="500"
-					placeholder="说点什么…"
+					placeholder="说点什么… *"
 					placeholder-class="ph"
 					auto-height="true"
 					cursor-spacing="100"
@@ -148,6 +169,9 @@ const totalLabel = ref('共 0 条留言')
 const userStore = useUserStore()
 const composeOpen = ref(false)
 const composeDraft = ref('')
+const composeName = ref('')
+const composeEmail = ref('')
+const composeAddress = ref('')
 const composeFocus = ref(false)
 const replyingId = ref('')
 const replyDraft = ref('')
@@ -305,13 +329,31 @@ onMounted(() => {
 /** 阻止弹层冒泡关闭（sheet 点击） */
 function noop(): void {}
 
-/** 打开发布弹层并聚焦 */
+/**
+ * 简单邮箱格式校验（对齐 Nuxt）
+ */
+function isValidEmail(email: string): boolean {
+	const e = email.trim()
+	if (e.length == 0) return false
+	const at = e.indexOf('@')
+	const dot = e.lastIndexOf('.')
+	return at > 0 && dot > at + 1 && dot < e.length - 1
+}
+
+/** 打开发布弹层；登录用户预填昵称/主页 */
 function openCompose(): void {
-	if (!userStore.loggedIn) {
-		showXToast('lock', '请先登录', '')
-		uni.navigateTo({ url: '/pages/login/login' })
-		return
-	}
+	const uid = userStore.profile.id
+	composeName.value =
+		userStore.loggedIn && userStore.profile.nickname.length > 0
+			? userStore.profile.nickname
+			: ''
+	composeEmail.value = ''
+	composeAddress.value =
+		userStore.loggedIn && uid > 0
+			? '/user/' + uid
+			: userStore.profile.homepage.length > 0
+				? userStore.profile.homepage
+				: ''
 	composeDraft.value = ''
 	composeOpen.value = true
 	cancelReply()
@@ -324,6 +366,9 @@ function openCompose(): void {
 function closeCompose(): void {
 	composeOpen.value = false
 	composeDraft.value = ''
+	composeName.value = ''
+	composeEmail.value = ''
+	composeAddress.value = ''
 	composeFocus.value = false
 }
 
@@ -354,25 +399,30 @@ function cancelReply(): void {
 }
 
 /**
- * 发布主楼留言
+ * 发布主楼留言（对齐 Nuxt：name/eamil/address/comment 必填）
  */
 async function onPublish(): Promise<void> {
 	const text = composeDraft.value.trim()
-	if (text.length == 0 || submitting.value) return
-	if (!userStore.loggedIn) {
-		showXToast('lock', '请先登录', '')
-		uni.navigateTo({ url: '/pages/login/login' })
+	const name = composeName.value.trim()
+	const email = composeEmail.value.trim()
+	const address = composeAddress.value.trim()
+	if (submitting.value) return
+	if (name.length == 0 || email.length == 0 || address.length == 0 || text.length == 0) {
+		showXToast('alert-circle', '请填写完整信息', '')
 		return
 	}
-	const uid = userStore.profile.id
-	const name = userStore.profile.nickname
-	const avatar = userStore.profile.avatar
+	if (!isValidEmail(email)) {
+		showXToast('mail', '邮箱格式不正确', '')
+		return
+	}
+	const avatar = userStore.loggedIn ? userStore.profile.avatar : ''
 	submitting.value = true
 	try {
 		await postMsgboard({
-			name: name.length > 0 ? name : '访客',
+			name,
 			comment: text,
-			address: uid > 0 ? '/user/' + uid : '',
+			eamil: email,
+			address,
 			avatar: avatar.length > 0 ? avatar : '',
 		})
 		showXToast('message', '已发布', '')
@@ -607,5 +657,19 @@ onShow(() => {
 	font-weight: 700;
 	color: var(--x-ink, #1c1a17);
 	margin-bottom: 12px;
+}
+
+.field {
+	width: 100%;
+	height: 40px;
+	border-radius: 12px;
+	background-color: var(--x-surface, #ffffff);
+	border-width: 1px;
+	border-style: solid;
+	border-color: #d9d3c9;
+	padding: 0 12px;
+	font-size: 13px;
+	color: var(--x-ink, #1c1a17);
+	margin-bottom: 10px;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-	<!-- 冒险中心：统一滚动壳 + 下拉刷新 -->
+	<!-- 冒险中心：海报 → 冒险者卡片（真实用户）→ 签到/任务 → 四入口 -->
 	<x-scroll-page
 		variant="tab"
 		:enable-load-more="false"
@@ -17,9 +17,39 @@
 				<text class="x-chip x-chip-peach">{{ hero.weatherBuff }}</text>
 			</view>
 
+			<!-- 活动海报（对齐 Nuxt SeasonBanner） -->
+			<view v-if="poster != null" class="poster-card" @click="previewPoster">
+				<image
+					v-if="posterUrl.length > 0"
+					class="poster-img"
+					:src="posterUrl"
+					mode="aspectFill"
+				></image>
+				<view class="poster-body">
+					<text class="poster-type">{{ posterTypeLabel }}</text>
+					<text class="poster-name">{{ poster.name }}</text>
+					<text v-if="poster.description.length > 0" class="poster-desc">{{ poster.description }}</text>
+					<text v-if="poster.expBuffRate > 1" class="poster-buff">经验 ×{{ poster.expBuffRate }}</text>
+				</view>
+			</view>
+
+			<!-- 冒险者卡片：登录用户真实信息 -->
 			<view class="rpg-hero">
-				<text class="hero-label">旅行者 · {{ hero.travelerName }} · 连续签到 {{ streakDays }}</text>
-				<text class="hero-lv">Lv.{{ hero.level }} · 距下一级还差 {{ hero.expToNext }} 经验</text>
+				<view class="hero-top">
+					<view class="hero-av">
+						<image
+							v-if="avatarUrl.length > 0"
+							class="hero-av-img"
+							:src="avatarUrl"
+							mode="aspectFill"
+						></image>
+						<x-icon v-else name="paw" :size="22" color="#ffffff"></x-icon>
+					</view>
+					<view class="hero-meta">
+						<text class="hero-label">旅行者 · {{ travelerName }} · 连续签到 {{ streakDays }}</text>
+						<text class="hero-lv">Lv.{{ hero.level }} · 距下一级还差 {{ hero.expToNext }} 经验</text>
+					</view>
+				</view>
 				<view class="bar">
 					<view class="bar-i" :style="{ width: hero.expBarPercent + '%' }"></view>
 				</view>
@@ -36,10 +66,42 @@
 				</view>
 			</view>
 
+			<!-- 功能入口放在冒险者卡片下方 -->
+			<view class="x-grid-2">
+				<view class="x-grid-2-item">
+					<view class="x-tile" @click="goLottery">
+						<view class="x-tile-ico"><x-icon name="dice" :size="20" color="#1c1a17"></x-icon></view>
+						<text class="x-tile-title">幸运抽奖</text>
+						<text class="x-tile-desc">消耗抽奖券</text>
+					</view>
+				</view>
+				<view class="x-grid-2-item">
+					<view class="x-tile" @click="goRank">
+						<view class="x-tile-ico"><x-icon name="trophy" :size="20" color="#1c1a17"></x-icon></view>
+						<text class="x-tile-title">排行榜</text>
+						<text class="x-tile-desc">本周经验</text>
+					</view>
+				</view>
+				<view class="x-grid-2-item">
+					<view class="x-tile" @click="goCalendar">
+						<view class="x-tile-ico"><x-icon name="calendar" :size="20" color="#1c1a17"></x-icon></view>
+						<text class="x-tile-title">签到日历</text>
+						<text class="x-tile-desc">本月进度</text>
+					</view>
+				</view>
+				<view class="x-grid-2-item">
+					<view class="x-tile" @click="onBag">
+						<view class="x-tile-ico"><x-icon name="backpack" :size="20" color="#1c1a17"></x-icon></view>
+						<text class="x-tile-title">背包装扮</text>
+						<text class="x-tile-desc">称号 / 头像框</text>
+					</view>
+				</view>
+			</view>
+
 			<view class="x-card quest">
 				<view :class="checkedInToday ? 'q-icon done' : 'q-icon'">
 					<x-icon
-						:name="checkedInToday ? 'circle-check' : 'sun'"
+						:name="checkedInToday ? 'check' : 'sun'"
 						:size="18"
 						:color="checkedInToday ? '#2a8f76' : '#1c1a17'"
 					></x-icon>
@@ -60,7 +122,7 @@
 			<view v-for="q in displayQuests" :key="q.id" class="x-card quest">
 				<view :class="q.done ? 'q-icon done' : 'q-icon peach'">
 					<x-icon
-						:name="q.done ? 'circle-check' : q.icon"
+						:name="q.done ? 'check' : q.icon"
 						:size="18"
 						:color="q.done ? '#2a8f76' : '#1c1a17'"
 					></x-icon>
@@ -80,37 +142,6 @@
 				</view>
 			</view>
 
-			<view class="x-grid-2">
-				<view class="x-grid-2-item">
-					<view class="x-tile" @click="goLottery">
-						<view class="x-tile-ico"><x-icon name="dice" :size="22" color="#1c1a17"></x-icon></view>
-						<text class="x-tile-title">幸运抽奖</text>
-						<text class="x-tile-desc">消耗抽奖券</text>
-					</view>
-				</view>
-				<view class="x-grid-2-item">
-					<view class="x-tile" @click="goRank">
-						<view class="x-tile-ico"><x-icon name="trophy" :size="22" color="#1c1a17"></x-icon></view>
-						<text class="x-tile-title">排行榜</text>
-						<text class="x-tile-desc">本周经验</text>
-					</view>
-				</view>
-				<view class="x-grid-2-item">
-					<view class="x-tile" @click="goCalendar">
-						<view class="x-tile-ico"><x-icon name="calendar" :size="22" color="#1c1a17"></x-icon></view>
-						<text class="x-tile-title">签到日历</text>
-						<text class="x-tile-desc">本月进度</text>
-					</view>
-				</view>
-				<view class="x-grid-2-item">
-					<view class="x-tile" @click="onBag">
-						<view class="x-tile-ico"><x-icon name="backpack" :size="22" color="#1c1a17"></x-icon></view>
-						<text class="x-tile-title">背包装扮</text>
-						<text class="x-tile-desc">称号 / 头像框</text>
-					</view>
-				</view>
-			</view>
-
 			<view class="recharge-row">
 				<text class="recharge-tip">钻石不足？</text>
 				<view class="x-btn" @click="goRecharge">
@@ -122,22 +153,26 @@
 
 <script setup lang="ts">
 /**
- * 冒险中心面板：对齐原型 rpg 屏
- * 数据来源：联调 /rpg/status|sign|my-quests
- * 滚动：x-scroll-page 下拉刷新
+ * 冒险中心面板：对齐原型 rpg + Nuxt 海报 / 用户卡
+ * 数据来源：/rpg/status|sign|my-quests|activities/current；用户昵称/头像来自 Pinia
  */
 import type { RpgHero, RpgQuest } from '../../types/rpg'
 import {
 	claimQuest,
+	fetchActivityPoster,
 	fetchMyQuests,
 	fetchRpgHero,
 	fetchSignInfo,
 	rpgSignIn,
+	type RpgActivityPoster,
 } from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
+import { useUserStore } from '../../store/user'
+import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
 import { goTab, TAB_HOME } from '../../utils/tabNav'
+import { storeToRefs } from 'pinia'
 
 const emptyHero: RpgHero = {
 	travelerName: '',
@@ -153,7 +188,10 @@ const emptyHero: RpgHero = {
 
 const hero = ref(emptyHero)
 const quests = ref([] as RpgQuest[])
+const poster = ref(null as RpgActivityPoster | null)
 const store = useMockStore()
+const userStore = useUserStore()
+const { profile, loggedIn } = storeToRefs(userStore)
 const diamonds = store.diamonds
 const streakDays = store.streakDays
 const checkedInToday = store.checkedInToday
@@ -168,6 +206,37 @@ const {
 	beginRefresh,
 	endRefresh,
 } = useListScroll(10)
+
+/** 展示用旅行者名：优先登录昵称 */
+const travelerName = computed((): string => {
+	if (loggedIn.value && profile.value.nickname.length > 0 && profile.value.nickname != '未登录') {
+		return profile.value.nickname
+	}
+	if (hero.value.travelerName.length > 0) return hero.value.travelerName
+	return '旅行者'
+})
+
+/** 头像完整 URL */
+const avatarUrl = computed((): string => {
+	if (loggedIn.value && profile.value.avatarUrl.length > 0) return profile.value.avatarUrl
+	return ''
+})
+
+/** 海报完整 URL */
+const posterUrl = computed((): string => {
+	const p = poster.value
+	if (p == null || p.posterUrl.length == 0) return ''
+	return resolveStaticUrl(p.posterUrl)
+})
+
+/** 活动类型中文 */
+const posterTypeLabel = computed((): string => {
+	const t = poster.value != null ? poster.value.activityType : ''
+	if (t == 'season') return '赛季'
+	if (t == 'festival') return '节日'
+	if (t == 'event') return '限时'
+	return '活动'
+})
 
 /** 展示用任务（排除签到，避免与上方签到卡重复） */
 const displayQuests = computed((): RpgQuest[] => {
@@ -204,6 +273,12 @@ async function loadRpg(): Promise<void> {
 	} catch (_) {
 		quests.value = []
 	}
+
+	try {
+		poster.value = await fetchActivityPoster()
+	} catch (_) {
+		poster.value = null
+	}
 }
 
 /**
@@ -219,8 +294,19 @@ onMounted(() => {
 	onRefresh()
 })
 
+/** 预览活动海报大图 */
+function previewPoster(): void {
+	const url = posterUrl.value
+	if (url.length == 0) return
+	uni.previewImage({ urls: [url], current: url })
+}
+
 /** 每日签到 */
 async function onCheckin(): Promise<void> {
+	if (!userStore.loggedIn) {
+		uni.navigateTo({ url: '/pages/login/login' })
+		return
+	}
 	if (checkedInToday.value) {
 		showXToast('pin', '今日已签到', '明天再来哦')
 		return
@@ -285,11 +371,81 @@ function onBag(): void {
 	justify-content: space-between;
 }
 
+.poster-card {
+	background-color: var(--x-surface, #ffffff);
+	border-radius: 22px;
+	overflow: hidden;
+	margin-bottom: 12px;
+}
+
+.poster-img {
+	width: 100%;
+	height: 140px;
+	background-color: var(--x-bg-2, #ebe6df);
+}
+
+.poster-body {
+	padding: 12px 14px 14px;
+}
+
+.poster-type {
+	font-size: 10px;
+	font-weight: 600;
+	color: var(--x-accent-deep, #2a8f76);
+	margin-bottom: 4px;
+}
+
+.poster-name {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--x-ink, #1c1a17);
+	margin-bottom: 4px;
+}
+
+.poster-desc {
+	font-size: 12px;
+	color: var(--x-ink-2, #5c574f);
+	line-height: 1.4;
+	margin-bottom: 4px;
+}
+
+.poster-buff {
+	font-size: 11px;
+	font-weight: 600;
+	color: #c06a45;
+}
+
 .rpg-hero {
 	background-color: #2d6b5c;
 	border-radius: 22px;
 	padding: 16px;
 	margin-bottom: 12px;
+}
+
+.hero-top {
+	flex-direction: row;
+	align-items: center;
+	margin-bottom: 10px;
+}
+
+.hero-av {
+	width: 48px;
+	height: 48px;
+	border-radius: 24px;
+	background-color: rgba(255, 255, 255, 0.18);
+	align-items: center;
+	justify-content: center;
+	margin-right: 12px;
+	overflow: hidden;
+}
+
+.hero-av-img {
+	width: 48px;
+	height: 48px;
+}
+
+.hero-meta {
+	flex: 1;
 }
 
 .hero-label {
@@ -299,10 +455,9 @@ function onBag(): void {
 }
 
 .hero-lv {
-	font-size: 18px;
+	font-size: 16px;
 	font-weight: 700;
 	color: var(--x-on-ink, #ffffff);
-	margin-bottom: 10px;
 	line-height: 1.3;
 }
 
@@ -323,6 +478,7 @@ function onBag(): void {
 .bal-row {
 	flex-direction: row;
 	margin-top: 6px;
+	align-items: center;
 }
 
 .bal {

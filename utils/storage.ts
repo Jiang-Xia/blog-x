@@ -102,6 +102,12 @@ export function getCachedProfile(): UserProfile | null {
 			articleCount: o.articleCount != null ? Number(o.articleCount) : 0,
 			favoriteCount: o.favoriteCount != null ? Number(o.favoriteCount) : 0,
 			likeReceived: o.likeReceived != null ? Number(o.likeReceived) : 0,
+			roleIds: Array.isArray(o.roleIds)
+				? (o.roleIds as any[]).map((n) => Number(n)).filter((n) => !isNaN(n) && n > 0)
+				: [],
+			roleNames: Array.isArray(o.roleNames)
+				? (o.roleNames as any[]).map((n) => '' + n).filter((n) => n.length > 0)
+				: [],
 		}
 }
 

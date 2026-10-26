@@ -1,9 +1,9 @@
 <template>
-	<!-- 友情链接：列表 + 申请示意 -->
+	<!-- 友情链接：列表 + 申请表单（对齐 Nuxt /links） -->
 	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="友情链接">
 			<template v-slot:right>
-				<text class="apply" @click="onApply">申请</text>
+				<text class="apply" @click="openApply">申请</text>
 			</template>
 		</x-navbar>
 		<x-scroll-page
@@ -16,19 +16,63 @@
 			@refresherrestore="onRefresherRestore"
 			@refresherabort="onRefresherAbort"
 		>
-			<view v-for="item in links" :key="item.id" class="x-card">
+			<view v-for="item in links" :key="item.id" class="x-card" @click="onOpenLink(item)">
 				<text class="name">{{ item.name }}</text>
 				<text class="url">{{ item.url }}</text>
+				<text v-if="item.desp != null && item.desp.length > 0" class="desp">{{ item.desp }}</text>
 			</view>
-			<text class="hint">点击卡片可在真机用 web-view / 复制链接（示意）</text>
+			<x-empty v-if="links.length == 0 && showFooter" text="暂无友链，欢迎申请"></x-empty>
 		</x-scroll-page>
+
+		<!-- 申请友链表单弹层 -->
+		<view v-if="applyOpen" class="sheet-mask" @click="closeApply">
+			<view class="sheet" @click.stop="noop">
+				<text class="sheet-title">申请外链</text>
+				<input
+					class="field"
+					type="text"
+					v-model="formTitle"
+					placeholder="网站名 *"
+					placeholder-class="ph"
+				/>
+				<input
+					class="field"
+					type="text"
+					v-model="formUrl"
+					placeholder="网址 https://… *"
+					placeholder-class="ph"
+				/>
+				<input
+					class="field"
+					type="text"
+					v-model="formIcon"
+					placeholder="图标 URL *"
+					placeholder-class="ph"
+				/>
+				<input
+					class="field"
+					type="text"
+					v-model="formDesp"
+					placeholder="个签 / 简介 *"
+					placeholder-class="ph"
+				/>
+				<view class="compose-actions">
+					<view class="x-btn x-btn-ghost" @click="closeApply">
+						<text class="x-btn-ghost-text">取消</text>
+					</view>
+					<view class="x-btn" @click="onSubmitApply">
+						<text class="x-btn-text">{{ submitting ? '提交中…' : '确认' }}</text>
+					</view>
+				</view>
+			</view>
+		</view>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 友链页：联调 GET/POST /link
- * 滚动：一次全量，仅下拉刷新
+ * 友链页：联调 GET/POST /link（对齐 Nuxt pages/links）
+ * 申请：title / url / icon / desp 必填；url 须 http(s)
  */
 import type { FriendLink } from '../../types/notify'
 import { createLink, fetchLinks } from '../../api/modules/interact'
@@ -37,7 +81,17 @@ import { showXToast } from '../../utils/toast'
 import { useTheme } from '../../composables/useTheme'
 const { themeCssVars, syncNativeChrome } = useTheme()
 
-const links = ref([] as FriendLink[])
+/** 扩展展示：简介（后端 desp） */
+type LinkRow = FriendLink & { desp?: string; icon?: string }
+
+const links = ref([] as LinkRow[])
+const applyOpen = ref(false)
+const formTitle = ref('')
+const formUrl = ref('')
+const formIcon = ref('')
+const formDesp = ref('')
+const submitting = ref(false)
+
 const {
 	refreshing,
 	pullingDistance,
@@ -55,7 +109,8 @@ const {
 async function onRefresh(): Promise<void> {
 	beginRefresh()
 	try {
-		links.value = await fetchLinks()
+		const raw = await fetchLinks()
+		links.value = raw as LinkRow[]
 	} catch (_) {
 		links.value = []
 	}
@@ -66,15 +121,68 @@ onMounted(() => {
 	onRefresh()
 })
 
+function noop(): void {}
+
+function openApply(): void {
+	formTitle.value = ''
+	formUrl.value = ''
+	formIcon.value = ''
+	formDesp.value = ''
+	applyOpen.value = true
+}
+
+function closeApply(): void {
+	applyOpen.value = false
+}
+
 /**
- * 申请友链
+ * 简单校验 http(s) URL
  */
-async function onApply(): Promise<void> {
+function isValidUrl(url: string): boolean {
+	const u = url.trim()
+	return u.indexOf('http://') == 0 || u.indexOf('https://') == 0
+}
+
+/**
+ * 提交申请（对齐 Nuxt okHandle）
+ */
+async function onSubmitApply(): Promise<void> {
+	if (submitting.value) return
+	const title = formTitle.value.trim()
+	const url = formUrl.value.trim()
+	const icon = formIcon.value.trim()
+	const desp = formDesp.value.trim()
+	if (title.length == 0 || url.length == 0 || icon.length == 0 || desp.length == 0) {
+		showXToast('alert-circle', '请填写完整信息', '')
+		return
+	}
+	if (!isValidUrl(url)) {
+		showXToast('link', '请输入有效的 http/https 网址', '')
+		return
+	}
+	submitting.value = true
 	try {
-		await createLink({ title: '申请友链', url: 'https://example.com', desp: '来自 blog-x' })
-		showXToast('link', '已提交', '等待审核')
+		await createLink({ title, url, icon, desp })
+		showXToast('link', '申请已提交', '等待站长审核')
+		closeApply()
 		await onRefresh()
-	} catch (_) {}
+	} catch (_) {
+	} finally {
+		submitting.value = false
+	}
+}
+
+/**
+ * 点击卡片：复制链接
+ */
+function onOpenLink(item: LinkRow): void {
+	if (item.url == null || item.url.length == 0) return
+	uni.setClipboardData({
+		data: item.url,
+		success: () => {
+			showXToast('link', '已复制链接', item.url)
+		},
+	})
 }
 
 onShow(() => {
@@ -103,10 +211,60 @@ onShow(() => {
 	color: var(--x-accent-deep, #2a8f76);
 }
 
-.hint {
+.desp {
 	font-size: 11px;
 	color: var(--x-ink-3, #9a948a);
-	margin-top: 8px;
-	line-height: 1.5;
+	margin-top: 6px;
+	line-height: 1.4;
+}
+
+.sheet-mask {
+	position: fixed;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	background-color: rgba(28, 26, 23, 0.45);
+	justify-content: flex-end;
+	z-index: 80;
+}
+
+.sheet {
+	background-color: var(--x-bg, #f4f1ec);
+	border-top-left-radius: 18px;
+	border-top-right-radius: 18px;
+	padding: 16px 16px 28px;
+}
+
+.sheet-title {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--x-ink, #1c1a17);
+	margin-bottom: 12px;
+}
+
+.field {
+	width: 100%;
+	height: 40px;
+	border-radius: 12px;
+	background-color: var(--x-surface, #ffffff);
+	border-width: 1px;
+	border-style: solid;
+	border-color: #d9d3c9;
+	padding: 0 12px;
+	font-size: 13px;
+	color: var(--x-ink, #1c1a17);
+	margin-bottom: 10px;
+}
+
+.compose-actions {
+	flex-direction: row;
+	justify-content: flex-end;
+	align-items: center;
+	margin-top: 4px;
+}
+
+.ph {
+	color: var(--x-ink-3, #9a948a);
 }
 </style>

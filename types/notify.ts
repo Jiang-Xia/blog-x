@@ -43,11 +43,15 @@ export type GuestbookItem = {
 	replies: GuestbookReply[]
 }
 
-export type FriendLink = {
-	id: string
-	name: string
-	url: string
-}
+	export type FriendLink = {
+		id: string
+		name: string
+		url: string
+		/** 个签 / 简介（后端 desp） */
+		desp?: string
+		/** 图标 URL */
+		icon?: string
+	}
 
 export type InboxItem = {
 	/** 评论 id，回复时作 parentId */

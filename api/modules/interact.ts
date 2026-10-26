@@ -58,6 +58,17 @@ export async function checkCollected(articleId: string | number): Promise<boolea
  * 我的收藏列表（Nest：{ list, pagination }，行内 article）
  */
 export async function fetchCollectList(page = 1, pageSize = 20): Promise<ArticleSummary[]> {
+	const res = await fetchCollectPage(page, pageSize)
+	return res.list
+}
+
+/**
+ * 我的收藏分页（含 total，供「我的」统计）
+ */
+export async function fetchCollectPage(
+	page = 1,
+	pageSize = 20,
+): Promise<{ list: ArticleSummary[]; total: number }> {
 	const res = await get('/collect/list', { page, pageSize })
 	const arr = res != null && res.list != null ? res.list : []
 	const list: ArticleSummary[] = []
@@ -68,7 +79,13 @@ export async function fetchCollectList(page = 1, pageSize = 20): Promise<Article
 		if (mapped.id.length == 0 || mapped.title.length == 0) continue
 		list.push(mapped)
 	}
-	return list
+	let total = list.length
+	if (res != null && res.pagination != null && res.pagination.total != null) {
+		total = Number(res.pagination.total)
+	} else if (res != null && res.total != null) {
+		total = Number(res.total)
+	}
+	return { list, total: isNaN(total) ? list.length : total }
 }
 
 /**

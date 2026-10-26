@@ -59,20 +59,40 @@ function avatarUrlOf(user: any): string {
 	return resolveStaticUrl(path)
 }
 
-/**
- * 标签数组 → 展示名列表（Nest tag.label）
- */
-function tagLabelsOf(raw: any): string[] {
-	const out: string[] = []
-	if (raw == null || !Array.isArray(raw.tags)) return out
-	for (let i = 0; i < raw.tags.length; i++) {
-		const t = raw.tags[i]
-		if (t == null || t.label == null) continue
-		const label = '' + t.label
-		if (label.length > 0) out.push(label)
+	/**
+	 * 标签数组 → 展示名列表（Nest tag.label）
+	 */
+	function tagLabelsOf(raw: any): string[] {
+		const out: string[] = []
+		if (raw == null || !Array.isArray(raw.tags)) return out
+		for (let i = 0; i < raw.tags.length; i++) {
+			const t = raw.tags[i]
+			if (t == null || t.label == null) continue
+			const label = '' + t.label
+			if (label.length > 0) out.push(label)
+		}
+		return out
 	}
-	return out
-}
+
+	/**
+	 * 标签数组 → { id, label, color }（详情/标签墙点击筛选）
+	 */
+	function tagItemsOf(raw: any): { id: string; label: string; color: string }[] {
+		const out: { id: string; label: string; color: string }[] = []
+		if (raw == null || !Array.isArray(raw.tags)) return out
+		for (let i = 0; i < raw.tags.length; i++) {
+			const t = raw.tags[i]
+			if (t == null || t.label == null) continue
+			const label = '' + t.label
+			if (label.length == 0) continue
+			out.push({
+				id: t.id != null ? '' + t.id : '' + i,
+				label,
+				color: t.color != null && ('' + t.color).length > 0 ? '' + t.color : '#2a8f76',
+			})
+		}
+		return out
+	}
 
 /**
  * 列表项 → ArticleSummary（封面取文章 cover）
@@ -141,10 +161,11 @@ export function mapArticleDetail(raw: any): ArticleDetail {
 		aiSummary: ai,
 		content: raw != null && raw.content != null ? '' + raw.content : '',
 		contentHtml: raw != null && raw.contentHtml != null ? '' + raw.contentHtml : '',
-		description,
-		tagLabels: tagLabelsOf(raw),
+			description,
+			tagLabels: tagLabelsOf(raw),
+			tags: tagItemsOf(raw),
+		}
 	}
-}
 
 /**
  * 英文月名 → 中文展示

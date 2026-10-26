@@ -31,28 +31,28 @@
 		<view class="x-grid-2">
 			<view class="x-grid-2-item">
 				<view class="x-tile" @click="goArchive">
-					<view class="x-tile-ico"><x-icon name="books" :size="22" color="#1c1a17"></x-icon></view>
+					<view class="x-tile-ico"><x-icon name="books" :size="20" color="#1c1a17"></x-icon></view>
 					<text class="x-tile-title">归档</text>
 					<text class="x-tile-desc">按月浏览</text>
 				</view>
 			</view>
 			<view class="x-grid-2-item">
 				<view class="x-tile" @click="goTags">
-					<view class="x-tile-ico"><x-icon name="tag" :size="22" color="#1c1a17"></x-icon></view>
+					<view class="x-tile-ico"><x-icon name="tag" :size="20" color="#1c1a17"></x-icon></view>
 					<text class="x-tile-title">标签墙</text>
 					<text class="x-tile-desc">全部标签</text>
 				</view>
 			</view>
 			<view class="x-grid-2-item">
 				<view class="x-tile" @click="goGuestbook">
-					<view class="x-tile-ico"><x-icon name="message" :size="22" color="#1c1a17"></x-icon></view>
+					<view class="x-tile-ico"><x-icon name="message" :size="20" color="#1c1a17"></x-icon></view>
 					<text class="x-tile-title">留言板</text>
 					<text class="x-tile-desc">访客留言</text>
 				</view>
 			</view>
 			<view class="x-grid-2-item">
 				<view class="x-tile" @click="goLinks">
-					<view class="x-tile-ico"><x-icon name="link" :size="22" color="#1c1a17"></x-icon></view>
+					<view class="x-tile-ico"><x-icon name="link" :size="20" color="#1c1a17"></x-icon></view>
 					<text class="x-tile-title">友链</text>
 					<text class="x-tile-desc">友情链接</text>
 				</view>
@@ -172,15 +172,17 @@ function goSearch(): void {
 }
 
 /**
- * 分类 chip → 搜索页（「推荐/全部」不带关键词）
+ * 分类 chip → 搜索页（精确 category UUID；「推荐/全部」打开空搜）
  */
 function onSelectCat(_i: number, chip: CategoryChip): void {
-	const c = chip != null && chip.label != null ? chip.label : ''
-	if (c == '推荐' || c == '全部' || c.length == 0) {
-		goSearch()
+	const id = chip != null && chip.id != null ? chip.id : ''
+	if (id.length == 0) {
+		uni.navigateTo({ url: '/pages/search/search' })
 		return
 	}
-	uni.navigateTo({ url: '/pages/search/search?q=' + encodeURIComponent(c) })
+	uni.navigateTo({
+		url: '/pages/search/search?category=' + encodeURIComponent(id),
+	})
 }
 
 function goArchive(): void {

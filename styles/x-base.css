@@ -178,26 +178,38 @@
 	background-color: var(--x-surface, #ffffff);
 	border-radius: 22px;
 	padding: 14px;
-	min-height: 88px;
+	min-height: 96px;
 	margin-bottom: 10px;
+	/* 图标 + 文案纵向对齐，左右两列视觉统一 */
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: flex-start;
 }
 
 .x-tile-ico {
-	margin-bottom: 6px;
+	width: 36px;
+	height: 36px;
+	border-radius: 12px;
+	background-color: var(--x-bg-2, #ebe6df);
+	margin-bottom: 10px;
 	align-items: center;
 	justify-content: center;
 }
 
 .x-tile-title {
-	font-size: 13px;
+	font-size: 14px;
 	font-weight: 700;
 	color: var(--x-ink, #1c1a17);
-	margin-bottom: 2px;
+	margin-bottom: 4px;
+	lines: 1;
+	text-overflow: ellipsis;
 }
 
 .x-tile-desc {
 	font-size: 11px;
 	color: var(--x-ink-3, #9a948a);
+	lines: 1;
+	text-overflow: ellipsis;
 }
 
 .x-grid-2 {

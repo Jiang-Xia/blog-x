@@ -13,7 +13,8 @@
     "mp-weixin" : {
         "appid" : "wx1df79a9834d74211",
         "setting" : {
-            "urlCheck" : false
+            "urlCheck" : false,
+            "es6" : false
         },
         "usingComponents" : true,
         "libVersion" : "3.7.9",

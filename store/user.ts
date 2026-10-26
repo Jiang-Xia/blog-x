@@ -21,20 +21,22 @@ import {
 } from '../utils/storage'
 
 	/** 未登录占位资料 */
-	function emptyProfile(): UserProfile {
-		return {
-			id: 0,
-			nickname: '未登录',
-			avatar: '',
-			avatarUrl: '',
-			avatarIcon: 'paw',
-			bio: '登录后同步收藏与冒险进度',
-			homepage: '',
-			articleCount: 0,
-			favoriteCount: 0,
-			likeReceived: 0,
+		function emptyProfile(): UserProfile {
+			return {
+				id: 0,
+				nickname: '未登录',
+				avatar: '',
+				avatarUrl: '',
+				avatarIcon: 'paw',
+				bio: '登录后同步收藏与冒险进度',
+				homepage: '',
+				articleCount: 0,
+				favoriteCount: 0,
+				likeReceived: 0,
+				roleIds: [],
+				roleNames: [],
+			}
 		}
-	}
 
 export const useUserStore = defineStore('user', () => {
 	/** 是否已登录（与 storage token 同步，供模板响应式） */
@@ -64,18 +66,20 @@ export const useUserStore = defineStore('user', () => {
 		if (cached != null) {
 			profile.value = cached
 			} else if (profile.value.id == 0) {
-				profile.value = {
-					id: 0,
-					nickname: '已登录',
-					avatar: '',
-					avatarUrl: '',
-					avatarIcon: 'paw',
-					bio: '正在同步资料…',
-					homepage: '',
-					articleCount: 0,
-					favoriteCount: 0,
-					likeReceived: 0,
-				}
+					profile.value = {
+						id: 0,
+						nickname: '已登录',
+						avatar: '',
+						avatarUrl: '',
+						avatarIcon: 'paw',
+						bio: '正在同步资料…',
+						homepage: '',
+						articleCount: 0,
+						favoriteCount: 0,
+						likeReceived: 0,
+						roleIds: [],
+						roleNames: [],
+					}
 			}
 	}
 

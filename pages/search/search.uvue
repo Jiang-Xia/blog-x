@@ -1,5 +1,5 @@
 <template>
-	<!-- 搜索：可输入关键词 + 结果 + 本地搜索历史 chip -->
+	<!-- 搜索：关键词模糊（标题/摘要/正文）+ 分类/标签精确筛选；空关键词=全部 -->
 	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="搜索"></x-navbar>
 		<view class="query-row">
@@ -7,7 +7,7 @@
 				class="query-input"
 				type="text"
 				v-model="query"
-				placeholder="搜索文章、标签…"
+				placeholder="搜索标题、摘要、正文…"
 				placeholder-class="query-ph"
 				confirm-type="search"
 				@confirm="onSearch"
@@ -15,6 +15,35 @@
 			<text class="search-btn" @click="onSearch">搜索</text>
 			<text class="clear" @click="onClear">清除</text>
 		</view>
+
+		<!-- 分类精确筛选 -->
+		<scroll-view class="filter-scroll" scroll-x="true" :show-scrollbar="false">
+			<view class="filter-row">
+				<view
+					v-for="(c, ci) in categories"
+					:key="'c' + ci"
+					:class="catId == c.id ? 'x-chip x-chip-dark' : 'x-chip x-chip-plain'"
+					@click="onPickCat(c.id)"
+				>
+					<text :class="catId == c.id ? 'chip-t-dark' : 'chip-t'">{{ c.label }}</text>
+				</view>
+			</view>
+		</scroll-view>
+
+		<!-- 标签精确筛选（可多选，对齐 Nuxt tags[]） -->
+		<scroll-view v-if="tagOptions.length > 0" class="filter-scroll" scroll-x="true" :show-scrollbar="false">
+			<view class="filter-row">
+				<view
+					v-for="(t, ti) in tagOptions"
+					:key="'t' + ti"
+					class="tag-filter"
+					:style="tagFilterStyle(t)"
+					@click="onToggleTag(t.id)"
+				>
+					<text class="tag-filter-t" :style="{ color: t.color }">{{ t.label }}</text>
+				</view>
+			</view>
+		</scroll-view>
 
 		<x-scroll-page
 			:enable-refresh="searched"
@@ -70,12 +99,20 @@
 
 <script setup lang="ts">
 /**
- * 搜索页：联调 POST /article/list?title=；chip-row 为本地搜索历史
- * 数据来源：API + utils/storage SearchHistoryKey
- * 滚动：有结果后支持下拉刷新 + 上滑加载更多
+ * 搜索页：对齐 Nuxt ArticleList
+ * - 关键词同时写入 title/description/content（服务端 OR 模糊）
+ * - 分类 category UUID 精确；标签 tags[] UUID 精确
+ * - 空关键词点击搜索 → 返回全部（可叠加分类/标签）
+ * 数据来源：POST /article/list；筛选选项 GET /category、/tag
  */
 import type { ArticleSummary } from '../../types/article'
-import { fetchArticleList } from '../../api/modules/article'
+import {
+	fetchArticleList,
+	fetchCategories,
+	fetchTags,
+	type CategoryOption,
+	type TagWallItem,
+} from '../../api/modules/article'
 import { useListScroll } from '../../composables/useListScroll'
 import { useTheme } from '../../composables/useTheme'
 import {
@@ -91,6 +128,11 @@ const query = ref('')
 const results = ref([] as ArticleSummary[])
 const history = ref([] as string[])
 const searched = ref(false)
+const categories = ref([{ id: '', label: '全部分类' }] as CategoryOption[])
+const catId = ref('')
+const tagOptions = ref([] as TagWallItem[])
+/** 已选标签 UUID */
+const selectedTagIds = ref([] as string[])
 
 const {
 	pageSize,
@@ -116,11 +158,40 @@ function reloadHistory(): void {
 }
 
 /**
- * 按页拉取搜索结果
+ * 标签筛选 chip 边框色（未选中浅边框，选中用标签色）
+ */
+function tagFilterStyle(t: TagWallItem): string {
+	const on = selectedTagIds.value.indexOf(t.id) >= 0
+	const c = t.color.length > 0 ? t.color : '#2a8f76'
+	if (on) {
+		return 'border-color:' + c + ';background-color:' + c + '22'
+	}
+	return 'border-color:' + c + '88;background-color:#ffffff'
+}
+
+/**
+ * 按页拉取（空关键词不传 title/description/content）
  */
 async function fetchPage(page: number, q: string): Promise<{ list: ArticleSummary[]; total: number }> {
 	try {
-		const res = await fetchArticleList({ page, pageSize, title: q, client: true })
+		const body: {
+			page: number
+			pageSize: number
+			client: boolean
+			title?: string
+			description?: string
+			content?: string
+			category?: string
+			tags?: string[]
+		} = { page, pageSize, client: true }
+		if (q.length > 0) {
+			body.title = q
+			body.description = q
+			body.content = q
+		}
+		if (catId.value.length > 0) body.category = catId.value
+		if (selectedTagIds.value.length > 0) body.tags = selectedTagIds.value.slice()
+		const res = await fetchArticleList(body)
 		return { list: res.list, total: res.total }
 	} catch (_) {
 		return { list: [], total: 0 }
@@ -128,18 +199,14 @@ async function fetchPage(page: number, q: string): Promise<{ list: ArticleSummar
 }
 
 /**
- * 按关键词搜文章，并写入本地历史
+ * 执行搜索；空关键词仍拉列表（全部 + 当前筛选）
  */
 async function doSearch(raw: string): Promise<void> {
 	const q = raw.trim()
 	query.value = q
-	if (q.length == 0) {
-		results.value = []
-		searched.value = false
-		resetPaging()
-		return
+	if (q.length > 0) {
+		history.value = pushSearchHistory(q)
 	}
-	history.value = pushSearchHistory(q)
 	searched.value = true
 	beginRefresh()
 	const res = await fetchPage(1, q)
@@ -175,10 +242,48 @@ async function onLoadMore(): Promise<void> {
 	endLoadMore(res.list.length, results.value.length, res.total)
 }
 
+/**
+ * 加载分类 / 标签筛选项
+ */
+async function loadFilters(): Promise<void> {
+	try {
+		const rows = await fetchCategories()
+		const chips: CategoryOption[] = [{ id: '', label: '全部分类' }]
+		for (let i = 0; i < rows.length; i++) {
+			chips.push(rows[i])
+		}
+		categories.value = chips
+	} catch (_) {
+		categories.value = [{ id: '', label: '全部分类' }]
+	}
+	try {
+		tagOptions.value = await fetchTags()
+	} catch (_) {
+		tagOptions.value = []
+	}
+}
+
 onLoad((options) => {
 	reloadHistory()
-	if (options != null && options['q'] != null && ('' + options['q']).length > 0) {
-		const q = decodeURIComponent('' + options['q'])
+	loadFilters()
+	const q =
+		options != null && options['q'] != null && ('' + options['q']).length > 0
+			? decodeURIComponent('' + options['q'])
+			: ''
+	const tagId =
+		options != null && options['tagId'] != null ? decodeURIComponent('' + options['tagId']) : ''
+	const category =
+		options != null && options['category'] != null
+			? decodeURIComponent('' + options['category'])
+			: ''
+	if (tagId.length > 0) {
+		selectedTagIds.value = [tagId]
+	}
+	if (category.length > 0) {
+		catId.value = category
+	}
+	// 有关键词 / 精确筛选 / 路由强制搜 → 直接出结果；否则展示历史
+	if (q.length > 0 || tagId.length > 0 || category.length > 0) {
 		doSearch(q)
 	}
 })
@@ -194,10 +299,35 @@ function onChip(h: string): void {
 	doSearch(h)
 }
 
+/**
+ * 切换分类精确筛选并重搜
+ */
+function onPickCat(id: string): void {
+	catId.value = id
+	resetPaging()
+	doSearch(query.value)
+}
+
+/**
+ * 切换标签多选精确筛选
+ */
+function onToggleTag(id: string): void {
+	const idx = selectedTagIds.value.indexOf(id)
+	if (idx >= 0) {
+		selectedTagIds.value.splice(idx, 1)
+	} else {
+		selectedTagIds.value.push(id)
+	}
+	resetPaging()
+	doSearch(query.value)
+}
+
 function onClear(): void {
 	query.value = ''
 	results.value = []
 	searched.value = false
+	catId.value = ''
+	selectedTagIds.value = []
 	resetPaging()
 	showXToast('eraser', '已清除', '')
 }
@@ -226,7 +356,7 @@ onShow(() => {
 	background-color: var(--x-surface, #ffffff);
 	border-radius: 999px;
 	padding: 8px 12px;
-	margin-bottom: 12px;
+	margin-bottom: 10px;
 }
 
 .query-input {
@@ -253,6 +383,35 @@ onShow(() => {
 .clear {
 	font-size: 12px;
 	color: var(--x-ink-3, #9a948a);
+}
+
+.filter-scroll {
+	width: 100%;
+	margin-bottom: 8px;
+	/* 横滑高度 */
+	height: 36px;
+}
+
+.filter-row {
+	flex-direction: row;
+	align-items: center;
+	flex-wrap: nowrap;
+	padding-right: 8px;
+}
+
+.tag-filter {
+	padding: 5px 12px;
+	border-radius: 999px;
+	border-width: 1px;
+	border-style: solid;
+	margin-right: 8px;
+	align-items: center;
+	justify-content: center;
+}
+
+.tag-filter-t {
+	font-size: 11px;
+	font-weight: 600;
 }
 
 .hist-block {
@@ -285,6 +444,12 @@ onShow(() => {
 .chip-t {
 	font-size: 11px;
 	color: var(--x-ink-2, #5c574f);
+	font-weight: 500;
+}
+
+.chip-t-dark {
+	font-size: 11px;
+	color: var(--x-on-ink, #ffffff);
 	font-weight: 500;
 }
 

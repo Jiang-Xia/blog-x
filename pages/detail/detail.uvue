@@ -43,8 +43,16 @@
 			<text class="detail-title">{{ article.title }}</text>
 			<text class="x-meta meta-line">{{ articleMetaLine }}</text>
 
-			<view v-if="article.tagLabels.length > 0" class="tag-row">
-				<text v-for="(t, ti) in article.tagLabels" :key="ti" class="x-chip tag-chip">{{ t }}</text>
+			<view v-if="article.tags.length > 0" class="tag-row">
+				<view
+					v-for="(t, ti) in article.tags"
+					:key="ti"
+					class="tag-chip"
+					:style="'border-color:' + t.color + ';'"
+					@click="goTag(t)"
+				>
+					<text class="tag-chip-t" :style="'color:' + t.color + ';'">{{ t.label }}</text>
+				</view>
 			</view>
 
 			<view
@@ -339,6 +347,7 @@ const emptyArticle: ArticleDetail = {
 	contentHtml: '',
 	description: '',
 	tagLabels: [],
+	tags: [],
 }
 
 const article = ref(emptyArticle)
@@ -653,6 +662,16 @@ onShow(() => {
 		refreshLikeCollect(articleId.value)
 	}
 })
+
+/**
+ * 点击标签 → 搜索页精确筛选该标签
+ */
+function goTag(t: { id: string; label: string }): void {
+	if (t == null || t.id == null || t.id.length == 0) return
+	uni.navigateTo({
+		url: '/pages/search/search?tagId=' + encodeURIComponent(t.id),
+	})
+}
 
 function goAi(): void {
 	uni.navigateTo({ url: '/pages-blog/ai/index' })
@@ -1015,7 +1034,18 @@ async function onTipPaid(amount: number): Promise<void> {
 }
 
 .tag-chip {
+	padding: 5px 12px;
+	border-radius: 999px;
+	border-width: 1px;
+	border-style: solid;
+	background-color: var(--x-surface, #ffffff);
+	margin-right: 8px;
 	margin-bottom: 6px;
+}
+
+.tag-chip-t {
+	font-size: 11px;
+	font-weight: 600;
 }
 
 .cover-hero {

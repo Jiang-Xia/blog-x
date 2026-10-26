@@ -27,6 +27,13 @@
 		articleCount: number
 		favoriteCount: number
 		likeReceived: number
+		/**
+		 * 角色名列表（/user/info.roles[].roleName）
+		 * 用于管理模式入口：超级管理员 / 管理员
+		 */
+		roleNames: string[]
+		/** 角色 id 列表（roles[].id；1=超级管理员） */
+		roleIds: number[]
 	}
 
 	/** PATCH /user/edit 入参（对齐 blog-home-nuxt UpdateUserProfileParams） */

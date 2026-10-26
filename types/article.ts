@@ -59,8 +59,10 @@ export type ArticleDetail = ArticleSummary & {
 	content: string
 	/** 正文 HTML（优先 rich-text） */
 	contentHtml: string
-	/** 文章简介 */
-	description: string
-	/** 标签展示名列表（后端 label） */
-	tagLabels: string[]
-}
+		/** 文章简介 */
+		description: string
+		/** 标签展示名列表（后端 label） */
+		tagLabels: string[]
+		/** 标签完整项（含 id/color，供着色与精确筛选跳转） */
+		tags: { id: string; label: string; color: string }[]
+	}

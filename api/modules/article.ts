@@ -12,17 +12,30 @@ import type { ArchiveYear } from '../../types/notify'
 export async function fetchArticleList(params: {
 	page?: number
 	pageSize?: number
+	/** 模糊：标题（与 description/content 同关键词时对齐 Nuxt 全站搜） */
 	title?: string
+	/** 模糊：摘要 */
+	description?: string
+	/** 模糊：正文 */
+	content?: string
+	/** 精确：分类 UUID */
 	category?: string
+	/** 精确：标签 UUID 列表 */
+	tags?: string[]
 	client?: boolean
 } = {}): Promise<{ list: ArticleSummary[]; total: number }> {
-	const body = {
+	const body: Record<string, any> = {
 		page: params.page != null ? params.page : 1,
 		pageSize: params.pageSize != null ? params.pageSize : 10,
 		client: params.client != null ? params.client : true,
-		title: params.title,
-		category: params.category,
 	}
+	if (params.title != null && params.title.length > 0) body.title = params.title
+	if (params.description != null && params.description.length > 0) {
+		body.description = params.description
+	}
+	if (params.content != null && params.content.length > 0) body.content = params.content
+	if (params.category != null && params.category.length > 0) body.category = params.category
+	if (params.tags != null && params.tags.length > 0) body.tags = params.tags
 	const res = await post('/article/list', body)
 	const rawList = res != null && res.list != null ? res.list : []
 	const list: ArticleSummary[] = []
@@ -202,14 +215,16 @@ export async function fetchTagNames(): Promise<string[]> {
 	return names
 }
 
-/** 标签墙单项 */
+/** 标签墙单项（color 来自后端，勿本地调色） */
 export type TagWallItem = {
 	id: string
 	label: string
+	/** 标签自带色（文字/边框） */
+	color: string
 }
 
 /**
- * 标签墙列表（Nest：裸数组，字段 label）
+ * 标签墙列表（Nest：裸数组，字段 label / color）
  */
 export async function fetchTags(): Promise<TagWallItem[]> {
 	const res = await get('/tag', { isDelete: true }, { silent: true })
@@ -222,7 +237,26 @@ export async function fetchTags(): Promise<TagWallItem[]> {
 		list.push({
 			id: t.id != null ? '' + t.id : '' + i,
 			label,
+			color: t != null && t.color != null && ('' + t.color).length > 0 ? '' + t.color : '#2a8f76',
 		})
 	}
 	return list
+}
+
+/**
+ * 作者创作统计（对齐 Nuxt getAuthorStats → GET /article/author-stats）
+ */
+export async function fetchAuthorStats(): Promise<{
+	published: number
+	totalLikes: number
+}> {
+	try {
+		const res = await get('/article/author-stats', null, { silent: true })
+		return {
+			published: res != null && res.published != null ? Number(res.published) : 0,
+			totalLikes: res != null && res.totalLikes != null ? Number(res.totalLikes) : 0,
+		}
+	} catch (_) {
+		return { published: 0, totalLikes: 0 }
+	}
 }
