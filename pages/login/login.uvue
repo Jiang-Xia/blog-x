@@ -4,7 +4,11 @@
 		<x-navbar title="登录"></x-navbar>
 		<view class="brand">
 			<view class="brand-em">
-				<x-icon name="paw" :size="36" color="#1c1a17"></x-icon>
+				<image
+					class="brand-logo"
+					src="/static/favicon_io/android-chrome-192x192.png"
+					mode="aspectFit"
+				></image>
 			</view>
 			<text class="brand-name">江夏的博客</text>
 			<text class="brand-sub">账号登录或微信一键登录</text>
@@ -263,6 +267,11 @@ onShow(() => {
 	margin-bottom: 12px;
 	align-items: center;
 	justify-content: center;
+}
+
+.brand-logo {
+	width: 72px;
+	height: 72px;
 }
 
 .brand-name {
