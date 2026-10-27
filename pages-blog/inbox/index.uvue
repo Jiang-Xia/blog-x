@@ -2,7 +2,9 @@
 	<!-- 评论收件箱：列表 + 回复 -->
 	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="评论收件箱"></x-navbar>
-		<text class="badge-line">未读 {{ badge }}</text>
+		<view class="x-page-head">
+			<text class="badge-line">未读 {{ badge }}</text>
+		</view>
 		<x-scroll-page
 			:refreshing="refreshing"
 			:pulling-distance="pullingDistance"

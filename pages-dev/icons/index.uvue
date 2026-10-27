@@ -7,7 +7,7 @@
 			</template>
 		</x-navbar>
 
-		<view class="pick-bar">
+		<view class="pick-bar x-page-head">
 			<input
 				class="pick-input"
 				v-model="keyword"

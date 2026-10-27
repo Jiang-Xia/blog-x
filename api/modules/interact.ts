@@ -63,21 +63,96 @@ export async function fetchCollectList(page = 1, pageSize = 20): Promise<Article
 }
 
 /**
+ * 收藏行 enrich 缓存：articleId → { coverUrl, categoryName }
+ * /collect/list 不返回 cover；会话内复用查询结果，避免重复请求
+ */
+const collectEnrichCache = new Map<string, { coverUrl: string; categoryName: string }>()
+
+/**
+ * 用 /article/list 命中行覆盖收藏行的封面/分类
+ */
+function applyCollectEnrich(
+	row: ArticleSummary,
+	info: { coverUrl: string; categoryName: string },
+): ArticleSummary {
+	return {
+		...row,
+		coverUrl: row.coverUrl.length > 0 ? row.coverUrl : info.coverUrl,
+		categoryName: row.categoryName.length > 0 ? row.categoryName : info.categoryName,
+	}
+}
+
+/**
+ * 收藏行封面补齐：/collect/list 行内无 cover，按行标题查 /article/list
+ * （client=true，正文置空的轻量行）并按文章 id 精确匹配回填；查不到保留占位封面
+ */
+async function enrichCollectRow(row: ArticleSummary): Promise<ArticleSummary> {
+	if (row.coverUrl.length > 0) return row
+	const hit = collectEnrichCache.get(row.id)
+	if (hit != null) return applyCollectEnrich(row, hit)
+	if (row.title.length == 0) return row
+	try {
+		const res = await post(
+			'/article/list',
+			{ page: 1, pageSize: 5, title: row.title, client: true },
+			{ silent: true },
+		)
+		const arr = res != null && res.list != null ? res.list : []
+		for (let i = 0; i < arr.length; i++) {
+			const a = arr[i]
+			if (a == null || a.id == null || '' + a.id !== row.id) continue
+			const mapped = mapArticleSummary(a)
+			const info = { coverUrl: mapped.coverUrl, categoryName: mapped.categoryName }
+			collectEnrichCache.set(row.id, info)
+			return applyCollectEnrich(row, info)
+		}
+	} catch (_) {}
+	return row
+}
+
+/**
+ * 批量补齐一页收藏行（并发；保持原有顺序）
+ */
+async function enrichCollectRows(list: ArticleSummary[]): Promise<ArticleSummary[]> {
+	if (list.length == 0) return list
+	const out: ArticleSummary[] = []
+	const tasks: Promise<void>[] = []
+	for (let i = 0; i < list.length; i++) {
+		out.push(list[i])
+		const idx = i
+		tasks.push(
+			enrichCollectRow(list[i]).then((r: ArticleSummary) => {
+				out[idx] = r
+			}),
+		)
+	}
+	await Promise.all(tasks)
+	return out
+}
+
+/**
  * 我的收藏分页（含 total，供「我的」统计）
+ * @param enrich 是否补齐封面/分类（统计场景可关）
  */
 export async function fetchCollectPage(
 	page = 1,
 	pageSize = 20,
+	enrich = true,
 ): Promise<{ list: ArticleSummary[]; total: number }> {
 	const res = await get('/collect/list', { page, pageSize })
 	const arr = res != null && res.list != null ? res.list : []
-	const list: ArticleSummary[] = []
+	let list: ArticleSummary[] = []
 	for (let i = 0; i < arr.length; i++) {
 		const row = arr[i]
 		if (row == null || row.article == null) continue
 		const mapped = mapArticleSummary(row.article)
 		if (mapped.id.length == 0 || mapped.title.length == 0) continue
 		list.push(mapped)
+	}
+	if (enrich) {
+		try {
+			list = await enrichCollectRows(list)
+		} catch (_) {}
 	}
 	let total = list.length
 	if (res != null && res.pagination != null && res.pagination.total != null) {

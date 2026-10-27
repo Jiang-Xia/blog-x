@@ -4,3 +4,69 @@
 # 示例：
 # diamond
 # sword
+
+# ---- RPG 后端下发的 icon 键（rpg_item_config.icon / 宠物 / 奖池 / 装扮 / 成就）----
+# 宠物与宠物蛋
+slime
+fox
+dragon
+cat
+owl
+phoenix
+kirin
+egg
+# 奖池与消耗
+exp
+ticket
+scroll
+shield
+gem
+gems
+quill
+starburst
+# 钻石与通用
+diamond
+gift
+paw
+sparkle
+sparkles
+# 称号 / 头像框装扮
+crown
+crown-star
+crown-gem
+frame-green
+frame-blue
+frame-purple
+frame-gold
+medal-bronze
+medal-silver
+medal-gold
+# 成就图标（公开主页/任务等动态场景）
+pen
+books
+library
+chat
+megaphone
+reply
+board
+calendar
+calendar-check
+trophy
+fire
+flame
+heart
+hearts
+bookmark
+bookmarks
+star
+stars
+share
+dice
+slot
+hand
+hands
+flower
+bouquet
+paws
+dragon-pet
+banner

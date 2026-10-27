@@ -1,5 +1,5 @@
 /**
- * Tabler 字形映射（子集 outline 49 / filled 35）—— 由 scripts/subset-icons.py 生成，请勿手改。
+ * Tabler 字形映射（子集 outline 63 / filled 44）—— 由 scripts/subset-icons.py 生成，请勿手改。
  * 新增图标后重跑：python scripts/subset-icons.py
  * 动态拼接的图标名请加入 scripts/icon-whitelist.txt
  */
@@ -9,7 +9,7 @@ export interface IconGlyph {
 	unicode: string
 }
 
-/** 线性图标（tabler-icons.ttf），共 49 个 */
+/** 线性图标（tabler-icons.ttf），共 63 个 */
 export const ICON_OUTLINE: IconGlyph[] = [
 		{ name: 'arrow-back', unicode: '\uea0c' },
 		{ name: 'arrow-left', unicode: '\uea19' },
@@ -18,21 +18,32 @@ export const ICON_OUTLINE: IconGlyph[] = [
 		{ name: 'backpack', unicode: '\uef47' },
 		{ name: 'bell', unicode: '\uea35' },
 		{ name: 'book', unicode: '\uea39' },
+		{ name: 'bookmark', unicode: '\uea3a' },
+		{ name: 'bookmarks', unicode: '\ued08' },
 		{ name: 'books', unicode: '\ueff2' },
 		{ name: 'calendar', unicode: '\uea53' },
+		{ name: 'calendar-check', unicode: '\uf824' },
+		{ name: 'cat', unicode: '\uf65b' },
 		{ name: 'check', unicode: '\uea5e' },
 		{ name: 'chevron-left', unicode: '\uea60' },
 		{ name: 'chevron-right', unicode: '\uea61' },
 		{ name: 'clock', unicode: '\uea70' },
 		{ name: 'coin', unicode: '\ueb82' },
 		{ name: 'compass', unicode: '\uea79' },
+		{ name: 'crown', unicode: '\ued12' },
 		{ name: 'diamond', unicode: '\ueb65' },
 		{ name: 'dice', unicode: '\ueb66' },
+		{ name: 'dragon', unicode: '\ud800\ude72' },
 		{ name: 'edit', unicode: '\uea98' },
+		{ name: 'egg', unicode: '\ueb8a' },
+		{ name: 'flame', unicode: '\uec2c' },
+		{ name: 'flower', unicode: '\ueff6' },
 		{ name: 'gift', unicode: '\ueb68' },
 		{ name: 'heart', unicode: '\ueabe' },
+		{ name: 'hearts', unicode: '\uf387' },
 		{ name: 'home', unicode: '\ueac1' },
 		{ name: 'inbox', unicode: '\ueac4' },
+		{ name: 'library', unicode: '\ufd4c' },
 		{ name: 'link', unicode: '\ueade' },
 		{ name: 'login', unicode: '\ueba7' },
 		{ name: 'logout', unicode: '\ueba8' },
@@ -50,34 +61,44 @@ export const ICON_OUTLINE: IconGlyph[] = [
 		{ name: 'settings', unicode: '\ueb20' },
 		{ name: 'share', unicode: '\ueb21' },
 		{ name: 'shield', unicode: '\ueb24' },
+		{ name: 'sparkle', unicode: '\ud800\ude59' },
 		{ name: 'sparkles', unicode: '\uf6d7' },
 		{ name: 'star', unicode: '\ueb2e' },
+		{ name: 'stars', unicode: '\ued38' },
 		{ name: 'sun', unicode: '\ueb30' },
 		{ name: 'sword', unicode: '\uf030' },
 		{ name: 'tag', unicode: '\ud800\udc96' },
 		{ name: 'thumb-up', unicode: '\ueb3c' },
+		{ name: 'ticket', unicode: '\ueb3d' },
 		{ name: 'trash', unicode: '\ueb41' },
 		{ name: 'trophy', unicode: '\ueb45' },
 		{ name: 'user', unicode: '\ueb4d' },
 		{ name: 'x', unicode: '\ueb55' },
 ]
 
-/** 面性图标（tabler-icons-filled.ttf），共 35 个 */
+/** 面性图标（tabler-icons-filled.ttf），共 44 个 */
 export const ICON_FILLED: IconGlyph[] = [
 		{ name: 'bell', unicode: '\uf669' },
 		{ name: 'book', unicode: '\ufa87' },
+		{ name: 'bookmark', unicode: '\ufa88' },
+		{ name: 'bookmarks', unicode: '\ufb1f' },
 		{ name: 'calendar', unicode: '\ufb27' },
 		{ name: 'check', unicode: '\ud800\udde6' },
 		{ name: 'chevron-right', unicode: '\ud800\udde4' },
 		{ name: 'clock', unicode: '\uf73a' },
 		{ name: 'coin', unicode: '\ufd08' },
 		{ name: 'compass', unicode: '\ufd10' },
+		{ name: 'crown', unicode: '\ud800\uddc4' },
 		{ name: 'diamond', unicode: '\uf73d' },
 		{ name: 'dice', unicode: '\uf744' },
 		{ name: 'edit', unicode: '\ud800\udddb' },
+		{ name: 'egg', unicode: '\uf678' },
+		{ name: 'flame', unicode: '\ud800\udcc6' },
+		{ name: 'flower', unicode: '\ud800\udc10' },
 		{ name: 'gift', unicode: '\ufd14' },
 		{ name: 'heart', unicode: '\uf67c' },
 		{ name: 'home', unicode: '\ud800\udeb3' },
+		{ name: 'library', unicode: '\ud800\udd80' },
 		{ name: 'link', unicode: '\ud800\uddd5' },
 		{ name: 'message', unicode: '\ufecd' },
 		{ name: 'message-circle', unicode: '\ufecf' },
@@ -92,9 +113,11 @@ export const ICON_FILLED: IconGlyph[] = [
 		{ name: 'shield', unicode: '\uf69f' },
 		{ name: 'sparkles', unicode: '\ud800\uddb2' },
 		{ name: 'star', unicode: '\uf6a6' },
+		{ name: 'stars', unicode: '\uf6a8' },
 		{ name: 'sun', unicode: '\uf6a9' },
 		{ name: 'tag', unicode: '\uff02' },
 		{ name: 'thumb-up', unicode: '\uf6ab' },
+		{ name: 'ticket', unicode: '\ud800\uddc9' },
 		{ name: 'trash', unicode: '\uf783' },
 		{ name: 'trophy', unicode: '\uf6af' },
 		{ name: 'user', unicode: '\ufd19' },

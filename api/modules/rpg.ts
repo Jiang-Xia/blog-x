@@ -19,6 +19,7 @@ import type {
 	RpgHero,
 	RpgQuest,
 } from '../../types/rpg'
+import { resolveStaticUrl } from '../../utils/static-url'
 
 /**
  * 拉取冒险中心英雄区（status + weather）
@@ -201,7 +202,12 @@ export type BagItem = {
 	itemType: string
 	itemTypeLabel: string
 	sourceLabel: string
+	/** 后端 rpg_item_config.icon 键，前端直用不映射 */
 	icon: string
+	/** 管理端上传图标 URL（/static/rpgAssets/itemIcon/*），有则优先图片 */
+	iconUrl: string
+	/** 管理端上传背景 URL（/static/rpgAssets/itemBg/*） */
+	bgUrl: string
 	/** 是否可穿戴（title / avatar_frame） */
 	equippable: boolean
 }
@@ -223,7 +229,12 @@ export type BagPet = {
 	petCode: string
 	name: string
 	level: number
+	/** 后端宠物配置 icon 键，前端直用不映射 */
 	icon: string
+	/** 管理端上传图标 URL，有则优先图片 */
+	iconUrl: string
+	/** 管理端上传背景 URL */
+	bgUrl: string
 }
 
 /**
@@ -247,12 +258,19 @@ export async function fetchInventory(itemType?: string): Promise<BagItem[]> {
 			itemType: type,
 			itemTypeLabel: cfg != null && cfg.itemTypeLabel != null ? '' + cfg.itemTypeLabel : type.length > 0 ? type : '其他',
 			sourceLabel: row.sourceLabel != null ? '' + row.sourceLabel : '',
+			// 图标以 rpg_item_config.icon 为准（前端不控制展示），有上传资产则带 URL
 			icon:
-				cfg != null && cfg.itemTypeIcon != null
-					? '' + cfg.itemTypeIcon
-					: cfg != null && cfg.icon != null
-						? '' + cfg.icon
-						: 'gift',
+				cfg != null && cfg.icon != null
+					? '' + cfg.icon
+					: 'gift',
+			iconUrl:
+				cfg != null && cfg.iconUrl != null && ('' + cfg.iconUrl).length > 0
+					? resolveStaticUrl('' + cfg.iconUrl)
+					: '',
+			bgUrl:
+				cfg != null && cfg.bgUrl != null && ('' + cfg.bgUrl).length > 0
+					? resolveStaticUrl('' + cfg.bgUrl)
+					: '',
 			equippable,
 		})
 	}
@@ -311,12 +329,19 @@ export async function fetchMyPets(): Promise<BagPet[]> {
 							? '' + row.petCode
 							: '宠物',
 			level: row.level != null ? Number(row.level) : 1,
+			// 图标以后端宠物配置为准，有上传资产则带 URL
 			icon:
-				cfg != null && cfg.itemTypeIcon != null
-					? '' + cfg.itemTypeIcon
-					: cfg != null && cfg.icon != null
-						? '' + cfg.icon
-						: 'paw',
+				cfg != null && cfg.icon != null
+					? '' + cfg.icon
+					: 'paw',
+			iconUrl:
+				cfg != null && cfg.iconUrl != null && ('' + cfg.iconUrl).length > 0
+					? resolveStaticUrl('' + cfg.iconUrl)
+					: '',
+			bgUrl:
+				cfg != null && cfg.bgUrl != null && ('' + cfg.bgUrl).length > 0
+					? resolveStaticUrl('' + cfg.bgUrl)
+					: '',
 		})
 	}
 	return list

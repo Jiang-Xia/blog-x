@@ -6,7 +6,9 @@
 				<text class="pub" @click="openCompose">发布</text>
 			</template>
 		</x-navbar>
-		<text class="count">{{ totalLabel }}</text>
+		<view class="x-page-head">
+			<text class="count">{{ totalLabel }}</text>
+		</view>
 		<x-scroll-page
 			:refreshing="refreshing"
 			:pulling-distance="pullingDistance"

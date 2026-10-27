@@ -43,7 +43,8 @@ function onBack(): void {
 .x-navbar {
 	flex-direction: row;
 	align-items: center;
-	padding: 4px 0 12px;
+	/* 左右 16：页面壳无水平 padding 时顶栏仍与内容对齐，滚动条可贴边 */
+	padding: 4px 16px 12px;
 	min-height: 40px;
 }
 

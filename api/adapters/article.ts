@@ -100,10 +100,11 @@ function avatarUrlOf(user: any): string {
 export function mapArticleSummary(raw: any): ArticleSummary {
 	const id = raw != null && raw.id != null ? '' + raw.id : ''
 	const palette = coverOf(id)
+	// 接口未带 category（如公开主页/收藏行）时留空，避免误标「未分类」
 	const cat =
 		raw != null && raw.category != null && raw.category.label != null
 			? '' + raw.category.label
-			: '未分类'
+			: ''
 	const likes = raw != null && raw.likes != null ? Number(raw.likes) : 0
 	const comments = raw != null && raw.commentCount != null ? Number(raw.commentCount) : 0
 	const pinned = raw != null && (raw.topping === true || raw.topping === 1)
@@ -189,7 +190,28 @@ function monthLabelOf(en: string): string {
 }
 
 /**
- * 单月文章列表 → ArchiveArticle[]
+ * 英文月名 → 月序（1~12；未知返回 0）
+ */
+function monthIndexOf(en: string): number {
+	const map: Record<string, number> = {
+		January: 1,
+		February: 2,
+		March: 3,
+		April: 4,
+		May: 5,
+		June: 6,
+		July: 7,
+		August: 8,
+		September: 9,
+		October: 10,
+		November: 11,
+		December: 12,
+	}
+	return map[en] != null ? map[en] : 0
+}
+
+/**
+ * 单月文章列表 → ArchiveArticle[]（按发布时间倒序，最新在前）
  */
 function mapArchiveArticles(arts: any): ArchiveArticle[] {
 	const list: ArchiveArticle[] = []
@@ -200,8 +222,10 @@ function mapArchiveArticles(arts: any): ArchiveArticle[] {
 			id: a.id != null ? '' + a.id : '' + i,
 			title: a.title != null ? '' + a.title : '',
 			timeLabel: a.createTime != null ? formatTimeLabel(a.createTime) : undefined,
+			createTime: a.createTime != null ? Date.parse('' + a.createTime) || 0 : 0,
 		})
 	}
+	list.sort((x, y) => y.createTime - x.createTime)
 	return list
 }
 
@@ -228,8 +252,11 @@ export function mapArchives(raw: any): ArchiveYear[] {
 				articleId: arts.length > 0 ? arts[0].id : undefined,
 				articleTitle: arts.length > 0 ? arts[0].title : undefined,
 				articles: arts,
+				monthIndex: monthIndexOf(en),
 			})
 		}
+		// 月份倒序：最新的月份排在最上面
+		months.sort((x, y) => y.monthIndex - x.monthIndex)
 		years.push({ year: '' + item.year, months })
 	}
 	return years

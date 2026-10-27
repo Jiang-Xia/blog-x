@@ -1,7 +1,7 @@
 <template>
 	<!-- 文章详情：作者/封面/正文/相关横滑/评论头像/底栏赞藏赏 -->
 	<view class="page-wrap" :style="themeCssVars">
-		<scroll-view class="x-page detail-scroll" scroll-y="true">
+		<scroll-view class="detail-scroll" scroll-y="true">
 			<x-navbar title="文章">
 				<template v-slot:right>
 					<view class="nav-more">
@@ -15,6 +15,8 @@
 				</template>
 			</x-navbar>
 
+			<!-- 内容左右边距放内层，滚动条贴屏幕边缘 -->
+			<view class="detail-body">
 			<view v-if="tocOpen && tocItems.length > 0" class="toc-panel">
 				<text class="toc-title">目录</text>
 				<text
@@ -233,6 +235,7 @@
 				<text class="cmt-more-t">{{ commentMoreLabel }}</text>
 			</view>
 			<view class="bottom-pad"></view>
+			</view>
 		</scroll-view>
 
 		<view class="action-bar">
@@ -940,7 +943,12 @@ async function onTipPaid(amount: number): Promise<void> {
 
 .detail-scroll {
 	flex: 1;
-	padding-bottom: 80px;
+	width: 100%;
+}
+
+.detail-body {
+	width: 100%;
+	padding: 0 16px 80px;
 }
 
 .nav-more {

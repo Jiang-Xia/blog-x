@@ -85,14 +85,14 @@
 					<text class="m-label">登录 / 绑定</text>
 					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
-				<view v-else class="mrow" @click="onLogout">
-					<view class="m-ico"><x-icon name="logout" :size="16" :color="tokens.ink"></x-icon></view>
-					<text class="m-label">退出登录</text>
-					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
-				</view>
-				<view class="mrow last" @click="goNotify">
+				<view :class="loggedIn ? 'mrow' : 'mrow last'" @click="goNotify">
 					<view class="m-ico"><x-icon name="bell" :size="16" :color="tokens.ink"></x-icon></view>
 					<text class="m-label">站内通知</text>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
+				</view>
+				<view v-if="loggedIn" class="mrow last" @click="onLogout">
+					<view class="m-ico"><x-icon name="logout" :size="16" :color="tokens.ink"></x-icon></view>
+					<text class="m-label">退出登录</text>
 					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 			</view>
@@ -192,7 +192,7 @@ async function loadProfileStats(): Promise<void> {
 		likeReceived = stats.totalLikes
 	} catch (_) {}
 	try {
-		const collect = await fetchCollectPage(1, 1)
+		const collect = await fetchCollectPage(1, 1, false)
 		favoriteCount = collect.total
 	} catch (_) {}
 	userStore.setProfile({

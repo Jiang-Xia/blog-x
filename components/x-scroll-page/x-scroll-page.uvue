@@ -1,46 +1,61 @@
 <template>
-	<!-- 统一长页滚动：下拉刷新（uni-refresh-box）+ 触底加载更多 -->
-	<scroll-view
-		:class="scrollClass"
-		scroll-y="true"
-		:scroll-into-view="scrollIntoView"
-		:scroll-with-animation="scrollWithAnimation"
-		:refresher-enabled="enableRefresh"
-		:refresher-triggered="refreshing"
-		refresher-default-style="none"
-		:refresher-threshold="45"
-		refresher-max-drag-distance="200px"
-		:lower-threshold="100"
-		@refresherpulling="onPulling"
-		@refresherrefresh="onRefresh"
-		@refresherrestore="onRestore"
-		@refresherabort="onAbort"
-		@scrolltolower="onToLower"
-	>
-		<view :class="innerClass">
-			<slot></slot>
-			<view v-if="showFooter && enableLoadMore" class="x-scroll-footer">
-				<text class="x-scroll-footer-t">{{ footerText }}</text>
+	<!-- 统一长页滚动：下拉刷新（uni-refresh-box）+ 触底加载更多 + 回到顶部浮层 -->
+	<view :class="wrapClass">
+		<scroll-view
+			:class="scrollClass"
+			scroll-y="true"
+			:scroll-into-view="effectiveIntoView"
+			:scroll-with-animation="scrollWithAnimation"
+			:refresher-enabled="enableRefresh"
+			:refresher-triggered="refreshing"
+			refresher-default-style="none"
+			:refresher-threshold="45"
+			refresher-max-drag-distance="200px"
+			:lower-threshold="100"
+			@refresherpulling="onPulling"
+			@refresherrefresh="onRefresh"
+			@refresherrestore="onRestore"
+			@refresherabort="onAbort"
+			@scrolltolower="onToLower"
+			@scroll="onScroll"
+		>
+			<view :class="innerClass">
+				<!-- 回到顶部锚点：scroll-into-view 复位用，零视觉占位 -->
+				<view id="x-btt-anchor" class="x-btt-anchor"></view>
+				<slot></slot>
+				<view v-if="showFooter && enableLoadMore" class="x-scroll-footer">
+					<text class="x-scroll-footer-t">{{ footerText }}</text>
+				</view>
+				<view v-else-if="showFooter && !enableLoadMore" class="x-scroll-footer">
+					<text class="x-scroll-footer-t">{{ footerDoneText }}</text>
+				</view>
 			</view>
-			<view v-else-if="showFooter && !enableLoadMore" class="x-scroll-footer">
-				<text class="x-scroll-footer-t">{{ footerDoneText }}</text>
-			</view>
+			<uni-refresh-box
+				v-if="enableRefresh"
+				slot="refresher"
+				:pulling-distance="pullingDistance"
+				:refreshing="refreshing"
+			></uni-refresh-box>
+		</scroll-view>
+		<!-- 回到顶部浮层：下滑超过一屏出现 -->
+		<view
+			v-if="showBackTop"
+			:class="variant == 'tab' ? 'x-backtop x-backtop-tab' : 'x-backtop'"
+			@click="onBackTop"
+		>
+			<x-icon name="arrow-up" :size="18" color="#ffffff"></x-icon>
 		</view>
-		<uni-refresh-box
-			v-if="enableRefresh"
-			slot="refresher"
-			:pulling-distance="pullingDistance"
-			:refreshing="refreshing"
-		></uni-refresh-box>
-	</scroll-view>
+	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 长列表/长页面滚动壳：scroll-view + 下拉刷新 + 上滑触底
- * - variant=page：二级页（配合外层 x-page + navbar）
+ * 长列表/长页面滚动壳：scroll-view + 下拉刷新 + 上滑触底 + 回到顶部浮层
+ * - variant=page：二级页（配合外层 x-page-flex + navbar；全宽贴边，内边距在 inner）
  * - variant=tab：主壳 Tab 面板（全宽贴边，内边距在 inner）
  * 数据请求由父组件在 @refresh / @loadmore 中完成；状态用 useListScroll
+ * 回到顶部：scrollTop > 300 出现浮层，点击经 scroll-into-view 锚点动画滚回顶部
+ * （不用 scroll-top：惯性滚动中赋值会被平台丢弃、两段赋值易被合并，经常失效）
  */
 const props = defineProps({
 	/** page=二级页；tab=主壳 Tab */
@@ -66,6 +81,8 @@ const props = defineProps({
 	scrollIntoView: { type: String, default: '' },
 	/** 是否带动画滚动到 scrollIntoView */
 	scrollWithAnimation: { type: Boolean, default: true },
+	/** 是否启用回到顶部浮层 */
+	enableBackTop: { type: Boolean, default: true },
 })
 
 const emit = defineEmits(['refresh', 'loadmore', 'refresherpulling', 'refresherrestore', 'refresherabort'])
@@ -78,6 +95,11 @@ const scrollClass = computed((): string => {
 /** 内容区 class */
 const innerClass = computed((): string => {
 	return props.variant == 'tab' ? 'x-page-tab-inner' : 'x-scroll-page-inner'
+})
+
+/** 外层定位壳 class（承载回到顶部浮层） */
+const wrapClass = computed((): string => {
+	return props.variant == 'tab' ? 'x-scroll-wrap x-scroll-wrap-tab' : 'x-scroll-wrap'
 })
 
 /**
@@ -111,10 +133,107 @@ function onToLower(): void {
 	if (!props.enableLoadMore) return
 	emit('loadmore')
 }
+
+/** ---- 回到顶部浮层 ---- */
+const BACK_TOP_THRESHOLD = 300
+const BACK_TOP_ANCHOR = 'x-btt-anchor'
+/** 最近一次 scrollTop */
+const lastTop = ref(0)
+/** 是否显示浮层（下滑超过一屏） */
+const showBackTop = ref(false)
+/** 回到顶部锚点（scroll-into-view 内部值；'' 为复位） */
+const backTopAnchor = ref('')
+/** 锚点复位定时器（防多次点击叠加） */
+let backTopResetTimer: number = -1
+
+/**
+ * scroll-into-view 实际绑定值：父组件指定时优先，否则用内部回到顶部锚点
+ */
+const effectiveIntoView = computed((): string => {
+	const fromParent = props.scrollIntoView
+	if (fromParent != null && fromParent.length > 0) return fromParent
+	return backTopAnchor.value
+})
+
+/**
+ * 滚动同步：记录 scrollTop 并切换浮层显隐
+ */
+function onScroll(e: any): void {
+	if (!props.enableBackTop) return
+	const d = e != null && e.detail != null ? e.detail : null
+	const raw = d != null && d.scrollTop != null ? Number(d.scrollTop) : 0
+	lastTop.value = isNaN(raw) ? 0 : raw
+	showBackTop.value = lastTop.value > BACK_TOP_THRESHOLD
+}
+
+/**
+ * 点击回到顶部：scroll-into-view 指向顶部锚点
+ * 关键：绑定值必须发生「变化」才触发 —— 若已处于锚点值，先复位再指向
+ */
+function onBackTop(): void {
+	showBackTop.value = false
+	if (backTopAnchor.value == BACK_TOP_ANCHOR) {
+		backTopAnchor.value = ''
+		setTimeout(() => {
+			backTopAnchor.value = BACK_TOP_ANCHOR
+		}, 30)
+	} else {
+		backTopAnchor.value = BACK_TOP_ANCHOR
+	}
+	// 500ms 后复位，避免残留锚点值导致下次点击不触发 / 与父组件 scrollIntoView 冲突
+	if (backTopResetTimer >= 0) clearTimeout(backTopResetTimer)
+	backTopResetTimer = setTimeout(() => {
+		backTopAnchor.value = ''
+		backTopResetTimer = -1
+	}, 500)
+}
 </script>
 
 <style>
 @import '../../styles/x-base.css';
+
+/* 定位壳：占位规则与原 scroll-view 一致，仅为回到顶部浮层提供定位上下文 */
+.x-scroll-wrap {
+	position: relative;
+	flex: 1;
+	height: 0;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+.x-scroll-wrap-tab {
+	position: relative;
+	flex: 1;
+	height: 100%;
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+}
+
+/* 回到顶部锚点：零视觉占位 */
+.x-btt-anchor {
+	width: 100%;
+	height: 1px;
+}
+
+/* 回到顶部浮层 */
+.x-backtop {
+	position: absolute;
+	right: 14px;
+	bottom: 28px;
+	width: 40px;
+	height: 40px;
+	border-radius: 20px;
+	background-color: rgba(28, 26, 23, 0.72);
+	align-items: center;
+	justify-content: center;
+}
+
+/* Tab 变体：抬高避让底部悬浮 tab 栏 */
+.x-backtop-tab {
+	bottom: 120px;
+}
 
 .x-scroll-footer {
 	align-items: center;

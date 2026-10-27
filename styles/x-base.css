@@ -30,17 +30,27 @@
 	flex-direction: column;
 }
 
+/**
+ * 页面壳：无左右 padding，滚动条贴屏幕边缘
+ * 内容边距 → x-page-inner / x-scroll-page-inner；顶栏自带左右 16
+ */
 .x-page {
 	flex: 1;
 	width: 100%;
 	height: 100%;
 	background-color: var(--x-bg, #f4f1ec);
+	padding: 0;
+}
+
+/** 非滚动页内容区（登录等）：navbar 下方包一层 */
+.x-page-inner {
+	width: 100%;
 	padding: 0 16px 24px;
 }
 
 /**
  * 二级长页：navbar 固定在上，下方 x-scroll-page 占满剩余高度
- * 底内边距交给 x-scroll-page-inner，避免裁切滚动区
+ * 无左右 padding，滚动条贴边；内容边距交给 x-scroll-page-inner / x-page-head
  */
 .x-page-flex {
 	flex: 1;
@@ -48,7 +58,16 @@
 	height: 100%;
 	flex-direction: column;
 	background-color: var(--x-bg, #f4f1ec);
-	padding: 0 16px 0;
+	padding: 0;
+}
+
+/**
+ * 滚动区上方固定头（搜索框、分段、筛选条等）：左右内容边距，不挤滚动条
+ */
+.x-page-head {
+	width: 100%;
+	padding-left: 16px;
+	padding-right: 16px;
 }
 
 /**
@@ -63,7 +82,8 @@
 
 .x-scroll-page-inner {
 	width: 100%;
-	padding-bottom: 24px;
+	/* 与 Tab 内边距一致：左右 16，底 24；滚动条在 scroll-view 上贴边 */
+	padding: 0 16px 24px;
 }
 
 .x-page-tab {

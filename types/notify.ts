@@ -77,6 +77,8 @@ export type ArchiveArticle = {
 	id: string
 	title: string
 	timeLabel?: string
+	/** 排序辅助：createTime 毫秒时间戳（映射内部使用） */
+	createTime?: number
 }
 
 /** 归档月块（由 archives year/data 展平） */
@@ -87,6 +89,8 @@ export type ArchiveMonth = {
 	articleTitle?: string
 	/** 该月全部文章（真实归档） */
 	articles?: ArchiveArticle[]
+	/** 排序辅助：月序 1~12（映射内部使用） */
+	monthIndex?: number
 }
 
 /** 归档年块（对齐 GET /article/archives） */

@@ -2,6 +2,7 @@
 	<!-- 搜索：关键词模糊（标题/摘要/正文）+ 分类/标签精确筛选；空关键词=全部 -->
 	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="搜索"></x-navbar>
+		<view class="x-page-head">
 		<view class="query-row">
 			<input
 				class="query-input"
@@ -27,6 +28,7 @@
 			:selected-ids="selectedTagIds"
 			@toggle="onToggleTag"
 		></x-tag-chips>
+		</view>
 
 		<x-scroll-page
 			:enable-refresh="searched"

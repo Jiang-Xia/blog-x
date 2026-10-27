@@ -7,6 +7,7 @@
 			</template>
 		</x-navbar>
 
+		<view class="x-page-head">
 		<view class="x-seg">
 			<view
 				v-for="(s, i) in segs"
@@ -16,6 +17,7 @@
 			>
 				<text :class="segIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
 			</view>
+		</view>
 		</view>
 
 		<x-scroll-page

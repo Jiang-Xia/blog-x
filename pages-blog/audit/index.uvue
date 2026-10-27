@@ -7,6 +7,7 @@
 			</template>
 		</x-navbar>
 
+		<view class="x-page-head">
 		<!-- 来源分段：空 / comment / msgboard / reply -->
 		<view class="x-seg">
 			<view
@@ -29,6 +30,7 @@
 			>
 				<text :class="statusIndex === si ? 'st-t st-t-on' : 'st-t'">{{ st.label }}</text>
 			</view>
+		</view>
 		</view>
 
 		<x-scroll-page

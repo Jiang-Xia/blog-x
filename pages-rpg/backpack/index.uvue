@@ -3,6 +3,7 @@
 	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="背包装扮"></x-navbar>
 
+		<view class="x-page-head">
 		<view class="x-card loadout">
 			<text class="lo-label">当前装扮</text>
 			<text class="lo-line">称号 · {{ loadout.titleName.length > 0 ? loadout.titleName : '未装备' }}</text>
@@ -20,6 +21,7 @@
 				<text :class="segIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
 			</view>
 		</view>
+		</view>
 
 		<x-scroll-page
 			:enable-load-more="false"
@@ -35,7 +37,13 @@
 			<template v-if="isPetSeg">
 				<view v-for="pet in pets" :key="pet.id" class="x-card row">
 					<view class="ico">
-						<x-icon :name="petIcon(pet.icon)" :size="20" color="#1c1a17"></x-icon>
+						<image
+							v-if="pet.iconUrl.length > 0"
+							class="ico-img"
+							:src="pet.iconUrl"
+							mode="aspectFill"
+						></image>
+						<x-icon v-else :name="petIcon(pet.icon)" :size="20" color="#1c1a17"></x-icon>
 					</view>
 					<view class="body">
 						<text class="name">{{ pet.name }}</text>
@@ -57,7 +65,13 @@
 			<template v-else>
 				<view v-for="item in filtered" :key="item.id" class="x-card row">
 					<view class="ico">
-						<x-icon :name="itemIcon(item.icon)" :size="20" color="#1c1a17"></x-icon>
+						<image
+							v-if="item.iconUrl.length > 0"
+							class="ico-img"
+							:src="item.iconUrl"
+							mode="aspectFill"
+						></image>
+						<x-icon v-else :name="itemIcon(item.icon)" :size="20" color="#1c1a17"></x-icon>
 					</view>
 					<view class="body">
 						<text class="name">{{ item.name }}</text>
@@ -297,6 +311,13 @@ onShow(() => {
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;
+	overflow: hidden;
+}
+
+.ico-img {
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
 }
 
 .ico-t {

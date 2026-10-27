@@ -2,6 +2,7 @@
 	<!-- 登录：账号密码 + 微信一键；成功后由 Pinia 统一写态 -->
 	<view class="x-page" :style="themeCssVars">
 		<x-navbar title="登录"></x-navbar>
+		<view class="x-page-inner">
 		<view class="brand">
 			<view class="brand-em">
 				<image
@@ -94,6 +95,7 @@
 			<text class="x-chip x-chip-lav">收藏同步</text>
 		</view>
 		<text class="proto">登录即表示同意用户协议与隐私政策</text>
+		</view>
 	</view>
 </template>
 

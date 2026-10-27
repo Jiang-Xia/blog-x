@@ -2,6 +2,7 @@
 	<!-- 排行榜：周期 + 维度双 Tab，对齐 Nuxt LeaderboardPanel；头像进公开主页 -->
 	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="排行榜"></x-navbar>
+		<view class="x-page-head">
 		<view class="x-seg">
 			<view
 				v-for="(s, i) in periodLabels"
@@ -21,6 +22,7 @@
 			>
 				<text :class="typeIndex === i ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">{{ s }}</text>
 			</view>
+		</view>
 		</view>
 		<x-scroll-page
 			:enable-load-more="false"
