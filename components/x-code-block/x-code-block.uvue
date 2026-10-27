@@ -1,0 +1,107 @@
+<template>
+	<!-- 文章代码块：语言条 + 一键复制；高亮靠内联 style 的 rich-text -->
+	<view class="code-block">
+		<view class="lang-bar">
+			<text class="lang-t">{{ langLabel }}</text>
+			<view class="copy-btn" @click="onCopy">
+				<text class="copy-t">{{ copyLabel }}</text>
+			</view>
+		</view>
+		<rich-text class="code-rich" :nodes="codeHtml"></rich-text>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 文章详情 fenced 代码块
+ * - 父组件传入纯文本 code（复制）与已高亮 codeHtml（展示）
+ * - rich-text 无法响应点击，故复制按钮必须在原生 view 上
+ */
+import { showXToast } from '../../utils/toast'
+
+const props = defineProps({
+	/** 顶栏语言名（如 TS / CODE） */
+	langLabel: { type: String, default: 'CODE' },
+	/** 剪贴板纯文本 */
+	code: { type: String, default: '' },
+	/** 高亮后的 pre/code HTML */
+	codeHtml: { type: String, default: '' },
+})
+
+/** 复制按钮文案（短时切到「已复制」） */
+const copyLabel = ref('复制')
+/** 防止组件卸载后仍改文案 */
+const alive = ref(true)
+
+/**
+ * 一键复制代码到剪贴板
+ */
+function onCopy(): void {
+	const text = props.code
+	if (text.length == 0) {
+		showXToast('file', '无可复制内容', '')
+		return
+	}
+	uni.setClipboardData({
+		data: text,
+		success: () => {
+			copyLabel.value = '已复制'
+			showXToast('circle-check', '已复制代码', '')
+			setTimeout(() => {
+				if (alive.value) {
+					copyLabel.value = '复制'
+				}
+			}, 1600)
+		},
+		fail: () => {
+			showXToast('circle-x', '复制失败', '')
+		},
+	})
+}
+
+onBeforeUnmount(() => {
+	alive.value = false
+})
+</script>
+
+<style>
+.code-block {
+	margin: 12px 0;
+	border-radius: 12px;
+	overflow: hidden;
+	background-color: #1c1a17;
+	border-width: 1px;
+	border-style: solid;
+	border-color: #3a3630;
+}
+
+.lang-bar {
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
+	padding: 6px 12px;
+	background-color: #2a2825;
+}
+
+.lang-t {
+	font-size: 11px;
+	font-weight: 600;
+	color: #c4bdb3;
+}
+
+.copy-btn {
+	padding: 4px 10px;
+	border-radius: 8px;
+	background-color: rgba(61, 184, 154, 0.18);
+}
+
+.copy-t {
+	font-size: 11px;
+	font-weight: 600;
+	color: #3db89a;
+}
+
+.code-rich {
+	width: 100%;
+}
+</style>

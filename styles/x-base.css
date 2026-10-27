@@ -100,22 +100,25 @@
 }
 
 .x-chip-peach {
-	background-color: rgba(240, 160, 122, 0.16);
-	color: #c06a45;
+	/* 暖色胶囊：底用 warmTint，深浅模式均可读 */
+	background-color: var(--x-warm-tint, #ffe8d6);
+	color: var(--x-peach, #f0a07a);
 }
 
 .x-chip-lav {
-	background-color: rgba(169, 154, 212, 0.18);
-	color: #6d5fa0;
+	/* 藤紫胶囊：底用 bg2，避免亮色半透明在深色下发飘 */
+	background-color: var(--x-bg-2, #ebe6df);
+	color: var(--x-lavender, #a99ad4);
 }
 
 .x-chip-dark {
+	/* ink 底 + bg 字：深色模式下 ink 变浅，字随之用页面底色保持对比 */
 	background-color: var(--x-ink, #1c1a17);
-	color: var(--x-on-ink, #ffffff);
+	color: var(--x-bg, #f4f1ec);
 }
 
 .x-chip-plain {
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-bg-2, #ebe6df);
 	color: var(--x-ink-2, #5c574f);
 }
 
@@ -190,7 +193,8 @@
 	width: 36px;
 	height: 36px;
 	border-radius: 12px;
-	background-color: var(--x-bg-2, #ebe6df);
+	/* 强调浅底，避免深色模式下 bg2≈图标黑而看不见 */
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 	margin-bottom: 10px;
 	align-items: center;
 	justify-content: center;
@@ -249,7 +253,8 @@
 }
 
 .x-seg-text-on {
-	color: var(--x-on-ink, #ffffff);
+	/* 与 x-chip-dark 一致：ink 底上用 bg 字保证深浅对比 */
+	color: var(--x-bg, #f4f1ec);
 	font-weight: 600;
 }
 

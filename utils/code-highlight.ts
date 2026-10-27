@@ -1,7 +1,8 @@
 /**
- * 代码块后处理：语言标签 + 简易语法高亮（内联 style）
+ * 代码块后处理：语言标签 + 简易语法高亮（内联 style）+ 详情分段
  * 原因：uni-cmark 只出 <pre><code class="language-xx">，不做高亮；
- * rich-text 大多不应用页面 CSS，必须把颜色写进 style
+ * rich-text 大多不应用页面 CSS，必须把颜色写进 style；
+ * 一键复制须原生按钮，故 segmentArticleBody 把 fenced 拆出给 x-code-block
  * 实现避开 Map / replace 回调，便于 App UTS 编译
  */
 
@@ -274,14 +275,25 @@ function langLabel(lang: string): string {
 	return lang.toUpperCase()
 }
 
+/** 解析出的 fenced 代码块（供原生复制按钮与 rich-text 高亮） */
+type ParsedFencedBlock = {
+	start: number
+	end: number
+	lang: string
+	/** 纯文本源码（复制用） */
+	code: string
+	/** 仅高亮后的 inner HTML（已 escape + span） */
+	highlighted: string
+}
+
 /**
  * 找下一个 <pre ...><code ...>...</code></pre>
- * @returns 替换后的块 HTML；找不到返回空
+ * @returns 解析结果；找不到返回空
  */
-function findAndBuildNextBlock(
+function findNextFencedBlock(
 	html: string,
 	from: number,
-): { start: number; end: number; html: string } | null {
+): ParsedFencedBlock | null {
 	const preOpen = html.indexOf('<pre', from)
 	if (preOpen < 0) return null
 	const preTagEnd = html.indexOf('>', preOpen)
@@ -302,27 +314,47 @@ function findAndBuildNextBlock(
 	if (code.length > 0 && code.charAt(code.length - 1) == '\n') {
 		code = code.substring(0, code.length - 1)
 	}
-	const highlighted = highlightCode(code, lang)
-	const built =
+	return {
+		start: preOpen,
+		end: preClose + 6,
+		lang,
+		code,
+		highlighted: highlightCode(code, lang),
+	}
+}
+
+/**
+ * 把解析块拼成仍可塞进 rich-text 的 HTML（无复制按钮；兼容旧路径）
+ */
+function buildFencedBlockHtml(block: ParsedFencedBlock): string {
+	return (
 		'<div style="' +
 		PRE_STYLE +
 		'">' +
 		'<div style="' +
 		LANG_BAR_STYLE +
 		'">' +
-		escapeHtml(langLabel(lang)) +
+		escapeHtml(langLabel(block.lang)) +
 		'</div>' +
 		'<pre style="margin:0;padding:0;background:transparent;"><code style="' +
 		CODE_STYLE +
 		'">' +
-		highlighted +
+		block.highlighted +
 		'</code></pre></div>'
+	)
+}
 
-	return {
-		start: preOpen,
-		end: preClose + 6,
-		html: built,
-	}
+/**
+ * 代码块正文 HTML（供原生外壳内的 rich-text，不含语言条）
+ */
+function buildCodeInnerHtml(highlighted: string): string {
+	return (
+		'<pre style="margin:0;padding:0;background:transparent;"><code style="' +
+		CODE_STYLE +
+		'">' +
+		highlighted +
+		'</code></pre>'
+	)
 }
 
 /**
@@ -371,7 +403,103 @@ function findAndBuildNextInline(
 }
 
 /**
- * 增强全部 fenced 代码块，再增强行内 `code`
+ * 只增强行内 `code`（fenced 已拆出时用）
+ */
+function enhanceInlineCodes(html: string): string {
+	if (html == null || html.length == 0) return ''
+	let out = ''
+	let cursor = 0
+	while (cursor < html.length) {
+		const inline = findAndBuildNextInline(html, cursor)
+		if (inline == null) {
+			out += html.substring(cursor)
+			break
+		}
+		out += html.substring(cursor, inline.start)
+		out += inline.html
+		cursor = inline.end
+	}
+	return out
+}
+
+/**
+ * 文章正文分段（扁平字段，便于 App UTS；避免联合类型）
+ * kind=html 时读 html；kind=code 时读 lang/langLabel/code/codeHtml
+ * 代码块由原生组件渲染（语言条 + 一键复制），因 rich-text 内无法响应点击
+ */
+export type ArticleBodySegment = {
+	/** html | code */
+	kind: string
+	/** 普通 HTML 段 */
+	html: string
+	/** language-* 归一化名 */
+	lang: string
+	/** 顶栏展示名 */
+	langLabel: string
+	/** 剪贴板纯文本 */
+	code: string
+	/** 高亮代码 HTML（无外壳） */
+	codeHtml: string
+}
+
+/**
+ * 构造 HTML 分段
+ */
+function htmlSegment(html: string): ArticleBodySegment {
+	return {
+		kind: 'html',
+		html,
+		lang: '',
+		langLabel: '',
+		code: '',
+		codeHtml: '',
+	}
+}
+
+/**
+ * 构造代码分段
+ */
+function codeSegment(block: ParsedFencedBlock): ArticleBodySegment {
+	return {
+		kind: 'code',
+		html: '',
+		lang: block.lang,
+		langLabel: langLabel(block.lang),
+		code: block.code,
+		codeHtml: buildCodeInnerHtml(block.highlighted),
+	}
+}
+
+/**
+ * 将含 fenced 的 HTML 切成可交互分段，并增强行内 code
+ */
+export function segmentArticleBody(html: string): ArticleBodySegment[] {
+	const out: ArticleBodySegment[] = []
+	if (html == null || html.length == 0) return out
+	let cursor = 0
+	while (cursor < html.length) {
+		const block = findNextFencedBlock(html, cursor)
+		if (block == null) {
+			const rest = enhanceInlineCodes(html.substring(cursor))
+			if (rest.length > 0) {
+				out.push(htmlSegment(rest))
+			}
+			break
+		}
+		if (block.start > cursor) {
+			const gap = enhanceInlineCodes(html.substring(cursor, block.start))
+			if (gap.length > 0) {
+				out.push(htmlSegment(gap))
+			}
+		}
+		out.push(codeSegment(block))
+		cursor = block.end
+	}
+	return out
+}
+
+/**
+ * 增强全部 fenced 代码块，再增强行内 `code`（整段 HTML，无复制按钮）
  */
 export function enhanceCodeBlocks(html: string): string {
 	if (html == null || html.length == 0) return ''
@@ -379,27 +507,15 @@ export function enhanceCodeBlocks(html: string): string {
 	let step1 = ''
 	let cursor = 0
 	while (cursor < html.length) {
-		const block = findAndBuildNextBlock(html, cursor)
+		const block = findNextFencedBlock(html, cursor)
 		if (block == null) {
 			step1 += html.substring(cursor)
 			break
 		}
 		step1 += html.substring(cursor, block.start)
-		step1 += block.html
+		step1 += buildFencedBlockHtml(block)
 		cursor = block.end
 	}
 	// 2) 行内 code
-	let out = ''
-	cursor = 0
-	while (cursor < step1.length) {
-		const inline = findAndBuildNextInline(step1, cursor)
-		if (inline == null) {
-			out += step1.substring(cursor)
-			break
-		}
-		out += step1.substring(cursor, inline.start)
-		out += inline.html
-		cursor = inline.end
-	}
-	return out
+	return enhanceInlineCodes(step1)
 }

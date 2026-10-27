@@ -97,17 +97,24 @@ onShow(() => {
 }
 
 .tag-chip {
-	padding: 8px 14px;
+	/* 与首页/搜索筛选胶囊同高 26px */
+	height: 26px;
+	padding-left: 12px;
+	padding-right: 12px;
 	border-radius: 999px;
 	background-color: var(--x-surface, #ffffff);
 	border-width: 1px;
 	border-style: solid;
 	margin-right: 8px;
 	margin-bottom: 10px;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
 }
 
 .tag-t {
-	font-size: 13px;
-	font-weight: 500;
+	font-size: 11px;
+	font-weight: 600;
+	lines: 1;
 }
 </style>

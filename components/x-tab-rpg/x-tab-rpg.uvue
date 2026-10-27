@@ -70,28 +70,28 @@
 			<view class="x-grid-2">
 				<view class="x-grid-2-item">
 					<view class="x-tile" @click="goLottery">
-						<view class="x-tile-ico"><x-icon name="dice" :size="20" color="#1c1a17"></x-icon></view>
+						<view class="x-tile-ico"><x-icon name="dice" :size="20" :color="tokens.ink"></x-icon></view>
 						<text class="x-tile-title">幸运抽奖</text>
 						<text class="x-tile-desc">消耗抽奖券</text>
 					</view>
 				</view>
 				<view class="x-grid-2-item">
 					<view class="x-tile" @click="goRank">
-						<view class="x-tile-ico"><x-icon name="trophy" :size="20" color="#1c1a17"></x-icon></view>
+						<view class="x-tile-ico"><x-icon name="trophy" :size="20" :color="tokens.ink"></x-icon></view>
 						<text class="x-tile-title">排行榜</text>
 						<text class="x-tile-desc">本周经验</text>
 					</view>
 				</view>
 				<view class="x-grid-2-item">
 					<view class="x-tile" @click="goCalendar">
-						<view class="x-tile-ico"><x-icon name="calendar" :size="20" color="#1c1a17"></x-icon></view>
+						<view class="x-tile-ico"><x-icon name="calendar" :size="20" :color="tokens.ink"></x-icon></view>
 						<text class="x-tile-title">签到日历</text>
 						<text class="x-tile-desc">本月进度</text>
 					</view>
 				</view>
 				<view class="x-grid-2-item">
 					<view class="x-tile" @click="onBag">
-						<view class="x-tile-ico"><x-icon name="backpack" :size="20" color="#1c1a17"></x-icon></view>
+						<view class="x-tile-ico"><x-icon name="backpack" :size="20" :color="tokens.ink"></x-icon></view>
 						<text class="x-tile-title">背包装扮</text>
 						<text class="x-tile-desc">称号 / 头像框</text>
 					</view>
@@ -103,7 +103,7 @@
 					<x-icon
 						:name="checkedInToday ? 'check' : 'sun'"
 						:size="18"
-						:color="checkedInToday ? '#2a8f76' : '#1c1a17'"
+						:color="checkedInToday ? tokens.accentDeep : tokens.ink"
 					></x-icon>
 				</view>
 				<view class="q-body">
@@ -124,7 +124,7 @@
 					<x-icon
 						:name="q.done ? 'check' : q.icon"
 						:size="18"
-						:color="q.done ? '#2a8f76' : '#1c1a17'"
+						:color="q.done ? tokens.accentDeep : tokens.ink"
 					></x-icon>
 				</view>
 				<view class="q-body">
@@ -168,11 +168,14 @@ import {
 } from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
+import { useTheme } from '../../composables/useTheme'
 import { useUserStore } from '../../store/user'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
 import { goTab, TAB_HOME } from '../../utils/tabNav'
 import { storeToRefs } from 'pinia'
+
+const { tokens } = useTheme()
 
 const emptyHero: RpgHero = {
 	travelerName: '',
@@ -509,11 +512,11 @@ function onBag(): void {
 }
 
 .q-icon.peach {
-	background-color: rgba(240, 160, 122, 0.16);
+	background-color: var(--x-warm-tint, #ffe8d6);
 }
 
 .q-icon.done {
-	background-color: rgba(61, 184, 154, 0.22);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 }
 
 .q-body {

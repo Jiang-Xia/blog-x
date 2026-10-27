@@ -63,9 +63,21 @@
 				<image class="cover-hero-img" :src="article.coverUrl" mode="aspectFill"></image>
 			</view>
 
-			<!-- 正文：uni-cmark + 排版/代码后处理；rich-text 用全局字号/行高作底 -->
-			<view v-if="bodyHtml.length > 0" class="prose">
-				<rich-text class="prose-rich" :nodes="bodyHtml"></rich-text>
+			<!-- 正文：HTML 段用 rich-text；代码块用 x-code-block（可一键复制） -->
+			<view v-if="bodySegments.length > 0" class="prose">
+				<view v-for="(seg, si) in bodySegments" :key="si" class="prose-seg">
+					<rich-text
+						v-if="seg.kind == 'html'"
+						class="prose-rich"
+						:nodes="seg.html"
+					></rich-text>
+					<x-code-block
+						v-else
+						:lang-label="seg.langLabel"
+						:code="seg.code"
+						:code-html="seg.codeHtml"
+					></x-code-block>
+				</view>
 			</view>
 			<view v-else-if="article.description.length > 0" class="prose">
 				<text class="prose-text">{{ article.description }}</text>
@@ -255,7 +267,7 @@
 
 /**
  * 文章详情：联调 info/views/related/comment + 赞藏 + 发表评论/回复 + 钻石打赏
- * 展示：作者真实头像、封面/正文/标签、相邻文、相关阅读、评论头像可跳主页
+ * 展示：作者真实头像、封面/正文（代码块可一键复制）/标签、相邻文、相关阅读、评论头像可跳主页
  * 失败留空；赏打开 tip-sheet（paid 带 amount）
  */
 import type { ArticleDetail, ArticleSummary } from '../../types/article'
@@ -278,10 +290,11 @@ import {
 import { useTheme } from '../../composables/useTheme'
 import { useUserStore } from '../../store/user'
 import {
-	enhanceArticleHtml,
+	enhanceArticleToSegments,
 	ensureMarkdownReady,
-	renderMarkdownToHtml,
+	renderMarkdownToSegments,
 } from '../../utils/markdown'
+import type { ArticleBodySegment } from '../../utils/code-highlight'
 import { goPublicProfile } from '../../utils/nav-profile'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
@@ -360,8 +373,8 @@ const articleId = ref('0')
 const commentDraft = ref('')
 const submitting = ref(false)
 const userStore = useUserStore()
-/** 正文 HTML（contentHtml 或 uni-cmark 渲染结果） */
-const bodyHtml = ref('')
+/** 正文分段（html/code；code 走原生复制按钮） */
+const bodySegments = ref([] as ArticleBodySegment[])
 const adjacentPrev = ref(null as AdjacentArticle | null)
 const adjacentNext = ref(null as AdjacentArticle | null)
 const tocItems = ref([] as TocItem[])
@@ -449,22 +462,36 @@ function extractToc(html: string): TocItem[] {
 }
 
 /**
- * 刷新正文展示：优先 contentHtml（仍做代码高亮后处理），否则 uni-cmark 转 Markdown
+ * 从分段拼 HTML 供目录抽取（忽略代码块）
+ */
+function htmlFromSegments(segs: ArticleBodySegment[]): string {
+	let html = ''
+	for (let i = 0; i < segs.length; i++) {
+		const s = segs[i]
+		if (s.kind == 'html') {
+			html += s.html
+		}
+	}
+	return html
+}
+
+/**
+ * 刷新正文展示：优先 contentHtml，否则 uni-cmark；代码块分段以支持复制
  */
 async function refreshBodyHtml(): Promise<void> {
 	const a = article.value
 	if (a.contentHtml.length > 0) {
-		bodyHtml.value = enhanceArticleHtml(a.contentHtml)
-		tocItems.value = extractToc(bodyHtml.value)
+		bodySegments.value = enhanceArticleToSegments(a.contentHtml)
+		tocItems.value = extractToc(htmlFromSegments(bodySegments.value))
 		return
 	}
 	if (a.content.length > 0) {
 		await ensureMarkdownReady()
-		bodyHtml.value = renderMarkdownToHtml(a.content)
-		tocItems.value = extractToc(bodyHtml.value)
+		bodySegments.value = renderMarkdownToSegments(a.content)
+		tocItems.value = extractToc(htmlFromSegments(bodySegments.value))
 		return
 	}
-	bodyHtml.value = ''
+	bodySegments.value = []
 	tocItems.value = []
 }
 
@@ -1064,6 +1091,10 @@ async function onTipPaid(amount: number): Promise<void> {
 
 .prose {
 	margin-bottom: 14px;
+}
+
+.prose-seg {
+	width: 100%;
 }
 
 /* rich-text 仅支持有限全局样式；细排版靠 HTML 内联 style（md-prose） */

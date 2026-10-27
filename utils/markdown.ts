@@ -3,7 +3,8 @@
  * 须先 ensureMarkdownReady（App.onLaunch 已调）；供详情 rich-text
  *
  * 链路：md2html → enhanceProseHtml（标题/列表/引用等内联 style）
- *      → enhanceCodeBlocks（fenced 语言条+高亮、行内 code 胶囊）
+ *      → segmentArticleBody / enhanceCodeBlocks（fenced 高亮、行内 code 胶囊）
+ * 详情页用分段渲染：代码块走原生组件以支持一键复制（rich-text 内无法点击）
  * rich-text 不吃页面 CSS，样式必须写进 HTML
  */
 import {
@@ -11,8 +12,14 @@ import {
 	isMd2htmlAvailable,
 	md2html,
 } from '@/uni_modules/uni-cmark'
-import { enhanceCodeBlocks } from './code-highlight'
+import {
+	enhanceCodeBlocks,
+	segmentArticleBody,
+	type ArticleBodySegment,
+} from './code-highlight'
 import { enhanceProseHtml } from './md-prose'
+
+export type { ArticleBodySegment }
 
 /** 是否已完成 initMd2html（Web/小程序需加载 WASM） */
 let inited = false
@@ -32,10 +39,17 @@ export async function ensureMarkdownReady(): Promise<boolean> {
 }
 
 /**
- * 统一后处理：排版 + 代码
+ * 统一后处理：排版 + 代码（整段 HTML，无复制按钮）
  */
 function polishHtml(html: string): string {
 	return enhanceCodeBlocks(enhanceProseHtml(html))
+}
+
+/**
+ * 排版后切成 html/code 分段（详情页可交互复制）
+ */
+function polishToSegments(html: string): ArticleBodySegment[] {
+	return segmentArticleBody(enhanceProseHtml(html))
 }
 
 /**
@@ -54,9 +68,32 @@ export function renderMarkdownToHtml(md: string): string {
 }
 
 /**
+ * Markdown → 正文分段（含可复制代码块）
+ */
+export function renderMarkdownToSegments(md: string): ArticleBodySegment[] {
+	if (md == null || md.length == 0) return []
+	if (!inited && !isMd2htmlAvailable()) return []
+	try {
+		const html = md2html(md)
+		if (html == null || ('' + html).length == 0) return []
+		return polishToSegments('' + html)
+	} catch (_) {
+		return []
+	}
+}
+
+/**
  * 对已有 HTML（如后端 contentHtml）补排版与代码高亮
  */
 export function enhanceArticleHtml(html: string): string {
 	if (html == null || html.length == 0) return ''
 	return polishHtml(html)
+}
+
+/**
+ * 已有 HTML → 正文分段（含可复制代码块）
+ */
+export function enhanceArticleToSegments(html: string): ArticleBodySegment[] {
+	if (html == null || html.length == 0) return []
+	return polishToSegments(html)
 }

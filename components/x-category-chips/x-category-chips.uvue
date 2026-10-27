@@ -1,5 +1,5 @@
 <template>
-	<!-- 分类筛选：标准两行 + 横向滚动 -->
+	<!-- 分类筛选：单行横滑 -->
 	<scroll-view class="cat-scroll" scroll-x="true" show-scrollbar="false">
 		<view class="cat-row">
 			<view
@@ -17,9 +17,9 @@
 
 <script setup lang="ts">
 /**
- * 分类筛选横滑业务组件（标准两行）
+ * 分类筛选横滑业务组件（单行）
  * - 数据：父组件传入 CategoryChip[]（id + label，展示用后端 label）
- * - 布局：column + wrap 固定两行高度，超出横向滚动
+ * - 布局：单行横滑；胶囊固定 26px，与 x-tag-chips 同高
  * - 交互：点击抛 select(index, chip)；activeIndex 由父组件控制选中态
  */
 import type { CategoryChip } from '../../types/article'
@@ -62,18 +62,16 @@ function onTap(i: number): void {
 <style>
 .cat-scroll {
 	width: 100%;
-	/* 两行区 + 底边距 */
-	height: 68px;
+	height: 26px;
 	margin-bottom: 8px;
 	flex-direction: row;
 }
 
 .cat-row {
-	/* column + wrap：先竖排满 2 行，再向右开新列 → 横滑 */
-	flex-direction: column;
-	flex-wrap: wrap;
-	align-content: flex-start;
-	height: 60px;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: center;
+	height: 26px;
 	padding-right: 8px;
 }
 
@@ -84,7 +82,6 @@ function onTap(i: number): void {
 	padding-right: 12px;
 	border-radius: 999px;
 	margin-right: 8px;
-	margin-bottom: 8px;
 	align-items: center;
 	justify-content: center;
 	/* 无边框；高度与带边框的标签胶囊一致 */
@@ -92,11 +89,13 @@ function onTap(i: number): void {
 }
 
 .cat-chip-on {
+	/* ink 填充；深色下 ink 为浅色，字用 --x-bg 保持对比 */
 	background-color: var(--x-ink, #1c1a17);
 }
 
 .cat-chip-off {
-	background-color: var(--x-surface, #ffffff);
+	/* bg2 比 surface 更贴页面底，深色下不跳白块 */
+	background-color: var(--x-bg-2, #ebe6df);
 }
 
 .cat-t {
@@ -108,7 +107,7 @@ function onTap(i: number): void {
 
 .cat-t-on {
 	font-size: 11px;
-	color: var(--x-on-ink, #ffffff);
+	color: var(--x-bg, #f4f1ec);
 	font-weight: 500;
 	lines: 1;
 }

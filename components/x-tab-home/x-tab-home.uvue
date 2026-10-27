@@ -15,12 +15,12 @@
 		<view class="status-pad"></view>
 		<view class="search-bar" @click="goSearch">
 			<view class="search-ico">
-				<x-icon name="search" :size="14" color="#9a948a"></x-icon>
+				<x-icon name="search" :size="14" :color="tokens.ink3"></x-icon>
 			</view>
 			<text class="search-ph">搜索文章、标签、作者</text>
 			<!-- 右侧铃铛：未读通知入口；角标仅在有未读时显示 -->
 			<view class="bell-wrap" @click.stop="goNotify">
-				<x-icon name="bell" :size="16" color="#5c574f"></x-icon>
+				<x-icon name="bell" :size="16" :color="tokens.ink2"></x-icon>
 				<view v-if="notifyBadge > 0" class="bell">
 					<text class="bell-text">{{ notifyBadge > 99 ? '99+' : notifyBadge }}</text>
 				</view>
@@ -44,19 +44,20 @@
 
 		<view class="chip-row chip-gap">
 			<view class="x-chip x-chip-dark chip-with-ico" @click="goAi">
-				<x-icon name="sparkles" :size="12" color="#ffffff"></x-icon>
+				<!-- chip-dark 字色跟 --x-bg，图标同步 -->
+				<x-icon name="sparkles" :size="12" :color="tokens.bg"></x-icon>
 				<text class="chip-t-dark">AI 助手</text>
 			</view>
 			<view class="x-chip x-chip-plain" @click="goRpg">
 				<text class="chip-t">{{ questChip }}</text>
 			</view>
 			<view class="x-chip x-chip-plain chip-with-ico" @click="onWrite">
-				<x-icon name="pencil" :size="12" color="#5c574f"></x-icon>
+				<x-icon name="pencil" :size="12" :color="tokens.ink2"></x-icon>
 				<text class="chip-t">写文章</text>
 			</view>
 		</view>
 
-		<!-- 分类 / 标签：标准两行横滑；精确 category / tags[] -->
+		<!-- 分类 / 标签：单行横滑；精确 category / tags[] -->
 		<x-category-chips
 			:items="categories"
 			:active-index="catIndex"
@@ -94,7 +95,7 @@
 /**
  * 首页 Tab 面板：对齐小卡原型 home
  * 数据来源：联调 article/list、category、tag、未读、sign-info、my-quests
- * 筛选：分类单选 + 标签多选（标准两行横滑组件）
+ * 筛选：分类单选 + 标签多选（单行横滑组件）
  * 滚动：x-scroll-page(variant=tab) 下拉刷新 + 文章上滑加载更多
  */
 import type { ArticleSummary, CategoryChip } from '../../types/article'
@@ -110,8 +111,11 @@ import { fetchUnreadCount } from '../../api/modules/notification'
 import { fetchMyQuests, fetchSignInfo } from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
+import { useTheme } from '../../composables/useTheme'
 import { useUserStore } from '../../store/user'
 import { goTab, TAB_DISCOVER, TAB_RPG } from '../../utils/tabNav'
+
+const { tokens } = useTheme()
 
 const list = ref([] as ArticleSummary[])
 const listTotal = ref(-1)
@@ -418,7 +422,8 @@ function goDetail(id: string): void {
 	flex-direction: row;
 	align-items: center;
 	justify-content: space-between;
-	background-color: #f3faf7;
+	/* 主题强调浅底，替代写死浅绿，深色模式不再跳色 */
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 }
 
 .today-left {
@@ -457,7 +462,7 @@ function goDetail(id: string): void {
 
 .chip-t-dark {
 	font-size: 11px;
-	color: var(--x-on-ink, #ffffff);
+	color: var(--x-bg, #f4f1ec);
 	font-weight: 500;
 }
 
@@ -465,7 +470,7 @@ function goDetail(id: string): void {
 	width: 72px;
 	height: 72px;
 	border-radius: 36px;
-	background-color: rgba(61, 184, 154, 0.15);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 	align-items: center;
 	justify-content: center;
 	border-width: 6px;

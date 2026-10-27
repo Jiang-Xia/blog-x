@@ -7,21 +7,21 @@
 			</view>
 			<text class="article-title">{{ title }}</text>
 			<view v-if="showStat" class="article-stat-row">
-				<x-icon name="thumb-up" :size="11" color="#5c574f"></x-icon>
+				<x-icon name="thumb-up" :size="11" :color="tokens.ink2"></x-icon>
 				<text class="article-stat">{{ likeCount }}</text>
-				<x-icon name="message" :size="11" color="#5c574f"></x-icon>
+				<x-icon name="message" :size="11" :color="tokens.ink2"></x-icon>
 				<text class="article-stat">{{ commentCount }}</text>
 			</view>
 			<text v-else-if="statLine.length > 0" class="article-stat">{{ statLine }}</text>
 		</view>
-		<view class="cover" :style="{ backgroundColor: coverC1 }">
+		<view class="cover" :style="{ backgroundColor: coverBg }">
 			<image
 				v-if="coverUrl.length > 0"
 				class="cover-img"
 				:src="coverUrl"
 				mode="aspectFill"
 			></image>
-			<x-icon v-else :name="coverIcon" :size="26" color="#5c574f"></x-icon>
+			<x-icon v-else :name="coverIcon" :size="26" :color="tokens.ink2"></x-icon>
 		</view>
 	</view>
 </template>
@@ -30,8 +30,11 @@
 /**
  * 文章卡片（列表复用）
  * - 封面：文章 coverUrl（API cover 经 resolveStaticUrl）；空则 coverIcon + coverC1
+ * - 深色：占位封面映射为压饱和色块，避免亮粉绿跳色
  * - 点击抛 open(id)，由父页跳转详情
  */
+import { useTheme } from '../../composables/useTheme'
+
 const props = defineProps({
 	id: { type: String, default: '' },
 	title: { type: String, default: '' },
@@ -54,6 +57,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['open'])
+const { tokens, isDark } = useTheme()
 
 const metaLine = computed((): string => {
 	if (props.hotLabel.length > 0) return props.hotLabel
@@ -62,6 +66,28 @@ const metaLine = computed((): string => {
 	if (cat.length > 0 && time.length > 0) return cat + ' · ' + time
 	if (cat.length > 0) return cat
 	return time
+})
+
+/**
+ * 亮色占位封面 → 深色压饱和色（与 adapters COVER_PALETTE 对齐）
+ */
+function coverC1ForDark(c1: string): string {
+	if (c1 == '#c8efe4') return '#2a403a'
+	if (c1 == '#ffe8d6') return '#3d322c'
+	if (c1 == '#e8dff8') return '#322e3d'
+	if (c1 == '#fde2e2') return '#3d2e2e'
+	if (c1 == '#e8a87c') return '#3d3228'
+	if (c1 == '#f4d4a8') return '#3a3228'
+	if (c1 == '#d4cfc7') return '#2e2c2a'
+	return tokens.value.bg2
+}
+
+/**
+ * 封面占位底色：深色模式用压饱和映射，避免浅粉绿突兀
+ */
+const coverBg = computed((): string => {
+	if (!isDark.value) return props.coverC1
+	return coverC1ForDark(props.coverC1)
 })
 
 /**

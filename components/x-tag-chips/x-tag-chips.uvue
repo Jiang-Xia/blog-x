@@ -1,5 +1,5 @@
 <template>
-	<!-- 标签筛选：标准两行 + 横向滚动；文字/边框用标签自带 color -->
+	<!-- 标签筛选：单行横滑；文字/边框用标签自带 color -->
 	<scroll-view v-if="items.length > 0" class="tag-scroll" scroll-x="true" show-scrollbar="false">
 		<view class="tag-row">
 			<view
@@ -17,12 +17,14 @@
 
 <script setup lang="ts">
 /**
- * 标签筛选横滑业务组件（标准两行）
+ * 标签筛选横滑业务组件（单行）
  * - 数据：TagWallItem[]（id/label/color 来自 GET /tag，勿本地调色）
- * - 布局：与 x-category-chips 同高 26px（border-box，边框不撑高）
+ * - 布局：单行横滑；与 x-category-chips 同高 26px（border-box，边框不撑高）
  * - 交互：多选；抛 toggle(id)；selectedIds 由父组件控制
+ * - 深色：未选底用 surface（勿写死 #fff），边框略降透明度减轻突兀
  */
 import type { TagWallItem } from '../../api/modules/article'
+import { useTheme } from '../../composables/useTheme'
 
 const props = defineProps({
 	/** 标签列表 */
@@ -38,6 +40,7 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['toggle'])
+const { tokens, isDark } = useTheme()
 
 /**
  * 稳定 key
@@ -57,18 +60,20 @@ function isOn(id: string): boolean {
 }
 
 /**
- * 胶囊边框/底色（选中浅底，未选白底；色来自标签）
+ * 胶囊边框/底色（选中浅染，未选 surface；色来自标签）
  */
 function chipStyle(t: TagWallItem): string {
 	const c = t.color != null && t.color.length > 0 ? t.color : '#2a8f76'
+	const fill = tokens.value.surface
 	if (isOn(t.id)) {
-		return 'border-color:' + c + ';background-color:' + c + '22'
+		return 'border-color:' + c + ';background-color:' + c + (isDark.value ? '33' : '22')
 	}
-	return 'border-color:' + c + '88;background-color:#ffffff'
+	const borderAlpha = isDark.value ? '55' : '88'
+	return 'border-color:' + c + borderAlpha + ';background-color:' + fill
 }
 
 /**
- * 文字色（始终用标签色）
+ * 文字色（始终用标签色；深色略提亮可读性由后端 color 决定）
  */
 function textStyle(t: TagWallItem): string {
 	const c = t.color != null && t.color.length > 0 ? t.color : '#2a8f76'
@@ -87,22 +92,22 @@ function onTap(t: TagWallItem): void {
 <style>
 .tag-scroll {
 	width: 100%;
-	height: 68px;
+	height: 26px;
 	margin-bottom: 8px;
 	flex-direction: row;
 }
 
 .tag-row {
-	flex-direction: column;
-	flex-wrap: wrap;
-	align-content: flex-start;
-	height: 60px;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	align-items: center;
+	height: 26px;
 	padding-right: 8px;
 }
 
 .tag-chip {
 	flex-shrink: 0;
-	/* 与分类胶囊同高；边框计入高度，避免 28px */
+	/* 与分类胶囊同高；边框计入高度，避免撑高 */
 	height: 26px;
 	padding-left: 12px;
 	padding-right: 12px;
@@ -110,7 +115,6 @@ function onTap(t: TagWallItem): void {
 	border-width: 1px;
 	border-style: solid;
 	margin-right: 8px;
-	margin-bottom: 8px;
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;

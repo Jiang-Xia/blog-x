@@ -16,7 +16,7 @@
 			<text class="clear" @click="onClear">清除</text>
 		</view>
 
-		<!-- 分类 / 标签：标准两行横滑；精确筛选 -->
+		<!-- 分类 / 标签：单行横滑；精确筛选 -->
 		<x-category-chips
 			:items="categories"
 			:active-index="catActiveIndex"
@@ -84,7 +84,7 @@
 /**
  * 搜索页：对齐 Nuxt ArticleList
  * - 关键词同时写入 title/description/content（服务端 OR 模糊）
- * - 分类/标签：x-category-chips / x-tag-chips 标准两行横滑；UUID 精确
+ * - 分类/标签：x-category-chips / x-tag-chips 单行横滑；UUID 精确
  * - 空关键词点击搜索 → 返回全部（可叠加分类/标签）
  * 数据来源：POST /article/list；筛选选项 GET /category、/tag
  */
