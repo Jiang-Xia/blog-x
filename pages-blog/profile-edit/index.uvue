@@ -18,16 +18,47 @@
 					></image>
 					<x-icon v-else name="paw" :size="28" color="#1c1a17"></x-icon>
 				</view>
-				<view
-					class="change-btn"
+				<!-- 微信小程序：必须用 button open-type=chooseAvatar 才能拉起微信头像 -->
+				<!-- #ifdef MP-WEIXIN -->
+				<button
+					class="change-btn x-btn-reset"
 					:class="avatarUploading ? 'btn-disabled' : ''"
-					@click="chooseAvatar"
+					:disabled="avatarUploading || submitting"
+					open-type="chooseAvatar"
+					hover-class="btn-hover"
+					@chooseavatar="onWxChooseAvatar"
 				>
 					<text class="change-t">{{ avatarUploading ? '上传中…' : '更换头像' }}</text>
-				</view>
+				</button>
+				<!-- #endif -->
+				<!-- #ifndef MP-WEIXIN -->
+				<button
+					class="change-btn x-btn-reset"
+					:class="avatarUploading ? 'btn-disabled' : ''"
+					:disabled="avatarUploading || submitting"
+					hover-class="btn-hover"
+					@click="chooseAlbumAvatar"
+				>
+					<text class="change-t">{{ avatarUploading ? '上传中…' : '更换头像' }}</text>
+				</button>
+				<!-- #endif -->
 			</view>
 
 			<text class="label">昵称</text>
+			<!-- 微信小程序：type=nickname 键盘上方可一键填微信昵称 -->
+			<!-- #ifdef MP-WEIXIN -->
+			<input
+				class="field"
+				type="nickname"
+				maxlength="6"
+				:value="nickname"
+				placeholder="昵称（可选用微信昵称）"
+				placeholder-class="ph"
+				@input="onNicknameInput"
+				@blur="onNicknameBlur"
+			/>
+			<!-- #endif -->
+			<!-- #ifndef MP-WEIXIN -->
 			<input
 				class="field"
 				type="text"
@@ -36,6 +67,7 @@
 				placeholder="昵称（最多6字）"
 				placeholder-class="ph"
 			/>
+			<!-- #endif -->
 
 			<text class="label">个人简介</text>
 			<textarea
@@ -56,13 +88,16 @@
 				placeholder-class="ph"
 			/>
 
-			<view
-				class="submit-btn"
+			<!-- 长主按钮：用 button + x-btn-reset，主题色走 CSS 变量（含深色） -->
+			<button
+				class="submit-btn x-btn-reset"
 				:class="submitting || avatarUploading ? 'btn-disabled' : ''"
+				:disabled="submitting || avatarUploading"
+				hover-class="btn-hover"
 				@click="onSubmit"
 			>
 				<text class="submit-t">{{ submitting ? '保存中…' : '保存资料' }}</text>
-			</view>
+			</button>
 		</x-scroll-page>
 	</view>
 </template>
@@ -73,10 +108,11 @@
  * 数据来源：Pinia profile；上传 POST /resources/upload-media?category=avatar；
  * 保存 PATCH /user/edit → 再拉 /user/info
  * 滚动：x-page-flex + x-scroll-page（仅纵向，关闭刷新/触底）
+ * MP-WEIXIN：button open-type=chooseAvatar + input type=nickname 快速填微信资料
  */
 import { useUserStore } from '../../store/user'
 import { uploadAvatar } from '../../api/modules/resources'
-import { resolveStaticUrl } from '../../utils/static-url'
+import { resolveStaticUrl, toStaticPath } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
 import { useTheme } from '../../composables/useTheme'
 const { themeCssVars, syncNativeChrome } = useTheme()
@@ -85,13 +121,13 @@ const userStore = useUserStore()
 
 const nickname = ref('')
 const intro = ref('')
-/** 提交给接口的相对/原始头像路径 */
+/** 提交给接口的相对路径（/static/...）；预览走 resolveStaticUrl */
 const avatar = ref('')
 const homepage = ref('')
 const avatarUploading = ref(false)
 const submitting = ref(false)
 
-/** 预览用完整 URL */
+/** 预览用完整 URL（线上为 …/x-api/blog-server/static/...） */
 const previewUrl = computed((): string => {
 	const a = avatar.value
 	if (a.length == 0) return ''
@@ -99,46 +135,86 @@ const previewUrl = computed((): string => {
 })
 
 /**
- * 用当前 Pinia 资料填表
+ * 用当前 Pinia 资料填表（avatar 统一压成 /static 相对路径）
  */
 function syncFromStore(): void {
 	const p = userStore.profile
 	nickname.value = p.nickname != null ? '' + p.nickname : ''
 	intro.value = p.bio != null ? '' + p.bio : ''
 	homepage.value = p.homepage != null ? '' + p.homepage : ''
-	avatar.value = p.avatar != null && p.avatar.length > 0 ? '' + p.avatar : ''
+	const raw = p.avatar != null && p.avatar.length > 0 ? '' + p.avatar : ''
+	avatar.value = raw.length > 0 ? toStaticPath(raw) : ''
 }
 
 /**
- * 选图并上传头像
+ * 上传本地/微信临时路径到 avatar 分类
  */
-function chooseAvatar(): void {
+async function uploadAndSetAvatar(filePath: string): Promise<void> {
+	if (filePath.length == 0) return
+	avatarUploading.value = true
+	try {
+		const rel = await uploadAvatar(filePath)
+		avatar.value = toStaticPath(rel)
+		showXToast('photo', '头像已上传', '记得点保存')
+	} catch (_) {
+		showXToast('alert-triangle', '上传失败', '请重试')
+	} finally {
+		avatarUploading.value = false
+	}
+}
+
+/**
+ * 相册/相机选图（非微信小程序，或作兜底）
+ */
+function chooseAlbumAvatar(): void {
 	if (avatarUploading.value || submitting.value) return
 	uni.chooseImage({
 		count: 1,
 		sizeType: ['compressed'],
 		sourceType: ['album', 'camera'],
-		success: async (res) => {
+		success: (res) => {
 			const paths = res.tempFilePaths
 			if (paths == null || paths.length == 0) return
 			const path = '' + paths[0]
-			if (path.length == 0) return
-			avatarUploading.value = true
-			try {
-				const rel = await uploadAvatar(path)
-				avatar.value = rel
-				showXToast('photo', '头像已上传', '记得点保存')
-			} catch (_) {
-				showXToast('alert-triangle', '上传失败', '请重试')
-			} finally {
-				avatarUploading.value = false
-			}
+			uploadAndSetAvatar(path)
 		},
 	})
 }
 
+// #ifdef MP-WEIXIN
 /**
- * 提交资料
+ * 微信头像选择回调（open-type=chooseAvatar）
+ * detail.avatarUrl 为临时路径，须再 uploadAvatar
+ */
+function onWxChooseAvatar(e: any): void {
+	if (avatarUploading.value || submitting.value) return
+	const detail = e != null ? e.detail : null
+	const path =
+		detail != null && detail.avatarUrl != null ? '' + detail.avatarUrl : ''
+	uploadAndSetAvatar(path)
+}
+
+/**
+ * 微信 nickname 输入（type=nickname 时用 :value + @input，键盘可一键填微信昵称）
+ */
+function onNicknameInput(e: any): void {
+	const detail = e != null ? e.detail : null
+	nickname.value = detail != null && detail.value != null ? '' + detail.value : ''
+}
+
+/**
+ * 失焦再同步一次（微信安全审核未通过时可能清空输入）
+ */
+function onNicknameBlur(e: any): void {
+	const detail = e != null ? e.detail : null
+	if (detail != null && detail.value != null) {
+		nickname.value = '' + detail.value
+	}
+}
+// #endif
+
+/**
+ * 提交资料（avatar 落库前再 toStaticPath，避免写入完整域名）
  */
 async function onSubmit(): Promise<void> {
 	if (submitting.value || avatarUploading.value) return
@@ -158,7 +234,7 @@ async function onSubmit(): Promise<void> {
 			nickname: name,
 			intro: intro.value.trim(),
 			homepage: homepage.value.trim(),
-			avatar: avatar.value,
+			avatar: toStaticPath(avatar.value),
 		})
 		showXToast('check', '资料已保存', '')
 		uni.navigateBack()
@@ -184,6 +260,22 @@ onShow(() => {
 
 <style>
 @import '../../styles/x-base.css';
+
+/* 抹平各端 button 默认绿底/边框，主题色交给业务 class + CSS 变量 */
+.x-btn-reset {
+	margin: 0;
+	padding: 0;
+	border-width: 0;
+	border-radius: 0;
+	background-color: transparent;
+	line-height: 1.2;
+}
+
+/* #ifdef MP-WEIXIN */
+.x-btn-reset::after {
+	border: none;
+}
+/* #endif */
 
 .avatar-row {
 	flex-direction: row;
@@ -265,6 +357,10 @@ onShow(() => {
 	font-size: 15px;
 	font-weight: 700;
 	color: var(--x-on-ink, #ffffff);
+}
+
+.btn-hover {
+	opacity: 0.88;
 }
 
 .btn-disabled {

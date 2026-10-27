@@ -14,8 +14,8 @@
 - [ ] 编辑资料：可改头像（upload-media avatar）、昵称、简介、个人主页；保存后「我的」即时刷新
 - [ ] 详情：赞 / 藏 Toast；赏打开 Sheet；支付关闭并 Toast；AI 卡进助手
 - [ ] 签到成功后按钮变「已签」、钻石/连续天数变化；首页今日文案同步
-- [ ] 抽奖：中心「抽一次」高亮轮转后 Toast
-- [ ] 充值：选档支付后钻石增加，回冒险中心可见
+- [ ] 抽奖：券/钻石切换；单抽与五连；中心格高亮轮转后 Toast；奖池图（iconUrl）与抽奖记录可展开
+- [ ] 充值：选快捷面额（1/5/10/50）或自定义金额 → 支付宝链接复制 → 支付后钻石增加
 - [ ] 登录：账号登录（验证码）与微信一键登录均可；成功后回「我的」可见资料
 - [ ] 资料编辑：`PATCH /user/edit` 成功；头像走 `upload-media?category=avatar`；回「我的」见新昵称/头像/简介/主页
 - [ ] 杀进程重进：有 token 缓存时自动登录，无需再点登录
@@ -56,7 +56,7 @@
 - [ ] 背包装扮：`GET /rpg/inventory` + `/rpg/loadout`；称号/头像框穿戴卸下；宠物段 `GET /rpg/pets` 出战/休息
 - [ ] 审核台：`GET /sensitive-word/hit`（来源/状态筛选）；待审项 `approve` / `reject`；需管理员登录
 - [ ] 详情打赏：钻石档位 → `POST /rpg/article/tip`；站点赞赏 → `POST /site/tip/create` + status 轮询
-- [ ] 充值下单返回 `outTradeNo`（真支付到账需支付宝环境）
+- [ ] 充值下单返回 `outTradeNo` + `universalLink`/`scheme`（真支付到账需支付宝环境；自定义金额 0.01~200）
 - [ ] 通知 / 收件箱有列表或空态；AI 配额来自 `/rag/quota`；发送走 `/rag/query-stream` 有流式或整包回复
 - [ ] `USE_MOCK=true` 时仍可离线演示原型交互
 

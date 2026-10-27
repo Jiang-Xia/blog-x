@@ -6,10 +6,10 @@
 				<template v-slot:right>
 					<view class="nav-more">
 						<view v-if="tocItems.length > 0" class="nav-ico" @click="tocOpen = !tocOpen">
-							<x-icon name="books" :size="18" color="#5c574f"></x-icon>
+							<x-icon name="books" :size="18" :color="tokens.ink2"></x-icon>
 						</view>
 						<view class="nav-ico" @click="onShare">
-							<x-icon name="share" :size="18" color="#5c574f"></x-icon>
+							<x-icon name="share" :size="18" :color="tokens.ink2"></x-icon>
 						</view>
 					</view>
 				</template>
@@ -32,7 +32,7 @@
 						:src="article.authorAvatarUrl"
 						mode="aspectFill"
 					></image>
-					<x-icon v-else :name="article.authorIcon" :size="22" color="#1c1a17"></x-icon>
+					<x-icon v-else :name="article.authorIcon" :size="22" :color="tokens.ink"></x-icon>
 				</view>
 				<view class="author-meta">
 					<text class="author-name">{{ article.authorName }}</text>
@@ -137,7 +137,7 @@
 								:src="m.coverUrl"
 								mode="aspectFill"
 							></image>
-							<x-icon v-else :name="m.coverIcon" :size="20" color="#5c574f"></x-icon>
+							<x-icon v-else :name="m.coverIcon" :size="20" :color="tokens.ink2"></x-icon>
 						</view>
 						<text class="mini-t">{{ m.title }}</text>
 						<text class="mini-meta">{{ m.categoryName }}</text>
@@ -177,7 +177,7 @@
 						:src="c.avatarUrl"
 						mode="aspectFill"
 					></image>
-					<x-icon v-else :name="c.icon" :size="16" color="#1c1a17"></x-icon>
+					<x-icon v-else :name="c.icon" :size="16" :color="tokens.ink"></x-icon>
 				</view>
 				<view class="bubble">
 					<text class="c-name" @click="goPublicProfile(c.uid)">{{ c.nameLine }}</text>
@@ -194,7 +194,7 @@
 								:src="r.avatarUrl"
 								mode="aspectFill"
 							></image>
-							<x-icon v-else :name="r.icon" :size="14" color="#1c1a17"></x-icon>
+							<x-icon v-else :name="r.icon" :size="14" :color="tokens.ink"></x-icon>
 						</view>
 						<view class="reply-body">
 							<text class="r-name" @click="goPublicProfile(r.uid)">{{ r.nameLine }}</text>
@@ -299,7 +299,7 @@ import { goPublicProfile } from '../../utils/nav-profile'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
 
-const { themeCssVars, syncNativeChrome } = useTheme()
+const { themeCssVars, syncNativeChrome, tokens, mode, paletteId } = useTheme()
 
 /** 目录项（从正文 HTML 抽 h1–h3） */
 type TocItem = {
@@ -428,14 +428,14 @@ const barComposeHint = computed((): string => {
 	return d.length > 0 ? d : '说点什么…'
 })
 
-/** 已赞图标色 */
+/** 已赞图标色（未赞跟 ink2，深色可读） */
 const likeIconColor = computed((): string => {
-	return liked.value ? '#e8897a' : '#5c574f'
+	return liked.value ? tokens.value.danger : tokens.value.ink2
 })
 
-/** 已藏图标色 */
+/** 已藏图标色（未藏跟 ink2） */
 const favIconColor = computed((): string => {
-	return faved.value ? '#c9a227' : '#5c574f'
+	return faved.value ? '#c9a227' : tokens.value.ink2
 })
 
 /**
@@ -477,17 +477,19 @@ function htmlFromSegments(segs: ArticleBodySegment[]): string {
 
 /**
  * 刷新正文展示：优先 contentHtml，否则 uni-cmark；代码块分段以支持复制
+ * 传入当前 tokens：rich-text 内联色须跟明暗，否则深色底+浅色默认字无对比
  */
 async function refreshBodyHtml(): Promise<void> {
 	const a = article.value
+	const t = tokens.value
 	if (a.contentHtml.length > 0) {
-		bodySegments.value = enhanceArticleToSegments(a.contentHtml)
+		bodySegments.value = enhanceArticleToSegments(a.contentHtml, t)
 		tocItems.value = extractToc(htmlFromSegments(bodySegments.value))
 		return
 	}
 	if (a.content.length > 0) {
 		await ensureMarkdownReady()
-		bodySegments.value = renderMarkdownToSegments(a.content)
+		bodySegments.value = renderMarkdownToSegments(a.content, t)
 		tocItems.value = extractToc(htmlFromSegments(bodySegments.value))
 		return
 	}
@@ -688,6 +690,14 @@ onShow(() => {
 	if (articleId.value.length > 0 && articleId.value != '0') {
 		refreshLikeCollect(articleId.value)
 	}
+})
+
+/**
+ * 明暗/色系变化时重渲正文：rich-text 内联色不会跟 CSS 变量自动变
+ */
+watch([mode, paletteId], () => {
+	if (article.value.id.length == 0) return
+	refreshBodyHtml()
 })
 
 /**
@@ -1020,7 +1030,7 @@ async function onTipPaid(amount: number): Promise<void> {
 	width: 36px;
 	height: 36px;
 	border-radius: 18px;
-	background-color: #f0e6d8;
+	background-color: var(--x-warm-tint, #f0e6d8);
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;
@@ -1209,12 +1219,12 @@ async function onTipPaid(amount: number): Promise<void> {
 	margin-right: 8px;
 }
 
-/* 输入框与白底气泡区分，看起来像可输入区域 */
+/* 输入区：bg2 底 + line 边，深浅模式都与气泡/页面有层次 */
 .cmt-field-box {
-	background-color: var(--x-bg, #f4f1ec);
+	background-color: var(--x-bg-2, #ebe6df);
 	border-width: 1px;
 	border-style: solid;
-	border-color: var(--x-bg-2, #ebe6df);
+	border-color: var(--x-line, rgba(28, 26, 23, 0.06));
 }
 
 .cmt-send {
@@ -1226,7 +1236,8 @@ async function onTipPaid(amount: number): Promise<void> {
 .cmt-send-t {
 	font-size: 13px;
 	font-weight: 600;
-	color: var(--x-on-ink, #ffffff);
+	/* 强调色按钮上固定浅字，勿跟 onInk（深色下也可能是浅） */
+	color: #ffffff;
 }
 
 .comment {
@@ -1238,7 +1249,7 @@ async function onTipPaid(amount: number): Promise<void> {
 	width: 32px;
 	height: 32px;
 	border-radius: 16px;
-	background-color: #f0e6d8;
+	background-color: var(--x-warm-tint, #f0e6d8);
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;
@@ -1286,7 +1297,7 @@ async function onTipPaid(amount: number): Promise<void> {
 	margin-top: 10px;
 	padding-top: 10px;
 	border-top-width: 1px;
-	border-top-color: var(--x-bg-2, #ebe6df);
+	border-top-color: var(--x-line, rgba(28, 26, 23, 0.06));
 	border-top-style: solid;
 }
 
@@ -1318,7 +1329,7 @@ async function onTipPaid(amount: number): Promise<void> {
 	margin-top: 10px;
 	padding-top: 10px;
 	border-top-width: 1px;
-	border-top-color: var(--x-bg-2, #ebe6df);
+	border-top-color: var(--x-line, rgba(28, 26, 23, 0.06));
 	border-top-style: solid;
 }
 
@@ -1326,7 +1337,7 @@ async function onTipPaid(amount: number): Promise<void> {
 	width: 24px;
 	height: 24px;
 	border-radius: 12px;
-	background-color: #f0e6d8;
+	background-color: var(--x-warm-tint, #f0e6d8);
 	align-items: center;
 	justify-content: center;
 	margin-right: 8px;
@@ -1374,7 +1385,11 @@ async function onTipPaid(amount: number): Promise<void> {
 	right: 14px;
 	bottom: 14px;
 	height: 52px;
-	background-color: rgba(255, 255, 255, 0.95);
+	/* 跟 Tab 底栏同令牌，避免写死近白在深色下刺眼 */
+	background-color: var(--x-tab-bar-bg, rgba(255, 255, 255, 0.82));
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-tab-bar-border, rgba(255, 255, 255, 0.7));
 	border-radius: 18px;
 	flex-direction: row;
 	align-items: center;
@@ -1387,6 +1402,9 @@ async function onTipPaid(amount: number): Promise<void> {
 	height: 34px;
 	border-radius: 16px;
 	background-color: var(--x-bg-2, #ebe6df);
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-line, rgba(28, 26, 23, 0.06));
 	justify-content: center;
 	padding: 0 12px;
 	margin-right: 8px;
@@ -1418,11 +1436,12 @@ async function onTipPaid(amount: number): Promise<void> {
 }
 
 .ic-fav {
-	background-color: rgba(246, 217, 168, 0.65);
+	/* 暖色浅底跟主题，深色不再跳亮黄 */
+	background-color: var(--x-warm-tint, #ffe8d6);
 }
 
 .tip {
-	background-color: rgba(61, 184, 154, 0.25);
+	background-color: var(--x-accent-tint, rgba(61, 184, 154, 0.12));
 }
 
 .act-t {

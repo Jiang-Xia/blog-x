@@ -41,7 +41,7 @@ blog-x/
 
 | 文件 | 作用 |
 |------|------|
-| [`api/dev-target.js`](api/dev-target.js) | 联调目标：`API_ORIGIN` / `API_PREFIX` / Web 代理前缀（与 `vite.config.js` 共用） |
+| [`api/dev-target.js`](api/dev-target.js) | 联调目标：`API_ORIGIN` / `API_PREFIX` / `STATIC_BASE_URL` / Web 代理前缀（与 `vite.config.js` 共用） |
 | [`api/config.ts`](api/config.ts) | `USE_MOCK` / `WEB_DEV_PROXY` / `OPEN_ENCRYPT` / `OPEN_REQUEST_LOG` / `GATEWAY_CRYPTO` |
 | [`vite.config.js`](vite.config.js) | Web 开发：`/x-api` → Nest，避免浏览器 CORS |
 | [`api/request.ts`](api/request.ts) | `uni.request`：解包、Bearer、加密网关、401 refresh、开发日志 |
@@ -53,11 +53,12 @@ blog-x/
 
 默认 baseURL：`http://localhost:5000/api/v1`（Nest `blog-server`）。切换环境只改 [`api/dev-target.js`](api/dev-target.js)：
 
-| 环境 | `API_ORIGIN` | `API_PREFIX` |
-|------|--------------|--------------|
-| 本地 Nest | `http://localhost:5000` | `/api/v1` |
-| 线上 Nest | `https://jiang-xia.top` | `/x-blog/api/v1` |
-| 本地 Go | `http://localhost:8000` | `/api/v1` |
+| 环境 | `API_ORIGIN` | `API_PREFIX` | `STATIC_BASE_URL`（上传图预览） |
+|------|--------------|--------------|----------------------------------|
+| 本地 Nest | `http://localhost:5000` | `/api/v1` | `http://localhost:5000` |
+| 线上 Nest | `https://jiang-xia.top` | `/x-blog/api/v1` | `https://jiang-xia.top/x-api/blog-server` |
+| 本地 Go | `http://localhost:8000` | `/api/v1` | `http://localhost:8000` |
+| 线上 Go | （见 Go 部署） | （见 Go 部署） | `https://go.jiang-xia.top/x-api/blog-server` |
 
 ### Web 本地开发代理（防 CORS）
 
@@ -65,7 +66,7 @@ blog-x/
 
 1. `WEB_DEV_PROXY=true`（`api/config.ts`）时，Web + `development` 下 `getBaseUrl()` 返回同源前缀 `/x-api`
 2. [`vite.config.js`](vite.config.js) 把 `/x-api` 转发到 `API_ORIGIN + API_PREFIX`
-3. **不要**代理整个 `/static`：会抢走本地 `static/fonts`（Tabler 图标字体）等项目资源；上传图用 `resolveStaticUrl` 直连 `API_ORIGIN`
+3. **不要**代理整个 `/static`：会抢走本地 `static/fonts`（Tabler 图标字体）等项目资源；上传图用 `resolveStaticUrl` 直连 `STATIC_BASE_URL`（线上为 `…/x-api/blog-server`，与 API 前缀不同）
 4. App / 小程序仍直连完整 `API_ORIGIN`，不受代理影响
 5. 改完 `dev-target.js` 后需**重新运行到浏览器**（Vite 才会读到新代理目标）
 
@@ -93,7 +94,7 @@ await apis.getAllTag()
 | home / discover / rpg / me | `/pages/index/index`（`uni-tab` + tab-bar-blur，`?tab=0~3`） | 主包主壳 |
 | search / detail / login / notify | `/pages/search|detail|login|notify/...` | 主包 |
 | archive / guestbook / links / favorites / inbox / profile / audit / ai / tags / write | `/pages-blog/<模块>/index` | 博客分包 |
-| lottery / rank / calendar / recharge / backpack | `/pages-rpg/<模块>/index` | RPG 分包 |
+| lottery（券/钻石、奖池图、记录）/ rank / calendar / recharge / backpack | `/pages-rpg/<模块>/index` | RPG 分包 |
 | tipSheet | 详情页内 `x-tip-sheet`（钻石 tip + 站点赞赏） | 组件 |
 | profile 社交 | 公开主页 `x-social-bar`（加油 / 扔鸡蛋 / 送鲜花） | 组件 |
 

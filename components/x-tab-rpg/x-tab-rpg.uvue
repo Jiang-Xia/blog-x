@@ -72,7 +72,7 @@
 					<view class="x-tile" @click="goLottery">
 						<view class="x-tile-ico"><x-icon name="dice" :size="20" :color="tokens.ink"></x-icon></view>
 						<text class="x-tile-title">幸运抽奖</text>
-						<text class="x-tile-desc">消耗抽奖券</text>
+						<text class="x-tile-desc">钻石或抽奖券</text>
 					</view>
 				</view>
 				<view class="x-grid-2-item">
@@ -187,6 +187,8 @@ const emptyHero: RpgHero = {
 	lotteryTickets: 0,
 	streakDays: 0,
 	weatherBuff: '',
+	lotteryPityCounter: 0,
+	lotteryLegendaryPityCounter: 0,
 }
 
 const hero = ref(emptyHero)

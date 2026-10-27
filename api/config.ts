@@ -7,6 +7,7 @@
 import {
 	API_ORIGIN as TARGET_ORIGIN,
 	API_PREFIX as TARGET_PREFIX,
+	STATIC_BASE_URL as TARGET_STATIC,
 	WEB_DEV_PROXY_PREFIX as TARGET_PROXY_PREFIX,
 } from './dev-target.js'
 
@@ -26,6 +27,12 @@ export const API_ORIGIN = ('' + TARGET_ORIGIN).replace(/\/$/, '')
 export const API_PREFIX = ('' + TARGET_PREFIX).startsWith('/')
 	? ('' + TARGET_PREFIX).replace(/\/$/, '')
 	: '/' + ('' + TARGET_PREFIX).replace(/\/$/, '')
+
+/**
+ * 静态资源根（上传 /static/... 拼完整 URL；对齐 uniapp VITE_STATIC_BASEURL）
+ * 线上：https://jiang-xia.top/x-api/blog-server；本地：与 API_ORIGIN 同
+ */
+export const STATIC_BASE_URL = ('' + TARGET_STATIC).replace(/\/$/, '')
 
 /**
  * Web 本地开发是否走 Vite 同源代理（manifest/vite :3008 → API_ORIGIN）

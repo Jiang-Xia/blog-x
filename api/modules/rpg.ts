@@ -2,8 +2,23 @@
  * RPG API（对齐 blog-home-uniapp / blog-home-nuxt api/rpg）
  */
 import { get, post } from '../request'
-import { mapLotteryCells, mapRankRows, mapRpgHero, mapRpgQuests } from '../adapters/rpg'
-import type { LotteryCell, RankRow, RpgHero, RpgQuest } from '../../types/rpg'
+import {
+	mapDrawResults,
+	mapLotteryHistory,
+	mapLotteryPool,
+	mapRankRows,
+	mapRpgHero,
+	mapRpgQuests,
+} from '../adapters/rpg'
+import type {
+	DrawResult,
+	LotteryCurrency,
+	LotteryPoolItem,
+	LotteryRecord,
+	RankRow,
+	RpgHero,
+	RpgQuest,
+} from '../../types/rpg'
 
 /**
  * 拉取冒险中心英雄区（status + weather）
@@ -121,18 +136,31 @@ export function claimQuest(questCode: string): Promise<any> {
 }
 
 /**
- * 抽奖奖池
+ * 抽奖奖池（后台配置；含 iconUrl / 稀有度展示字段）
  */
-export async function fetchLotteryPool(): Promise<LotteryCell[]> {
+export async function fetchLotteryPool(): Promise<LotteryPoolItem[]> {
 	const res = await get('/rpg/lottery/pool')
-	return mapLotteryCells(res)
+	return mapLotteryPool(res)
 }
 
 /**
- * 抽一次
+ * 执行抽奖（1～5 次前端常用；支付：ticket 券 / currency 钻石）
+ * 副作用：扣券或钻石、写抽奖记录、推进保底
  */
-export function lotteryDraw(count = 1, currency: 'ticket' | 'currency' = 'ticket'): Promise<any> {
-	return post('/rpg/lottery/draw', { count, currency })
+export async function lotteryDraw(
+	count = 1,
+	currency: LotteryCurrency = 'ticket',
+): Promise<DrawResult[]> {
+	const res = await post('/rpg/lottery/draw', { count, currency })
+	return mapDrawResults(res)
+}
+
+/**
+ * 抽奖历史（需登录；分页 list）
+ */
+export async function fetchLotteryHistory(page = 1, pageSize = 20): Promise<LotteryRecord[]> {
+	const res = await get('/rpg/lottery/history', { page, pageSize })
+	return mapLotteryHistory(res)
 }
 
 /**
@@ -150,14 +178,15 @@ export async function fetchLeaderboard(
 }
 
 /**
- * 充值下单
+ * 钻石充值下单（支付宝；返回 outTradeNo + universalLink/scheme）
+ * @param amountYuan 充值金额（元，0.01~200，最多两位小数）
  */
 export function createRpgRecharge(amountYuan: number): Promise<any> {
 	return post('/rpg/recharge/create', { amountYuan })
 }
 
 /**
- * 充值状态轮询
+ * 充值状态轮询（silent；PAID/fulfilled 后刷新余额）
  */
 export function getRpgRechargeStatus(outTradeNo: string): Promise<any> {
 	return get('/rpg/recharge/status', { out_trade_no: outTradeNo }, { silent: true })

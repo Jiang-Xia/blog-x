@@ -14,8 +14,8 @@ alwaysApply: false
 
 ```
 api/
-  dev-target.js   # API_ORIGIN / API_PREFIX / WEB_DEV_PROXY_PREFIX（与 vite.config.js 共用）
-  config.ts       # USE_MOCK / WEB_DEV_PROXY / OPEN_ENCRYPT / OPEN_REQUEST_LOG / GATEWAY_CRYPTO
+  dev-target.js   # API_ORIGIN / API_PREFIX / STATIC_BASE_URL / WEB_DEV_PROXY_PREFIX（与 vite.config.js 共用）
+  config.ts       # USE_MOCK / WEB_DEV_PROXY / STATIC_BASE_URL / OPEN_ENCRYPT / OPEN_REQUEST_LOG / GATEWAY_CRYPTO
   request.ts      # get/post/put/patch/del，解包 { code, data, message }
   registry.ts     # 接口注册表（新增接口只改这里 + modules）
   createApi.ts    # 按注册表生成 apis.xxx
@@ -47,6 +47,7 @@ utils/
 
 - 统一 `api/request.ts`：`uni.request`，暴露 `get` / `post` / `put` / `patch` / `del`
 - baseURL：改 [`api/dev-target.js`](api/dev-target.js)（`API_ORIGIN` + `API_PREFIX`）；`getBaseUrl()` 读取之
+- 上传图完整 URL：同文件 `STATIC_BASE_URL` + `/static/...`（`utils/static-url.ts`）；线上 Nest 为 `https://jiang-xia.top/x-api/blog-server`，勿用 `API_ORIGIN` 直拼
 - Web 本地开发：`WEB_DEV_PROXY=true` 时浏览器走同源 `/x-api`，由 [`vite.config.js`](vite.config.js) 转发，禁止 Web 直连线上域名（CORS）
 - App / 小程序：始终直连完整 `API_ORIGIN`，不经 Vite 代理
 - `USE_MOCK=true`：由 `apis` 合并 `api/mocks/` 同名覆盖；mock 的 `data` 必须抄真实接口

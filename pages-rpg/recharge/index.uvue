@@ -1,5 +1,5 @@
 <template>
-	<!-- 钻石充值：SKU + 支付下单轮询 -->
+	<!-- 钻石充值：支付宝下单（对齐 Nuxt 面额 + 自定义金额；支付链路同站点赞赏） -->
 	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="钻石充值"></x-navbar>
 		<x-scroll-page
@@ -18,20 +18,50 @@
 					<x-icon name="diamond" :size="22" color="#1c1a17"></x-icon>
 					<text class="bal-n">{{ diamonds }}</text>
 				</view>
+				<text class="rate-hint">{{ rateText }}</text>
 			</view>
+
+			<text class="sec-title">充值金额</text>
 			<view class="pack">
 				<view
-					v-for="sku in skus"
-					:key="sku.id"
-					:class="sku.id === selectedId ? 'sku on' : 'sku'"
-					@click="selectSku(sku.id)"
+					v-for="yuan in presetOptions"
+					:key="'' + yuan"
+					:class="amountMode == 'preset' && selectedPreset == yuan ? 'sku on' : 'sku'"
+					@click="selectPreset(yuan)"
 				>
-					<text class="sku-strong">{{ sku.diamonds }} 钻石</text>
-					<text class="sku-span">¥{{ sku.priceYuan }}{{ sku.bonusLabel != null ? ' · ' + sku.bonusLabel : '' }}</text>
+					<text class="sku-strong">¥{{ yuan }}</text>
+					<text class="sku-span">{{ calcDiamonds(yuan) }} 钻石</text>
+				</view>
+				<view
+					:class="amountMode == 'custom' ? 'sku on' : 'sku'"
+					@click="selectCustomMode"
+				>
+					<text class="sku-strong">自定义</text>
+					<text class="sku-span">{{ customRangeHint }}</text>
 				</view>
 			</view>
-			<view class="x-btn pay" @click="onPay">
-				<text class="x-btn-text">支付 ¥{{ payPrice }}</text>
+
+			<view v-if="amountMode == 'custom'" class="custom-row">
+				<input
+					class="custom-input"
+					type="digit"
+					:value="customAmountInput"
+					:placeholder="customPlaceholder"
+					placeholder-class="custom-ph"
+					@input="onCustomInput"
+				/>
+				<text class="custom-unit">元</text>
+			</view>
+
+			<view class="x-card preview-card">
+				<text class="preview-label">预计到账</text>
+				<text class="preview-value">{{ diamondsPreviewText }}</text>
+				<text class="preview-suffix">钻石</text>
+			</view>
+
+			<text class="pay-hint">{{ alipayHint }}</text>
+			<view class="x-btn pay" :class="paying || !isAmountValid ? 'pay-disabled' : ''" @click="onPay">
+				<text class="x-btn-text">{{ payBtnText }}</text>
 			</view>
 		</x-scroll-page>
 	</view>
@@ -39,24 +69,39 @@
 
 <script setup lang="ts">
 /**
- * 钻石充值：联调 create + 轮询 status
+ * 钻石充值：POST /rpg/recharge/create（仅支付宝）+ 轮询 status
+ * 面额/汇率/自定义范围对齐 Nuxt rpg-economy；拉起支付同站点赞赏（复制 universalLink/scheme）
  * 滚动：x-scroll-page 下拉刷新余额
  */
-import type { RechargeSku } from '../../types/rpg'
 import { createRpgRecharge, getRpgRechargeStatus, fetchRpgHero } from '../../api/modules/rpg'
+import {
+	RPG_RECHARGE_AMOUNT_OPTIONS,
+	RPG_RECHARGE_DEFAULT_AMOUNT,
+	RPG_RECHARGE_MIN_YUAN,
+	RPG_RECHARGE_MAX_YUAN,
+	RPG_RECHARGE_RATE_TEXT,
+	RPG_RECHARGE_ALIPAY_HINT,
+	parseRechargeYuanInput,
+	isRechargeYuanInRange,
+	calcRechargeDiamonds,
+} from '../../constants/rpg-economy'
 import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 import { useTheme } from '../../composables/useTheme'
+
 const { themeCssVars, syncNativeChrome } = useTheme()
 
-const skus: RechargeSku[] = [
-	{ id: '60', diamonds: 60, priceYuan: 6 },
-	{ id: '300', diamonds: 300, priceYuan: 30, bonusLabel: '+30' },
-	{ id: '680', diamonds: 680, priceYuan: 68 },
-	{ id: '1280', diamonds: 1280, priceYuan: 128 },
-]
-const selectedId = ref('300')
+const presetOptions = RPG_RECHARGE_AMOUNT_OPTIONS
+const rateText = RPG_RECHARGE_RATE_TEXT
+const alipayHint = RPG_RECHARGE_ALIPAY_HINT
+const customRangeHint = `${RPG_RECHARGE_MIN_YUAN}~${RPG_RECHARGE_MAX_YUAN} 元`
+const customPlaceholder = `请输入 ${RPG_RECHARGE_MIN_YUAN}~${RPG_RECHARGE_MAX_YUAN}`
+
+/** preset=快捷面额；custom=自定义输入 */
+const amountMode = ref('preset')
+const selectedPreset = ref(RPG_RECHARGE_DEFAULT_AMOUNT)
+const customAmountInput = ref('')
 const store = useMockStore()
 const diamonds = store.diamonds
 const paying = ref(false)
@@ -89,26 +134,77 @@ onMounted(() => {
 })
 
 /**
- * 按 id 查找充值档
+ * 按金额算预计钻石（模板预览用）
  */
-function findSku(id: string) {
-	for (let i = 0; i < skus.length; i++) {
-		if (skus[i].id === id) return skus[i]
-	}
-	return null
-}
-
-const payPrice = computed((): number => {
-	const s = findSku(selectedId.value)
-	return s != null ? s.priceYuan : 0
-})
-
-function selectSku(id: string): void {
-	selectedId.value = id
+function calcDiamonds(yuan: number): number {
+	return calcRechargeDiamonds(yuan)
 }
 
 /**
- * 轮询充值到账
+ * 当前生效金额（元）：预设直接取值，自定义解析并校验范围
+ */
+const resolvedAmount = computed((): number | null => {
+	if (amountMode.value == 'preset') {
+		return selectedPreset.value
+	}
+	const parsed = parseRechargeYuanInput(customAmountInput.value)
+	if (parsed == null || !isRechargeYuanInRange(parsed)) return null
+	return parsed
+})
+
+const isAmountValid = computed((): boolean => {
+	return resolvedAmount.value != null
+})
+
+const diamondsPreviewText = computed((): string => {
+	const amount = resolvedAmount.value
+	if (amount == null) return '--'
+	return '' + calcRechargeDiamonds(amount)
+})
+
+const payBtnText = computed((): string => {
+	if (paying.value) return '处理中…'
+	const amount = resolvedAmount.value
+	if (amount == null) return '支付宝充值'
+	return '支付宝充值 ¥' + amount
+})
+
+/**
+ * 选中快捷面额
+ */
+function selectPreset(yuan: number): void {
+	if (paying.value) return
+	amountMode.value = 'preset'
+	selectedPreset.value = yuan
+}
+
+/**
+ * 切到自定义金额；空输入时带入当前预设作初值
+ */
+function selectCustomMode(): void {
+	if (paying.value) return
+	amountMode.value = 'custom'
+	if (customAmountInput.value.trim().length == 0) {
+		customAmountInput.value = '' + selectedPreset.value
+	}
+}
+
+/**
+ * 自定义金额输入：封顶到上限
+ */
+function onCustomInput(e: any): void {
+	const detail = e != null ? e.detail : null
+	const raw = detail != null && detail.value != null ? '' + detail.value : ''
+	const parsed = parseRechargeYuanInput(raw)
+	if (parsed != null && parsed > RPG_RECHARGE_MAX_YUAN) {
+		customAmountInput.value = '' + RPG_RECHARGE_MAX_YUAN
+		return
+	}
+	customAmountInput.value = raw
+}
+
+/**
+ * 轮询充值到账（对齐站点赞赏：PENDING 继续，PAID 刷新余额）
  */
 function pollRecharge(outTradeNo: string, left: number): void {
 	if (left <= 0) {
@@ -118,9 +214,14 @@ function pollRecharge(outTradeNo: string, left: number): void {
 	}
 	getRpgRechargeStatus(outTradeNo)
 		.then(async (res) => {
+			const status = res != null && res.status != null ? ('' + res.status).toLowerCase() : ''
+			const paidFlag = res != null && res.paid === true
+			const fulfilled = res != null && res.fulfilled === true
 			const paid =
-				res != null &&
-				(res.status === 'paid' || res.status === 'success' || res.paid === true)
+				paidFlag ||
+				fulfilled ||
+				status == 'paid' ||
+				status == 'success'
 			if (paid) {
 				paying.value = false
 				try {
@@ -130,39 +231,69 @@ function pollRecharge(outTradeNo: string, left: number): void {
 				showXToast('diamond', '充值成功', '')
 				return
 			}
+			if (status.length > 0 && status != 'pending') {
+				paying.value = false
+				showXToast('circle-x', '支付未完成', status)
+				return
+			}
 			setTimeout(() => {
 				pollRecharge(outTradeNo, left - 1)
-			}, 2000)
+			}, 2500)
 		})
 		.catch(() => {
 			setTimeout(() => {
 				pollRecharge(outTradeNo, left - 1)
-			}, 2000)
+			}, 2500)
 		})
 }
 
 /**
- * 下单充值
+ * 支付宝下单：create → 复制支付链接 → 轮询 status
  */
 async function onPay(): Promise<void> {
-	const s = findSku(selectedId.value)
-	if (s == null || paying.value) return
+	const amount = resolvedAmount.value
+	if (amount == null || paying.value) {
+		if (amount == null) {
+			showXToast(
+				'alert-triangle',
+				'请输入有效金额',
+				`范围 ${RPG_RECHARGE_MIN_YUAN}~${RPG_RECHARGE_MAX_YUAN} 元`,
+			)
+		}
+		return
+	}
 	paying.value = true
 	try {
-		const res = await createRpgRecharge(s.priceYuan)
+		const res = await createRpgRecharge(amount)
 		const outTradeNo =
 			res != null && res.outTradeNo != null
 				? '' + res.outTradeNo
 				: res != null && res.out_trade_no != null
 					? '' + res.out_trade_no
 					: ''
+		const link =
+			res != null && res.universalLink != null
+				? '' + res.universalLink
+				: res != null && res.scheme != null
+					? '' + res.scheme
+					: ''
 		if (outTradeNo.length == 0) {
 			paying.value = false
 			showXToast('alert-triangle', '下单失败', '')
 			return
 		}
-		showXToast('credit-card', '请完成支付', '正在确认到账…')
-		pollRecharge(outTradeNo, 15)
+		if (link.length > 0) {
+			// 与站点赞赏一致：各端统一复制链接，避免 plus/window 条件编译差异
+			uni.setClipboardData({
+				data: link,
+				success: () => {
+					showXToast('clipboard', '支付链接已复制', '请在浏览器打开完成支付')
+				},
+			})
+		} else {
+			showXToast('credit-card', '请完成支付', '正在确认到账…')
+		}
+		pollRecharge(outTradeNo, 24)
 	} catch (_) {
 		paying.value = false
 	}
@@ -199,11 +330,24 @@ onShow(() => {
 	margin-left: 6px;
 }
 
+.rate-hint {
+	font-size: 11px;
+	color: var(--x-ink-3, #9a948a);
+	margin-top: 8px;
+}
+
+.sec-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--x-ink-2, #5c574f);
+	margin-bottom: 10px;
+}
+
 .pack {
 	flex-direction: row;
 	flex-wrap: wrap;
 	justify-content: space-between;
-	margin-bottom: 20px;
+	margin-bottom: 12px;
 }
 
 .sku {
@@ -213,7 +357,7 @@ onShow(() => {
 	background-color: var(--x-surface, #ffffff);
 	border-width: 1.5px;
 	border-style: solid;
-	border-color: transparent;
+	border-color: var(--x-bg-2, #ebe6df);
 	margin-bottom: 8px;
 }
 
@@ -234,7 +378,75 @@ onShow(() => {
 	color: var(--x-ink-3, #9a948a);
 }
 
+.custom-row {
+	flex-direction: row;
+	align-items: center;
+	background-color: var(--x-surface, #ffffff);
+	border-radius: 14px;
+	border-width: 1.5px;
+	border-style: solid;
+	border-color: var(--x-bg-2, #ebe6df);
+	padding: 4px 12px;
+	margin-bottom: 12px;
+}
+
+.custom-input {
+	flex: 1;
+	height: 40px;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--x-ink, #1c1a17);
+}
+
+.custom-ph {
+	color: var(--x-ink-3, #9a948a);
+	font-weight: 400;
+	font-size: 13px;
+}
+
+.custom-unit {
+	font-size: 14px;
+	color: var(--x-ink-2, #5c574f);
+	margin-left: 8px;
+}
+
+.preview-card {
+	flex-direction: row;
+	align-items: baseline;
+	margin-bottom: 12px;
+	padding: 12px 14px;
+}
+
+.preview-label {
+	font-size: 12px;
+	color: var(--x-ink-3, #9a948a);
+	margin-right: 8px;
+}
+
+.preview-value {
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--x-accent-deep, #2a8f76);
+}
+
+.preview-suffix {
+	font-size: 12px;
+	color: var(--x-ink-2, #5c574f);
+	margin-left: 4px;
+}
+
+.pay-hint {
+	font-size: 11px;
+	color: var(--x-ink-3, #9a948a);
+	margin-bottom: 12px;
+	line-height: 1.4;
+}
+
 .pay {
 	padding: 12px;
+}
+
+.pay-disabled {
+	opacity: 0.55;
 }
 </style>

@@ -49,7 +49,7 @@
 | 文章详情 | `pages/detail/detail` |
 | 归档 | `pages-blog/archives/index` |
 | 编辑资料 | `pages-blog/profile-edit/index`（头像/昵称/简介/主页） |
-| 幸运抽奖 | `pages-rpg/lottery/index` |
+| 幸运抽奖 | `pages-rpg/lottery/index` | 券/钻石、奖池（后台配置+iconUrl）、记录 |
 
 页面优先走 `api/modules/*`；失败或 `USE_MOCK` 时回落 `mock/data.ts`（见 `x-07`）。验收见 `docs/qa-checklist.md`。
 

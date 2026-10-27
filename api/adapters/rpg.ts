@@ -2,9 +2,41 @@
  * RPG 服务端字段 → 小卡 UI 展示模型
  * 数据来源：blog-server /rpg/*（形状对齐 blog-home-nuxt）
  */
-import type { LotteryCell, RankRow, RpgHero, RpgQuest } from '../../types/rpg'
+import type {
+	DrawResult,
+	LotteryPoolItem,
+	LotteryRecord,
+	RankRow,
+	RpgHero,
+	RpgQuest,
+} from '../../types/rpg'
 import { toIconName } from '../../utils/icon-name'
 import { resolveStaticUrl } from '../../utils/static-url'
+
+/**
+ * 相对时间文案（抽奖记录 createTime 兜底）
+ */
+function formatLotteryTime(raw: any): string {
+	if (raw == null || raw === '') return ''
+	const s = '' + raw
+	if (s.indexOf('T') < 0 && s.indexOf('-') < 0) return s
+	const t = Date.parse(s)
+	if (isNaN(t)) return s
+	const diff = Date.now() - t
+	const day = 24 * 60 * 60 * 1000
+	if (diff < day) return '今天'
+	if (diff < 2 * day) return '昨天'
+	if (diff < 7 * day) return Math.floor(diff / day) + ' 天前'
+	return s.substring(0, 10)
+}
+
+/**
+ * 解析管理端上传的物品图标 URL（API iconUrl → 完整域名）
+ */
+function mapIconUrl(raw: any): string {
+	const u = raw != null ? ('' + raw).trim() : ''
+	return u.length > 0 ? resolveStaticUrl(u) : ''
+}
 
 /**
  * status + 可选 weather → RpgHero
@@ -31,6 +63,12 @@ export function mapRpgHero(status: any, weather: any = null): RpgHero {
 		lotteryTickets: status != null && status.lotteryTickets != null ? Number(status.lotteryTickets) : 0,
 		streakDays: status != null && status.signDays != null ? Number(status.signDays) : 0,
 		weatherBuff: weatherLabel,
+		lotteryPityCounter:
+			status != null && status.lotteryPityCounter != null ? Number(status.lotteryPityCounter) : 0,
+		lotteryLegendaryPityCounter:
+			status != null && status.lotteryLegendaryPityCounter != null
+				? Number(status.lotteryLegendaryPityCounter)
+				: 0,
 	}
 }
 
@@ -91,18 +129,77 @@ export function mapRpgQuests(raw: any): RpgQuest[] {
 }
 
 /**
- * 奖池 → LotteryCell[]（Nest：裸数组；最多 8 格外围）
+ * 奖池 → LotteryPoolItem[]（Nest：裸数组；过滤未关联系统物品）
+ * 对齐 Nuxt filterLinkedLotteryPool：itemLinked === false 丢弃
  */
-export function mapLotteryCells(raw: any): LotteryCell[] {
-	const list: LotteryCell[] = []
+export function mapLotteryPool(raw: any): LotteryPoolItem[] {
+	const list: LotteryPoolItem[] = []
 	const arr = Array.isArray(raw) ? raw : []
-	const max = Math.min(arr.length, 8)
-	for (let i = 0; i < max; i++) {
+	for (let i = 0; i < arr.length; i++) {
 		const p = arr[i]
+		if (p == null) continue
+		if (p.itemLinked === false) continue
 		list.push({
-			index: i,
+			id: p.id != null ? Number(p.id) : i + 1,
+			itemCode: p.itemCode != null ? '' + p.itemCode : p.code != null ? '' + p.code : '' + i,
+			name: p.name != null ? '' + p.name : p.label != null ? '' + p.label : '奖品',
+			rarity: p.rarity != null ? '' + p.rarity : 'common',
+			rarityLabel: p.rarityLabel != null ? '' + p.rarityLabel : '',
+			rarityColor: p.rarityColor != null ? '' + p.rarityColor : '',
 			icon: toIconName(p.icon != null ? '' + p.icon : 'sparkles', 'sparkles'),
-			label: p.name != null ? '' + p.name : '奖品',
+			iconUrl: mapIconUrl(p.iconUrl),
+			itemLinked: p.itemLinked !== false,
+		})
+	}
+	return list
+}
+
+/**
+ * 抽奖历史 → LotteryRecord[]（Nest：{ list, pagination } 或裸数组）
+ */
+export function mapLotteryHistory(raw: any): LotteryRecord[] {
+	const list: LotteryRecord[] = []
+	const arr = raw != null && Array.isArray(raw.list) ? raw.list : Array.isArray(raw) ? raw : []
+	for (let i = 0; i < arr.length; i++) {
+		const r = arr[i]
+		if (r == null) continue
+		list.push({
+			id: r.id != null ? Number(r.id) : i + 1,
+			poolName:
+				r.poolName != null
+					? '' + r.poolName
+					: r.itemName != null
+						? '' + r.itemName
+						: '奖品',
+			poolRarity: r.poolRarity != null ? '' + r.poolRarity : r.rarity != null ? '' + r.rarity : '',
+			rarityLabel: r.rarityLabel != null ? '' + r.rarityLabel : '',
+			rarityColor: r.rarityColor != null ? '' + r.rarityColor : '',
+			icon: toIconName(r.icon != null ? '' + r.icon : 'sparkles', 'sparkles'),
+			iconUrl: mapIconUrl(r.iconUrl),
+			timeLabel: formatLotteryTime(r.createTime),
+		})
+	}
+	return list
+}
+
+/**
+ * 抽奖结果 → DrawResult[]（Nest：DrawResult[]，元素含 item / rewardDetail）
+ */
+export function mapDrawResults(raw: any): DrawResult[] {
+	const list: DrawResult[] = []
+	const arr = Array.isArray(raw) ? raw : raw != null && Array.isArray(raw.rewards) ? raw.rewards : []
+	for (let i = 0; i < arr.length; i++) {
+		const row = arr[i]
+		if (row == null) continue
+		const item = row.item != null ? row.item : row
+		list.push({
+			name: item.name != null ? '' + item.name : '奖品',
+			icon: toIconName(item.icon != null ? '' + item.icon : 'sparkles', 'sparkles'),
+			iconUrl: mapIconUrl(item.iconUrl),
+			rarity: item.rarity != null ? '' + item.rarity : '',
+			rarityLabel: item.rarityLabel != null ? '' + item.rarityLabel : '',
+			rarityColor: item.rarityColor != null ? '' + item.rarityColor : '',
+			rewardDetail: row.rewardDetail != null ? '' + row.rewardDetail : '',
 		})
 	}
 	return list

@@ -5,7 +5,8 @@
 import type { ArticleDetail, ArticleSummary } from '../types/article'
 import type { PublicRpgCard, UserProfile } from '../types/user'
 import type {
-	LotteryCell,
+	LotteryPoolItem,
+	LotteryRecord,
 	RankRow,
 	RechargeSku,
 	RpgHero,
@@ -198,6 +199,8 @@ export const rpgHeroSeed: RpgHero = {
 	lotteryTickets: 3,
 	streakDays: 32,
 	weatherBuff: '天气 Buff',
+	lotteryPityCounter: 12,
+	lotteryLegendaryPityCounter: 40,
 }
 
 export const rpgQuestsSeed: RpgQuest[] = [
@@ -222,22 +225,128 @@ export const rpgQuestsSeed: RpgQuest[] = [
 	},
 ]
 
-export const lotteryCells: LotteryCell[] = [
-	{ index: 0, icon: 'diamond', label: '+10' },
-	{ index: 1, icon: 'egg', label: '宠物蛋' },
-	{ index: 2, icon: 'coin', label: '+50' },
-	{ index: 3, icon: 'medal', label: '成就' },
-	{ index: 4, icon: 'frame', label: '头像框' },
-	{ index: 5, icon: 'diamond', label: '+50' },
-	{ index: 6, icon: 'ticket', label: '再来券' },
-	{ index: 7, icon: 'sparkles', label: '称号' },
+/** 抽奖奖池 mock（形状对齐 Nest enrich 后的 pool） */
+export const lotteryPoolSeed: LotteryPoolItem[] = [
+	{
+		id: 1,
+		itemCode: 'diamond_10',
+		name: '钻石+10',
+		rarity: 'common',
+		rarityLabel: '普通',
+		rarityColor: '#9ca3af',
+		icon: 'diamond',
+		iconUrl: '',
+		itemLinked: true,
+	},
+	{
+		id: 2,
+		itemCode: 'pet_egg',
+		name: '宠物蛋',
+		rarity: 'rare',
+		rarityLabel: '稀有',
+		rarityColor: '#3b82f6',
+		icon: 'egg',
+		iconUrl: '',
+		itemLinked: true,
+	},
+	{
+		id: 3,
+		itemCode: 'coin_50',
+		name: '金币+50',
+		rarity: 'common',
+		rarityLabel: '普通',
+		rarityColor: '#9ca3af',
+		icon: 'coin',
+		iconUrl: '',
+		itemLinked: true,
+	},
+	{
+		id: 4,
+		itemCode: 'medal_badge',
+		name: '成就徽章',
+		rarity: 'epic',
+		rarityLabel: '史诗',
+		rarityColor: '#a855f7',
+		icon: 'medal',
+		iconUrl: '',
+		itemLinked: true,
+	},
+	{
+		id: 5,
+		itemCode: 'avatar_frame',
+		name: '头像框',
+		rarity: 'rare',
+		rarityLabel: '稀有',
+		rarityColor: '#3b82f6',
+		icon: 'frame',
+		iconUrl: '',
+		itemLinked: true,
+	},
+	{
+		id: 6,
+		itemCode: 'diamond_50',
+		name: '钻石+50',
+		rarity: 'epic',
+		rarityLabel: '史诗',
+		rarityColor: '#a855f7',
+		icon: 'diamond',
+		iconUrl: '',
+		itemLinked: true,
+	},
+	{
+		id: 7,
+		itemCode: 'lottery_ticket',
+		name: '再来券',
+		rarity: 'rare',
+		rarityLabel: '稀有',
+		rarityColor: '#3b82f6',
+		icon: 'ticket',
+		iconUrl: '',
+		itemLinked: true,
+	},
+	{
+		id: 8,
+		itemCode: 'title_spark',
+		name: '称号',
+		rarity: 'legendary',
+		rarityLabel: '传说',
+		rarityColor: '#f59e0b',
+		icon: 'sparkles',
+		iconUrl: '',
+		itemLinked: true,
+	},
 ]
 
+/** 抽奖记录 mock */
+export const lotteryHistorySeed: LotteryRecord[] = [
+	{
+		id: 1,
+		poolName: '钻石+10',
+		poolRarity: 'common',
+		rarityLabel: '普通',
+		rarityColor: '#9ca3af',
+		icon: 'diamond',
+		iconUrl: '',
+		timeLabel: '今天',
+	},
+	{
+		id: 2,
+		poolName: '宠物蛋',
+		poolRarity: 'rare',
+		rarityLabel: '稀有',
+		rarityColor: '#3b82f6',
+		icon: 'egg',
+		iconUrl: '',
+		timeLabel: '昨天',
+	},
+]
+
+/** 快捷充值面额（对齐 Nuxt RPG_RECHARGE_AMOUNT_OPTIONS，1 元 = 100 钻） */
 export const rechargeSkus: RechargeSku[] = [
-	{ id: '60', diamonds: 60, priceYuan: 6 },
-	{ id: '300', diamonds: 300, priceYuan: 30, bonusLabel: '+30' },
-	{ id: '680', diamonds: 680, priceYuan: 68 },
-	{ id: '1280', diamonds: 1280, priceYuan: 128 },
+	{ id: '1', amountYuan: 1, diamonds: 100 },
+	{ id: '5', amountYuan: 5, diamonds: 500 },
+	{ id: '10', amountYuan: 10, diamonds: 1000 },
+	{ id: '50', amountYuan: 50, diamonds: 5000 },
 ]
 
 /** 文章钻石打赏档位（amount 对齐 POST /rpg/article/tip） */

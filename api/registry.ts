@@ -76,6 +76,7 @@ const RPG_ROWS: ApiRow[] = [
 	{ name: 'getWeatherBuff', label: '天气 Buff', method: 'GET', path: '/rpg/weather-buff' },
 	{ name: 'getLotteryPool', label: '抽奖奖池', method: 'GET', path: '/rpg/lottery/pool' },
 	{ name: 'lotteryDraw', label: '抽奖', method: 'POST', path: '/rpg/lottery/draw' },
+	{ name: 'getLotteryHistory', label: '抽奖记录', method: 'GET', path: '/rpg/lottery/history' },
 	{ name: 'getLotteryTickets', label: '抽奖券', method: 'GET', path: '/rpg/lottery/tickets' },
 	{ name: 'getRpgLeaderboard', label: '排行榜', method: 'GET', path: '/rpg/leaderboard' },
 	{ name: 'createRpgRecharge', label: '充值下单', method: 'POST', path: '/rpg/recharge/create' },

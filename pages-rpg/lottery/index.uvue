@@ -1,5 +1,5 @@
 <template>
-	<!-- 幸运抽奖：3×3 格 + 中心抽一次 + 高亮轮转 -->
+	<!-- 幸运抽奖：券/钻石、奖池图、转盘、记录（对齐 Nuxt LotteryBox 逻辑） -->
 	<view class="x-page-flex" :style="themeCssVars">
 		<x-navbar title="幸运抽奖"></x-navbar>
 		<x-scroll-page
@@ -12,17 +12,142 @@
 			@refresherrestore="onRefresherRestore"
 			@refresherabort="onRefresherAbort"
 		>
+			<!-- 余额 -->
+			<view class="x-card bal-card">
+				<view class="bal-row">
+					<view class="bal-item">
+						<x-icon name="ticket" :size="16" color="#1c1a17"></x-icon>
+						<text class="bal-n">{{ tickets }}</text>
+						<text class="bal-lb">抽奖券</text>
+					</view>
+					<view class="bal-item">
+						<x-icon name="diamond" :size="16" color="#1c1a17"></x-icon>
+						<text class="bal-n">{{ diamonds }}</text>
+						<text class="bal-lb">钻石</text>
+					</view>
+				</view>
+				<view class="pity-row">
+					<text class="pity-t">史诗保底 {{ pityEpic }} / {{ EPIC_PITY }}</text>
+					<text class="pity-t pity-gap">传说保底 {{ pityLeg }} / {{ LEG_PITY }}</text>
+				</view>
+			</view>
+
+			<!-- 支付方式：券 / 钻石 -->
+			<view class="x-seg">
+				<view
+					:class="drawCurrency == 'ticket' ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
+					@click="setCurrency('ticket')"
+				>
+					<text :class="drawCurrency == 'ticket' ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">
+						抽奖券
+					</text>
+				</view>
+				<view
+					:class="drawCurrency == 'currency' ? 'x-seg-item x-seg-item-on' : 'x-seg-item'"
+					@click="setCurrency('currency')"
+				>
+					<text :class="drawCurrency == 'currency' ? 'x-seg-text x-seg-text-on' : 'x-seg-text'">
+						钻石({{ CURRENCY_COST }}/抽)
+					</text>
+				</view>
+			</view>
+
+			<!-- 3×3 转盘 -->
 			<view class="lottery">
 				<view
 					v-for="(cell, i) in displayCells"
 					:key="'c' + i"
 					:class="cellClass(i)"
+					:style="cellBorderStyle(i)"
 					@click="onCellClick(i)"
 				>
-					<x-icon :name="cell.icon" :size="22" color="#1c1a17"></x-icon>
-					<text class="cell-lb">{{ cell.label }}</text>
+					<template v-if="cell.isGo">
+						<x-icon name="dice" :size="22" color="#ffffff"></x-icon>
+						<text class="cell-lb go-lb">{{ cell.label }}</text>
+					</template>
+					<template v-else>
+						<image
+							v-if="cell.iconUrl.length > 0"
+							class="cell-img"
+							:src="cell.iconUrl"
+							mode="aspectFit"
+						></image>
+						<x-icon v-else :name="cell.icon" :size="22" color="#1c1a17"></x-icon>
+						<text class="cell-lb">{{ cell.label }}</text>
+					</template>
 				</view>
 			</view>
+
+			<!-- 单抽 / 五连 -->
+			<view class="draw-actions">
+				<view
+					:class="isDrawDisabled(1) ? 'x-btn draw-btn draw-off' : 'x-btn draw-btn'"
+					@click="onDraw(1)"
+				>
+					<text class="x-btn-text">单抽 x1</text>
+				</view>
+				<view
+					:class="isDrawDisabled(MAX_DRAW) ? 'x-btn draw-btn draw-multi draw-off' : 'x-btn draw-btn draw-multi'"
+					@click="onDraw(MAX_DRAW)"
+				>
+					<text class="x-btn-text">五连 x{{ MAX_DRAW }}</text>
+				</view>
+			</view>
+
+			<!-- 奖池一览（后台配置 + 图片） -->
+			<view class="x-section-head">
+				<text class="x-section-title">奖池一览</text>
+			</view>
+			<view class="pool-grid">
+				<view
+					v-for="item in pool"
+					:key="item.id"
+					class="pool-chip"
+					:style="poolChipStyle(item.rarityColor)"
+				>
+					<image
+						v-if="item.iconUrl.length > 0"
+						class="pool-img"
+						:src="item.iconUrl"
+						mode="aspectFit"
+					></image>
+					<view v-else class="pool-ico">
+						<x-icon :name="item.icon" :size="18" color="#1c1a17"></x-icon>
+					</view>
+					<text v-if="item.rarityLabel.length > 0" class="pool-rar" :style="rarColor(item.rarityColor)">
+						{{ item.rarityLabel }}
+					</text>
+					<text class="pool-name">{{ item.name }}</text>
+				</view>
+			</view>
+			<x-empty v-if="pool.length == 0 && showFooter" text="奖池为空"></x-empty>
+
+			<!-- 抽奖记录 -->
+			<view class="hist-toggle" @click="toggleHistory">
+				<text class="hist-btn">抽奖记录 {{ showHistory ? '▼' : '▶' }}</text>
+			</view>
+			<view v-if="showHistory" class="hist-list">
+				<view v-for="rec in history" :key="rec.id" class="hist-row">
+					<image
+						v-if="rec.iconUrl.length > 0"
+						class="hist-img"
+						:src="rec.iconUrl"
+						mode="aspectFit"
+					></image>
+					<view v-else class="hist-ico">
+						<x-icon :name="rec.icon" :size="16" color="#1c1a17"></x-icon>
+					</view>
+					<view class="hist-body">
+						<text class="hist-name">{{ rec.poolName }}</text>
+						<text v-if="rec.rarityLabel.length > 0" class="hist-rar" :style="rarColor(rec.rarityColor)">
+							{{ rec.rarityLabel }}
+						</text>
+					</view>
+					<text class="hist-time">{{ rec.timeLabel }}</text>
+				</view>
+				<x-empty v-if="history.length == 0" text="暂无记录"></x-empty>
+			</view>
+
 			<view class="x-section-head">
 				<text class="x-section-title">最近获得</text>
 			</view>
@@ -33,23 +158,52 @@
 
 <script setup lang="ts">
 /**
- * 幸运抽奖：联调 pool + draw；UI 轮转后 toast 服务端结果
- * 滚动：x-scroll-page 下拉刷新奖池
+ * 幸运抽奖：对齐 Nuxt LotteryBox
+ * - 支付：抽奖券 / 钻石（LOTTERY_CURRENCY_COST）
+ * - 奖池 / 记录 / 稀有度 / iconUrl 均来自后端 enrich，勿本地 dict
+ * - UI：3×3 高亮轮转 + 奖池一览 + 可展开记录
+ * API：GET /rpg/lottery/pool、POST /rpg/lottery/draw、GET /rpg/lottery/history、GET /rpg/status
  */
-import type { LotteryCell } from '../../types/rpg'
-import { fetchLotteryPool, lotteryDraw } from '../../api/modules/rpg'
+import type { DrawResult, LotteryCurrency, LotteryPoolItem, LotteryRecord } from '../../types/rpg'
+import {
+	fetchLotteryHistory,
+	fetchLotteryPool,
+	fetchRpgHero,
+	lotteryDraw,
+} from '../../api/modules/rpg'
 import { useListScroll } from '../../composables/useListScroll'
+import { useTheme } from '../../composables/useTheme'
+import {
+	LOTTERY_CURRENCY_COST,
+	LOTTERY_EPIC_PITY_THRESHOLD,
+	LOTTERY_LEGENDARY_PITY_THRESHOLD,
+	LOTTERY_MAX_DRAW_COUNT,
+} from '../../utils/rpg-economy'
 import { toIconName } from '../../utils/icon-name'
 import { showXToast } from '../../utils/toast'
-import { useTheme } from '../../composables/useTheme'
+
 const { themeCssVars, syncNativeChrome } = useTheme()
+
+const CURRENCY_COST = LOTTERY_CURRENCY_COST
+const EPIC_PITY = LOTTERY_EPIC_PITY_THRESHOLD
+const LEG_PITY = LOTTERY_LEGENDARY_PITY_THRESHOLD
+const MAX_DRAW = LOTTERY_MAX_DRAW_COUNT
 
 /** 外围 8 格顺序（跳过中心 index 4） */
 const ringOrder = [0, 1, 2, 5, 8, 7, 6, 3]
 const hiIndex = ref(-1)
 const spinning = ref(false)
-const pool = ref([] as LotteryCell[])
-const recentLabel = ref('宠物蛋 · 钻石+10')
+const drawing = ref(false)
+const pool = ref([] as LotteryPoolItem[])
+const history = ref([] as LotteryRecord[])
+const showHistory = ref(false)
+const historyLoaded = ref(false)
+const recentLabel = ref('暂无')
+const drawCurrency = ref('currency' as LotteryCurrency)
+const tickets = ref(0)
+const diamonds = ref(0)
+const pityEpic = ref(0)
+const pityLeg = ref(0)
 
 const {
 	refreshing,
@@ -62,27 +216,80 @@ const {
 	endRefresh,
 } = useListScroll(10)
 
+type CellView = {
+	icon: string
+	label: string
+	isGo: boolean
+	iconUrl: string
+	rarityColor: string
+}
+
 /**
- * 下拉刷新奖池
+ * 稀有度文字色（后端 rarityColor；空则用默认 ink）
+ */
+function rarColor(color: string): string {
+	if (color.length > 0) return 'color:' + color
+	return ''
+}
+
+/**
+ * 奖池芯片边框色
+ */
+function poolChipStyle(color: string): string {
+	if (color.length > 0) return 'border-color:' + color
+	return ''
+}
+
+/**
+ * 下拉刷新：奖池 + 余额/保底
  */
 async function onRefresh(): Promise<void> {
 	beginRefresh()
+	await loadPoolAndBalance()
+	if (showHistory.value) {
+		await loadHistory(true)
+	}
+	endRefresh(1, 1, 1)
+}
+
+/**
+ * 拉取奖池与 RPG 余额（钻石/券/保底）
+ */
+async function loadPoolAndBalance(): Promise<void> {
 	try {
 		pool.value = await fetchLotteryPool()
 	} catch (_) {
 		pool.value = []
 	}
-	endRefresh(1, 1, 1)
+	try {
+		const hero = await fetchRpgHero()
+		tickets.value = hero.lotteryTickets
+		diamonds.value = hero.diamonds
+		pityEpic.value = hero.lotteryPityCounter
+		pityLeg.value = hero.lotteryLegendaryPityCounter
+	} catch (_) {}
+}
+
+/**
+ * 拉取抽奖记录
+ * @param force 强制重拉
+ */
+async function loadHistory(force: boolean = false): Promise<void> {
+	if (historyLoaded.value && !force) return
+	try {
+		history.value = await fetchLotteryHistory(1, 20)
+		historyLoaded.value = true
+	} catch (_) {
+		history.value = []
+	}
 }
 
 onMounted(() => {
 	onRefresh()
 })
 
-type CellView = { icon: string; label: string; isGo: boolean }
-
 /**
- * 组装 3×3：中心为抽一次
+ * 组装 3×3：中心为抽一次；外围取奖池前 8 项
  */
 const displayCells = computed((): CellView[] => {
 	const list: CellView[] = []
@@ -90,14 +297,33 @@ const displayCells = computed((): CellView[] => {
 	const cells = pool.value
 	for (let i = 0; i < 9; i++) {
 		if (i === 4) {
-			list.push({ icon: 'dice', label: '抽一次', isGo: true })
+			list.push({
+				icon: 'dice',
+				label: '抽一次',
+				isGo: true,
+				iconUrl: '',
+				rarityColor: '',
+			})
 		} else {
-			const p =
-				cells[prizeIdx] != null
-					? cells[prizeIdx]
-					: ({ icon: 'sparkles', label: '奖', index: prizeIdx } as LotteryCell)
+			const p = cells[prizeIdx]
 			prizeIdx++
-			list.push({ icon: toIconName(p.icon, 'sparkles'), label: p.label, isGo: false })
+			if (p != null) {
+				list.push({
+					icon: toIconName(p.icon, 'sparkles'),
+					label: p.name,
+					isGo: false,
+					iconUrl: p.iconUrl,
+					rarityColor: p.rarityColor,
+				})
+			} else {
+				list.push({
+					icon: 'sparkles',
+					label: '奖',
+					isGo: false,
+					iconUrl: '',
+					rarityColor: '',
+				})
+			}
 		}
 	}
 	return list
@@ -113,57 +339,149 @@ function cellClass(i: number): string {
 }
 
 /**
- * 点击中心开抽
+ * 高亮格稀有度描边
  */
-function onCellClick(i: number): void {
-	if (i !== 4) return
-	spinLottery()
+function cellBorderStyle(i: number): string {
+	if (hiIndex.value !== i) return ''
+	const c = displayCells.value[i].rarityColor
+	if (c.length > 0) return 'border-color:' + c
+	return ''
 }
 
 /**
- * 轮转高亮后出结果；联调时先请求 draw 再播动画
+ * 切换支付方式
  */
-async function spinLottery(): Promise<void> {
-	if (spinning.value) return
-	spinning.value = true
-	let winLabel = ''
-	let winIcon = 'sparkles'
-	try {
-		const res = await lotteryDraw(1, 'ticket')
-		const first =
-			res != null && res.rewards != null && res.rewards.length > 0 ? res.rewards[0] : null
-		if (first != null) {
-			winLabel = first.name != null ? '' + first.name : ''
-			winIcon = toIconName(first.icon != null ? '' + first.icon : 'sparkles', 'sparkles')
-		}
-	} catch (_) {
-		spinning.value = false
+function setCurrency(c: LotteryCurrency): void {
+	drawCurrency.value = c
+}
+
+/**
+ * 是否余额足够
+ */
+function canDraw(count: number): boolean {
+	if (drawCurrency.value == 'currency') {
+		return diamonds.value >= count * CURRENCY_COST
+	}
+	return tickets.value >= count
+}
+
+/**
+ * 按钮禁用：抽奖中；券不足禁用；钻石不足仍可点（跳充值）
+ */
+function isDrawDisabled(count: number): boolean {
+	if (drawing.value || spinning.value) return true
+	if (drawCurrency.value == 'ticket') return !canDraw(count)
+	return false
+}
+
+/**
+ * 点击中心格 → 单抽
+ */
+function onCellClick(i: number): void {
+	if (i !== 4) return
+	onDraw(1)
+}
+
+/**
+ * 展开/收起抽奖记录；首次展开拉历史
+ */
+function toggleHistory(): void {
+	showHistory.value = !showHistory.value
+	if (showHistory.value) {
+		loadHistory(false)
+	}
+}
+
+/**
+ * 发起抽奖：钻石不足跳充值；否则请求 draw 再播轮转
+ */
+async function onDraw(count: number): Promise<void> {
+	if (drawing.value || spinning.value) return
+	const n = count < 1 ? 1 : count > MAX_DRAW ? MAX_DRAW : count
+	if (drawCurrency.value == 'currency' && !canDraw(n)) {
+		uni.navigateTo({ url: '/pages-rpg/recharge/index' })
 		return
 	}
+	if (!canDraw(n)) return
+
+	drawing.value = true
+	let results: DrawResult[] = []
+	try {
+		results = await lotteryDraw(n, drawCurrency.value)
+	} catch (_) {
+		drawing.value = false
+		return
+	}
+	drawing.value = false
+
+	// 刷新余额/保底（抽后服务端已扣费写保底）
+	try {
+		const hero = await fetchRpgHero()
+		tickets.value = hero.lotteryTickets
+		diamonds.value = hero.diamonds
+		pityEpic.value = hero.lotteryPityCounter
+		pityLeg.value = hero.lotteryLegendaryPityCounter
+	} catch (_) {}
+
+	if (showHistory.value) {
+		await loadHistory(true)
+	} else {
+		historyLoaded.value = false
+	}
+
+	await playSpinThenToast(results)
+}
+
+/**
+ * 轮转高亮后 toast 结果；多抽汇总文案
+ */
+async function playSpinThenToast(results: DrawResult[]): Promise<void> {
+	if (spinning.value) return
+	spinning.value = true
+
+	const first = results.length > 0 ? results[0] : null
+	let winLabel = first != null ? first.name : ''
+	let winIcon = first != null ? first.icon : 'sparkles'
+
 	let step = 0
 	const total = 16 + Math.floor(Math.random() * 8)
-	const cells = pool.value
-	const timer = setInterval(() => {
-		const ringPos = step % ringOrder.length
-		hiIndex.value = ringOrder[ringPos]
-		step++
-		if (step >= total) {
-			clearInterval(timer)
-			const winRing = ringOrder[(step - 1) % ringOrder.length]
-			const prizePos = ringOrder.indexOf(winRing)
-			const prize = cells[prizePos]
-			if (winLabel.length == 0 && prize != null) {
-				winIcon = toIconName(prize.icon, 'sparkles')
-				winLabel = prize.label
+	await new Promise<void>((resolve) => {
+		const timer = setInterval(() => {
+			const ringPos = step % ringOrder.length
+			hiIndex.value = ringOrder[ringPos]
+			step++
+			if (step >= total) {
+				clearInterval(timer)
+				if (winLabel.length == 0) {
+					const winRing = ringOrder[(step - 1) % ringOrder.length]
+					const prizePos = ringOrder.indexOf(winRing)
+					const prize = pool.value[prizePos]
+					if (prize != null) {
+						winIcon = toIconName(prize.icon, 'sparkles')
+						winLabel = prize.name
+					}
+				}
+				resolve()
 			}
-			recentLabel.value = winLabel
-			showXToast(winIcon, '恭喜获得', winLabel)
-			spinning.value = false
-			setTimeout(() => {
-				hiIndex.value = -1
-			}, 800)
+		}, 80)
+	})
+
+	if (results.length > 1) {
+		const names: string[] = []
+		for (let i = 0; i < results.length; i++) {
+			names.push(results[i].name)
 		}
-	}, 80)
+		recentLabel.value = names.join('、')
+		showXToast(winIcon, '五连结果', recentLabel.value)
+	} else {
+		recentLabel.value = winLabel.length > 0 ? winLabel : '未中奖'
+		showXToast(winIcon, '恭喜获得', recentLabel.value)
+	}
+
+	spinning.value = false
+	setTimeout(() => {
+		hiIndex.value = -1
+	}, 800)
 }
 
 onShow(() => {
@@ -174,11 +492,54 @@ onShow(() => {
 <style>
 @import '../../styles/x-base.css';
 
+.bal-card {
+	margin-bottom: 12px;
+	padding: 14px 16px;
+}
+
+.bal-row {
+	flex-direction: row;
+	justify-content: space-around;
+}
+
+.bal-item {
+	flex-direction: row;
+	align-items: center;
+}
+
+.bal-n {
+	font-size: 18px;
+	font-weight: 700;
+	color: var(--x-ink, #1c1a17);
+	margin-left: 6px;
+	margin-right: 4px;
+}
+
+.bal-lb {
+	font-size: 11px;
+	color: var(--x-ink-2, #5c574f);
+}
+
+.pity-row {
+	flex-direction: row;
+	flex-wrap: wrap;
+	margin-top: 10px;
+}
+
+.pity-t {
+	font-size: 11px;
+	color: var(--x-ink-2, #5c574f);
+}
+
+.pity-gap {
+	margin-left: 12px;
+}
+
 .lottery {
 	flex-direction: row;
 	flex-wrap: wrap;
 	justify-content: space-between;
-	margin-bottom: 16px;
+	margin-bottom: 12px;
 }
 
 .cell {
@@ -190,6 +551,9 @@ onShow(() => {
 	justify-content: center;
 	margin-bottom: 8px;
 	padding: 8px;
+	border-width: 2px;
+	border-style: solid;
+	border-color: transparent;
 }
 
 .go {
@@ -197,29 +561,158 @@ onShow(() => {
 }
 
 .hi {
-	border-width: 2px;
-	border-style: solid;
 	border-color: var(--x-peach, #f0a07a);
 	background-color: #fff7f0;
 }
 
-.cell-em {
-	font-size: 20px;
-	margin-bottom: 2px;
+.cell-img {
+	width: 36px;
+	height: 36px;
+	margin-bottom: 4px;
 }
 
 .cell-lb {
 	font-size: 10px;
 	color: var(--x-ink-2, #5c574f);
 	font-weight: 500;
+	lines: 2;
+	text-align: center;
 }
 
-.go .cell-lb {
+.go-lb {
 	color: rgba(255, 255, 255, 0.9);
+}
+
+.draw-actions {
+	flex-direction: row;
+	justify-content: center;
+	margin-bottom: 16px;
+}
+
+.draw-btn {
+	min-width: 110px;
+	margin-left: 6px;
+	margin-right: 6px;
+}
+
+.draw-multi {
+	background-color: var(--x-peach, #f0a07a);
+}
+
+.draw-off {
+	opacity: 0.45;
+}
+
+.pool-grid {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.pool-chip {
+	width: 23%;
+	border-radius: 12px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-line, #e5e0d8);
+	background-color: var(--x-surface, #ffffff);
+	align-items: center;
+	padding: 8px 4px;
+	margin-bottom: 8px;
+}
+
+.pool-img {
+	width: 32px;
+	height: 32px;
+	margin-bottom: 4px;
+}
+
+.pool-ico {
+	width: 32px;
+	height: 32px;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 4px;
+}
+
+.pool-rar {
+	font-size: 9px;
+	font-weight: 600;
+	margin-bottom: 2px;
+}
+
+.pool-name {
+	font-size: 10px;
+	color: var(--x-ink, #1c1a17);
+	text-align: center;
+	lines: 2;
+}
+
+.hist-toggle {
+	padding: 8px 0;
+	margin-bottom: 4px;
+}
+
+.hist-btn {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--x-ink-2, #5c574f);
+}
+
+.hist-list {
+	margin-bottom: 12px;
+}
+
+.hist-row {
+	flex-direction: row;
+	align-items: center;
+	padding: 8px 0;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: var(--x-line, #e5e0d8);
+}
+
+.hist-img {
+	width: 28px;
+	height: 28px;
+	margin-right: 8px;
+}
+
+.hist-ico {
+	width: 28px;
+	height: 28px;
+	align-items: center;
+	justify-content: center;
+	margin-right: 8px;
+	background-color: var(--x-bg-2, #ebe6df);
+	border-radius: 8px;
+}
+
+.hist-body {
+	flex: 1;
+	flex-direction: column;
+}
+
+.hist-name {
+	font-size: 13px;
+	color: var(--x-ink, #1c1a17);
+	font-weight: 500;
+}
+
+.hist-rar {
+	font-size: 10px;
+	margin-top: 2px;
+}
+
+.hist-time {
+	font-size: 11px;
+	color: var(--x-ink-2, #5c574f);
 }
 
 .recent {
 	font-size: 13px;
 	color: var(--x-ink-2, #5c574f);
+	margin-bottom: 20px;
 }
 </style>

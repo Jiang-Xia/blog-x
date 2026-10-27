@@ -15,6 +15,7 @@ export {
 	getBaseUrl,
 	API_ORIGIN,
 	API_PREFIX,
+	STATIC_BASE_URL,
 	WEB_DEV_PROXY,
 	WEB_DEV_PROXY_PREFIX,
 } from './config'

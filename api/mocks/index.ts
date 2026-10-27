@@ -2,7 +2,13 @@
  * 同名方法 mock 挡板（类 shopkeeper-cli apis/mocks）
  * USE_MOCK=true 或 applyMocks 合并时覆盖 createApi 方法
  */
-import { homeArticles, lotteryCells, rankRows, rpgHeroSeed } from '../../mock/data'
+import {
+	homeArticles,
+	lotteryHistorySeed,
+	lotteryPoolSeed,
+	rankRows,
+	rpgHeroSeed,
+} from '../../mock/data'
 import type { ApiFn } from '../createApi'
 
 /**
@@ -14,7 +20,13 @@ export function createMockOverrides(): Record<string, ApiFn> {
 			return { list: homeArticles, pagination: { total: homeArticles.length } }
 		},
 		getLotteryPool: async () => {
-			return lotteryCells
+			return lotteryPoolSeed
+		},
+		getLotteryHistory: async () => {
+			return {
+				list: lotteryHistorySeed,
+				pagination: { total: lotteryHistorySeed.length, page: 1, pageSize: 20, totalPages: 1 },
+			}
 		},
 		getRpgStatus: async () => {
 			return {
@@ -26,6 +38,8 @@ export function createMockOverrides(): Record<string, ApiFn> {
 				lotteryTickets: rpgHeroSeed.lotteryTickets,
 				signDays: rpgHeroSeed.streakDays,
 				nickname: rpgHeroSeed.travelerName,
+				lotteryPityCounter: rpgHeroSeed.lotteryPityCounter,
+				lotteryLegendaryPityCounter: rpgHeroSeed.lotteryLegendaryPityCounter,
 			}
 		},
 		getRpgLeaderboard: async () => {

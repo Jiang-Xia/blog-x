@@ -87,4 +87,4 @@ C:/Users/96379/.workbuddy/binaries/python/envs/default/Scripts/python.exe script
 ## 彩色图标 / 游戏资产约定
 
 - **UI 图标**（导航、按钮、空状态）：一律 `x-icon`，需要"彩色感"用 渐变色块 + 白色图标 组合
-- **游戏内容资产**（RPG 物品 / 宠物）：走图片 `static/images/rpg/{iconKey}.png`，不用字体图标
+- **游戏内容资产**（RPG 物品 / 宠物 / 抽奖奖品）：优先用后端 enrich 的 `iconUrl`（`/static/rpgAssets/itemIcon/...`，经 `resolveStaticUrl`）；无上传图时回退 `x-icon`（Tabler）。勿前端按 icon 键拼本地路径回显

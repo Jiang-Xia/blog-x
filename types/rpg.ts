@@ -1,5 +1,6 @@
 /**
- * RPG 冒险相关类型（mock）
+ * RPG 冒险相关类型
+ * 展示字段（稀有度文案/色、iconUrl 等）由后端 enrich，勿本地 dict 回显
  */
 
 /** 冒险中心英雄区 */
@@ -13,6 +14,10 @@ export type RpgHero = {
 	lotteryTickets: number
 	streakDays: number
 	weatherBuff: string
+	/** 史诗保底计数（来自 /rpg/status） */
+	lotteryPityCounter: number
+	/** 传说保底计数（来自 /rpg/status） */
+	lotteryLegendaryPityCounter: number
 }
 
 /** 每日任务 */
@@ -31,21 +36,81 @@ export type RpgQuest = {
 	progressLabel?: string
 }
 
-/** 抽奖格 */
-export type LotteryCell = {
-	index: number
-	/** Tabler 图标名（奖品展示；游戏资产图另走 static/images/rpg） */
+/**
+ * 抽奖奖池项（对齐 Nuxt LotteryPoolItem）
+ * rarityLabel/rarityColor/iconUrl 来自后端 attachRarityDisplay + attachRpgItemAssetUrls
+ */
+export type LotteryPoolItem = {
+	id: number
+	itemCode: string
+	name: string
+	rarity: string
+	/** 后端 rarityLabel，勿本地 map */
+	rarityLabel: string
+	/** 后端 rarityColor */
+	rarityColor: string
+	/** icon 键 → Tabler 兜底名 */
 	icon: string
-	label: string
+	/** 管理端上传图标完整 URL；空则用 x-icon */
+	iconUrl: string
+	/** 未关联系统物品时应过滤（与后端 getPool 一致） */
+	itemLinked: boolean
 }
 
-/** 充值档位 */
+/**
+ * 3×3 转盘格（由奖池前 8 项映射；中心为「抽一次」）
+ * @deprecated 优先用 LotteryPoolItem；保留 index/label 兼容旧 mock
+ */
+export type LotteryCell = {
+	index: number
+	/** Tabler 图标名（奖品展示；游戏资产图优先走 iconUrl） */
+	icon: string
+	label: string
+	iconUrl?: string
+	rarityColor?: string
+}
+
+/** 抽奖支付方式：券 / 钻石 */
+export type LotteryCurrency = 'ticket' | 'currency'
+
+/**
+ * 抽奖记录（对齐 Nuxt LotteryRecord；展示字段后端 enrich）
+ */
+export type LotteryRecord = {
+	id: number
+	poolName: string
+	poolRarity: string
+	rarityLabel: string
+	rarityColor: string
+	icon: string
+	iconUrl: string
+	/** 相对时间或 YYYY-MM-DD */
+	timeLabel: string
+}
+
+/**
+ * 单次抽奖结果（POST /rpg/lottery/draw 数组元素）
+ */
+export type DrawResult = {
+	name: string
+	icon: string
+	iconUrl: string
+	rarity: string
+	rarityLabel: string
+	rarityColor: string
+	rewardDetail: string
+}
+
+/**
+ * 充值快捷面额展示（元）
+ * 实际下单用 amountYuan；钻石按汇率本地预览，以服务端履约为准
+ */
 export type RechargeSku = {
 	id: string
+	/** 充值金额（元） */
+	amountYuan: number
+	/** 预计到账钻石（= amountYuan × 汇率，仅展示） */
 	diamonds: number
-	priceYuan: number
-	/** 额外赠送说明 */
-	bonusLabel?: string
 }
 
 /** 排行榜周期（对齐 Nuxt LeaderboardPeriod） */
