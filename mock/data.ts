@@ -402,6 +402,7 @@ export const notifyItems: NotifyItem[] = [
 		title: '路过的读者 评论了你',
 		desc: '《uni-app x 上手》· 写得很清楚！',
 		kind: 'comment',
+		articleId: '1',
 	},
 	{
 		id: 'n2',
@@ -416,6 +417,7 @@ export const notifyItems: NotifyItem[] = [
 		title: '咖啡因 赞了你的评论',
 		desc: '《微信支付 V3》评论区',
 		kind: 'like',
+		articleId: '2',
 	},
 ]
 

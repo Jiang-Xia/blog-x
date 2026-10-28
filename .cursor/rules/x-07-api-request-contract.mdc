@@ -83,10 +83,12 @@ const data = await get('/article/info', { id });
 
 ## 开发模式日志
 
-- 开关：`OPEN_REQUEST_LOG`
-- **只打**：加解密密文出入参（`[gateway-crypto] encrypt out` / `decrypt in`，Hex 截断）+ 失败类（decrypt fail / 401 / biz / 网络）
-- **禁止**：`请求开始 req` / `请求结束 res`、明文 body、解密后明文
-- 发行前可将 `OPEN_REQUEST_LOG` 改为 false
+- 开关：`OPEN_REQUEST_LOG`（`api/config.ts` 按环境自动解析，勿手改常量）
+  - 微信：`envVersion` 为 `develop` / `trial` → true，`release` → false
+  - 其余端：`NODE_ENV === 'development'` → true，否则 false
+- **打印**（小程序/App Console）：`[api] METHOD url` + `入参`（加密前业务参数）+ `出参`（解密后 `{ code, data, message }`）；失败用 `[api:fail]`
+- password / token 等敏感键脱敏；过长字符串截断；gateway-crypto 另打密文 Hex 截断
+- **禁止**：打密文信封当入参；正式版打任何请求日志
 
 ## 错误提示
 

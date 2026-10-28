@@ -46,7 +46,7 @@
 - [ ] 账号登录：`GET /user/authCode` + `POST /user/login`（密码 RSA）；Pinia `loggedIn` 为 true
 - [ ] 冷启动自动登录：本地有 token 时请求带 `Authorization: Bearer`
 - [ ] `OPEN_ENCRYPT=true`：控制台可见 `/encrypt` 路径；GET 带 `X-Gateway-*`；响应可正常解包
-- [ ] `OPEN_REQUEST_LOG=true`：有 `[gateway-crypto] encrypt out` / `decrypt in`（密文截断）；无明文 body / 无 `请求开始 req`
+- [ ] 开发版/体验版：Console 有 `[api]` + url / 入参 / 出参；开加密时另有 `[gateway-crypto]` 密文截断；正式版无上述日志
 - [ ] 401 后 refresh 成功可重放；refresh 失败跳登录
 - [ ] 冒险签到 `POST /rpg/sign`；任务领取 `POST /rpg/quest/claim`；抽奖 / 排行正常
 - [ ] 签到日历摘要来自 `GET /rpg/sign-info`；网格按连续天数回溯（非 mock hits）

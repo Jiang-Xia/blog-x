@@ -31,7 +31,7 @@
 			@refresherrestore="onRefresherRestore"
 			@refresherabort="onRefresherAbort"
 		>
-			<view v-for="item in filtered" :key="item.id" class="msg">
+			<view v-for="item in filtered" :key="item.id" class="msg" @click="onItemClick(item)">
 				<view class="msg-row">
 					<view class="msg-em">
 						<x-icon :name="item.icon" :size="22" color="#1c1a17"></x-icon>
@@ -51,6 +51,7 @@
 /**
  * 消息中心：联调 /notification/list + read
  * 分段「全部/评论/赞藏/系统」按 NotifyItem.kind 前端过滤（后端 list 无 type 筛选参数）
+ * 点击：有 payload.articleId 则跳 /pages/detail/detail，并 PATCH 单条已读
  * 滚动：x-scroll-page 下拉刷新 + 上滑加载更多
  */
 import type { NotifyItem } from '../../types/notify'
@@ -149,6 +150,24 @@ async function onReadAll(): Promise<void> {
 		await markNotificationsRead()
 	} catch (_) {}
 	showXToast('check', '全部已读', '角标已清')
+}
+
+/**
+ * 点击消息：有 articleId 则跳详情，并标记该条已读（对齐 Nuxt 铃铛）
+ */
+async function onItemClick(item: NotifyItem): Promise<void> {
+	const aid = item.articleId != null ? item.articleId : ''
+	const nid = item.id
+	if (nid.length > 0) {
+		const idNum = parseInt(nid)
+		if (!isNaN(idNum)) {
+			try {
+				await markNotificationsRead(idNum)
+			} catch (_) {}
+		}
+	}
+	if (aid.length == 0) return
+	uni.navigateTo({ url: '/pages/detail/detail?id=' + aid })
 }
 
 onShow(() => {

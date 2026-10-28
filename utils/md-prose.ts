@@ -1,6 +1,7 @@
 /**
  * Markdown/HTML 正文排版后处理（内联 style）
  * rich-text 不吃页面 .prose CSS，须给 h/p/ul/blockquote/a/img/table/hr 写 style
+ * 表格：nowrap + 自然宽度，避免窄屏竖排；横滑由 wrapTablesForOverflow / 详情 scroll-view 负责
  * 色板跟 ThemeTokens：深色下 ink 变浅，避免写死 #1c1a17 导致无对比
  * 实现避开 Map，便于 App UTS 编译
  */
@@ -111,8 +112,9 @@ function buildStyles(c: ProseColors): ProseStyles {
 		a: 'color:' + c.link + ';text-decoration:underline;',
 		img: 'max-width:100%;height:auto;border-radius:10px;margin:12px 0;display:block;',
 		hr: 'margin:20px 0;border:none;border-top:1px solid ' + c.border + ';height:0;',
+		// 勿 width:100%：窄屏会把列压到一字宽「竖排」；自然宽度交给外层横滑
 		table:
-			'width:100%;border-collapse:collapse;font-size:13px;margin:12px 0;color:' +
+			'width:auto;max-width:none;border-collapse:collapse;font-size:13px;margin:0;color:' +
 			c.text +
 			';',
 		th:
@@ -122,8 +124,13 @@ function buildStyles(c: ProseColors): ProseStyles {
 			c.thBg +
 			';font-weight:700;text-align:left;color:' +
 			c.text +
-			';',
-		td: 'border:1px solid ' + c.border + ';padding:8px 10px;color:' + c.muted + ';',
+			';white-space:nowrap;',
+		td:
+			'border:1px solid ' +
+			c.border +
+			';padding:8px 10px;color:' +
+			c.muted +
+			';white-space:nowrap;',
 		strong: 'font-weight:700;color:' + c.text + ';',
 		em: 'font-style:italic;color:' + c.muted + ';',
 		del: 'text-decoration:line-through;color:' + c.muted + ';',
@@ -241,4 +248,61 @@ export function enhanceProseHtml(html: string, tokens: ThemeTokens | null = null
 	s = styleOpenTags(s, 'em', st.em)
 	s = styleOpenTags(s, 'del', st.del)
 	return s
+}
+
+/**
+ * 找下一个完整 <table>...</table>（Markdown 表一般不嵌套）
+ */
+export function findNextTableRange(
+	html: string,
+	from: number,
+): { start: number; end: number } | null {
+	const needle = '<table'
+	let start = from
+	while (start < html.length) {
+		const idx = html.indexOf(needle, start)
+		if (idx < 0) return null
+		const after = idx + needle.length
+		if (after < html.length) {
+			const next = html.charAt(after)
+			const ok =
+				next == ' ' ||
+				next == '\t' ||
+				next == '\n' ||
+				next == '\r' ||
+				next == '>'
+			if (!ok) {
+				start = after
+				continue
+			}
+		}
+		const close = html.indexOf('</table>', idx)
+		if (close < 0) return null
+		return { start: idx, end: close + 8 }
+	}
+	return null
+}
+
+/**
+ * 用可横滑 div 包裹表格（整段 rich-text 路径；详情分段另用原生 scroll-view）
+ */
+export function wrapTablesForOverflow(html: string): string {
+	if (html == null || html.length == 0) return ''
+	let out = ''
+	let cursor = 0
+	while (cursor < html.length) {
+		const range = findNextTableRange(html, cursor)
+		if (range == null) {
+			out += html.substring(cursor)
+			break
+		}
+		out += html.substring(cursor, range.start)
+		const tableHtml = html.substring(range.start, range.end)
+		out +=
+			'<div style="width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px 0;">' +
+			tableHtml +
+			'</div>'
+		cursor = range.end
+	}
+	return out
 }

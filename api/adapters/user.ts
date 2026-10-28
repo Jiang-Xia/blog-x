@@ -160,32 +160,43 @@ function mapNotifyDesc(payload: any): string {
 	return '点击查看详情'
 }
 
-/**
- * 通知列表 → NotifyItem[]
- * Nest：{ list, pagination }，字段 type + payload
- */
-export function mapNotifyItems(raw: any): NotifyItem[] {
-	const list: NotifyItem[] = []
-	const arr = raw != null && raw.list != null ? raw.list : []
-	for (let i = 0; i < arr.length; i++) {
-		const n = arr[i]
-		const type = n.type != null ? '' + n.type : 'system'
-		const payload = n.payload != null ? n.payload : null
-		const icon =
-			type.indexOf('comment') >= 0 ? 'message' : type.indexOf('like') >= 0 ? 'heart' : 'bell'
-		list.push({
-			id: n.id != null ? '' + n.id : '' + i,
-			icon,
-			title:
-				n.title != null && ('' + n.title).length > 0
-					? '' + n.title
-					: mapNotifyTitle(type, payload),
-			desc: n.content != null ? '' + n.content : mapNotifyDesc(payload),
-			kind: mapNotifySegKind(type),
-		})
+	/**
+	 * 从 payload 取关联文章 id（对齐 Nuxt NavNotificationBell → /detail/:id）
+	 */
+	function mapNotifyArticleId(payload: any): string {
+		if (payload == null || payload.articleId == null) return ''
+		return ('' + payload.articleId).trim()
 	}
-	return list
-}
+
+	/**
+	 * 通知列表 → NotifyItem[]
+	 * Nest：{ list, pagination }，字段 type + payload
+	 */
+	export function mapNotifyItems(raw: any): NotifyItem[] {
+		const list: NotifyItem[] = []
+		const arr = raw != null && raw.list != null ? raw.list : []
+		for (let i = 0; i < arr.length; i++) {
+			const n = arr[i]
+			const type = n.type != null ? '' + n.type : 'system'
+			const payload = n.payload != null ? n.payload : null
+			const icon =
+				type.indexOf('comment') >= 0 ? 'message' : type.indexOf('like') >= 0 ? 'heart' : 'bell'
+			const articleId = mapNotifyArticleId(payload)
+			const item: NotifyItem = {
+				id: n.id != null ? '' + n.id : '' + i,
+				icon,
+				title:
+					n.title != null && ('' + n.title).length > 0
+						? '' + n.title
+						: mapNotifyTitle(type, payload),
+				desc: n.content != null ? '' + n.content : mapNotifyDesc(payload),
+				kind: mapNotifySegKind(type),
+			}
+			if (articleId.length > 0) item.articleId = articleId
+			list.push(item)
+		}
+		return list
+	}
 
 /**
  * 单条留言子回复映射

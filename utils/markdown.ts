@@ -2,9 +2,9 @@
  * Markdown → HTML：uni-cmark 解析 + 正文排版 + 代码高亮
  * 须先 ensureMarkdownReady（App.onLaunch 已调）；供详情 rich-text
  *
- * 链路：md2html → enhanceProseHtml（标题/列表/引用等内联 style，跟主题令牌）
- *      → segmentArticleBody / enhanceCodeBlocks（fenced 高亮、行内 code 胶囊）
- * 详情页用分段渲染：代码块走原生组件以支持一键复制（rich-text 内无法点击）
+ * 链路：md2html → enhanceProseHtml（标题/列表/引用/表格等内联 style，跟主题令牌）
+ *      → segmentArticleBody / enhanceCodeBlocks（fenced 高亮、行内 code、表格横滑）
+ * 详情页用分段渲染：代码块可复制；表格走 scroll-x（防窄屏竖排）
  * rich-text 不吃页面 CSS，样式必须写进 HTML；切深色须重传 tokens 再 enhance
  */
 import {

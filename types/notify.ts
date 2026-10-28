@@ -10,6 +10,10 @@ export type NotifyItem = {
 	desc: string
 	/** 分段过滤：comment | like | system（由 type 归类，见 mapNotifySegKind） */
 	kind: string
+	/**
+	 * 关联文章 id（payload.articleId）；有则点击跳详情，无则不可跳转
+	 */
+	articleId?: string
 }
 
 /** 留言板子回复（pId>0） */

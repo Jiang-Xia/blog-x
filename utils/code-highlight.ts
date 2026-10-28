@@ -2,9 +2,11 @@
  * 代码块后处理：语言标签 + 简易语法高亮（内联 style）+ 详情分段
  * 原因：uni-cmark 只出 <pre><code class="language-xx">，不做高亮；
  * rich-text 大多不应用页面 CSS，必须把颜色写进 style；
- * 一键复制须原生按钮，故 segmentArticleBody 把 fenced 拆出给 x-code-block
+ * 一键复制须原生按钮，故 segmentArticleBody 把 fenced 拆出给 x-code-block；
+ * 宽表易挤成竖排，故同时拆出 table 给详情页 scroll-x
  * 实现避开 Map / replace 回调，便于 App UTS 编译
  */
+import { findNextTableRange, wrapTablesForOverflow } from './md-prose'
 
 const PRE_STYLE =
 	'margin:12px 0;padding:0;border-radius:12px;overflow:hidden;background-color:#1c1a17;border:1px solid #3a3630;'
@@ -424,13 +426,13 @@ function enhanceInlineCodes(html: string): string {
 
 /**
  * 文章正文分段（扁平字段，便于 App UTS；避免联合类型）
- * kind=html 时读 html；kind=code 时读 lang/langLabel/code/codeHtml
- * 代码块由原生组件渲染（语言条 + 一键复制），因 rich-text 内无法响应点击
+ * kind=html 时读 html；kind=code 时读 lang/langLabel/code/codeHtml；
+ * kind=table 时读 html（整表），详情用 scroll-x 包 rich-text
  */
 export type ArticleBodySegment = {
-	/** html | code */
+	/** html | code | table */
 	kind: string
-	/** 普通 HTML 段 */
+	/** 普通 HTML 段，或 table 的整表 HTML */
 	html: string
 	/** language-* 归一化名 */
 	lang: string
@@ -457,6 +459,28 @@ function htmlSegment(html: string): ArticleBodySegment {
 }
 
 /**
+ * 构造表格分段（外层 scroll-view 横滑，避免窄屏竖排）
+ */
+function tableSegment(tableHtml: string): ArticleBodySegment {
+	const cols = countTableColumns(tableHtml)
+	// rich-text 常按父宽布局；显式 min-width 让外层 scroll-view 能滑开
+	const minW = Math.max(cols * 96, 280)
+	return {
+		kind: 'table',
+		html:
+			'<div style="min-width:' +
+			minW +
+			'px;">' +
+			tableHtml +
+			'</div>',
+		lang: '',
+		langLabel: '',
+		code: '',
+		codeHtml: '',
+	}
+}
+
+/**
  * 构造代码分段
  */
 function codeSegment(block: ParsedFencedBlock): ArticleBodySegment {
@@ -471,35 +495,103 @@ function codeSegment(block: ParsedFencedBlock): ArticleBodySegment {
 }
 
 /**
- * 将含 fenced 的 HTML 切成可交互分段，并增强行内 code
+ * 首行 th/td 数量 → 估算列数（无表则 1）
  */
-export function segmentArticleBody(html: string): ArticleBodySegment[] {
+function countTableColumns(tableHtml: string): number {
+	const trOpen = tableHtml.indexOf('<tr')
+	if (trOpen < 0) return 1
+	const trTagEnd = tableHtml.indexOf('>', trOpen)
+	if (trTagEnd < 0) return 1
+	const trClose = tableHtml.indexOf('</tr>', trTagEnd)
+	if (trClose < 0) return 1
+	const row = tableHtml.substring(trTagEnd + 1, trClose).toLowerCase()
+	let cols = 0
+	let i = 0
+	while (i < row.length) {
+		const th = row.indexOf('<th', i)
+		const td = row.indexOf('<td', i)
+		let next = -1
+		if (th >= 0 && (td < 0 || th < td)) next = th
+		else if (td >= 0) next = td
+		if (next < 0) break
+		const after = next + 3
+		if (after < row.length) {
+			const ch = row.charAt(after)
+			if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '>') {
+				cols++
+			}
+		}
+		i = after
+	}
+	return cols > 0 ? cols : 1
+}
+
+/**
+ * 将 HTML 段再按 table 切开（table → 原生横滑）
+ */
+function splitHtmlByTables(html: string): ArticleBodySegment[] {
 	const out: ArticleBodySegment[] = []
 	if (html == null || html.length == 0) return out
+	let cursor = 0
+	while (cursor < html.length) {
+		const range = findNextTableRange(html, cursor)
+		if (range == null) {
+			const rest = html.substring(cursor)
+			if (rest.length > 0) out.push(htmlSegment(rest))
+			break
+		}
+		if (range.start > cursor) {
+			out.push(htmlSegment(html.substring(cursor, range.start)))
+		}
+		out.push(tableSegment(html.substring(range.start, range.end)))
+		cursor = range.end
+	}
+	return out
+}
+
+/**
+ * 将含 fenced / table 的 HTML 切成可交互分段，并增强行内 code
+ */
+export function segmentArticleBody(html: string): ArticleBodySegment[] {
+	const codeSplit: ArticleBodySegment[] = []
+	if (html == null || html.length == 0) return codeSplit
 	let cursor = 0
 	while (cursor < html.length) {
 		const block = findNextFencedBlock(html, cursor)
 		if (block == null) {
 			const rest = enhanceInlineCodes(html.substring(cursor))
 			if (rest.length > 0) {
-				out.push(htmlSegment(rest))
+				codeSplit.push(htmlSegment(rest))
 			}
 			break
 		}
 		if (block.start > cursor) {
 			const gap = enhanceInlineCodes(html.substring(cursor, block.start))
 			if (gap.length > 0) {
-				out.push(htmlSegment(gap))
+				codeSplit.push(htmlSegment(gap))
 			}
 		}
-		out.push(codeSegment(block))
+		codeSplit.push(codeSegment(block))
 		cursor = block.end
+	}
+	// html 段再拆表格，便于详情 scroll-x
+	const out: ArticleBodySegment[] = []
+	for (let i = 0; i < codeSplit.length; i++) {
+		const seg = codeSplit[i]
+		if (seg.kind != 'html') {
+			out.push(seg)
+			continue
+		}
+		const parts = splitHtmlByTables(seg.html)
+		for (let j = 0; j < parts.length; j++) {
+			out.push(parts[j])
+		}
 	}
 	return out
 }
 
 /**
- * 增强全部 fenced 代码块，再增强行内 `code`（整段 HTML，无复制按钮）
+ * 增强全部 fenced 代码块，再增强行内 `code`，最后包表格横滑（整段 HTML，无复制按钮）
  */
 export function enhanceCodeBlocks(html: string): string {
 	if (html == null || html.length == 0) return ''
@@ -516,6 +608,6 @@ export function enhanceCodeBlocks(html: string): string {
 		step1 += buildFencedBlockHtml(block)
 		cursor = block.end
 	}
-	// 2) 行内 code
-	return enhanceInlineCodes(step1)
+	// 2) 行内 code → 3) 表格 overflow-x
+	return wrapTablesForOverflow(enhanceInlineCodes(step1))
 }

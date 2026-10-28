@@ -1,7 +1,7 @@
 /**
  * HTTP 请求核：uni.request + 解包 { code, data, message }
  * 对齐 blog-home-nuxt request：Bearer 鉴权头、/encrypt 网关
- * 开发日志：失败类仍走 reqLog；加解密出入参见 gateway-crypto/log（不打明文）
+ * 开发日志：OPEN_REQUEST_LOG 时打 url / 入参 / 出参（业务明文，非密文信封）
  */
 import {
 	getBaseUrl,
@@ -37,8 +37,11 @@ type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 let refreshing = false
 let refreshQueue: Array<() => void> = []
 
+/** 日志脱敏字段（开发态仍可能截屏，避免密码/token 明文进 Console） */
+const LOG_SENSITIVE_KEYS = ['password', 'oldPassword', 'newPassword', 'token', 'refreshToken', 'accessToken']
+
 /**
- * 开发态失败类日志（成功起止与明文 body 不打印；密文出入参见 gateway-crypto）
+ * 开发态字符串日志（失败类文案）
  */
 function reqLog(msg: string, level: string = 'log'): void {
 	if (!OPEN_REQUEST_LOG) return
@@ -49,6 +52,55 @@ function reqLog(msg: string, level: string = 'log'): void {
 	} else {
 		console.log(msg)
 	}
+}
+
+/**
+ * 深拷贝并脱敏敏感键；过长字符串截断，避免小程序 Console 卡死
+ */
+function sanitizeForLog(value: any, depth: number = 0): any {
+	if (value === null || value === undefined) return value
+	if (typeof value === 'string') {
+		if (value.length > 2000) {
+			return value.substring(0, 2000) + '…(len=' + value.length + ')'
+		}
+		return value
+	}
+	if (typeof value !== 'object') return value
+	if (depth > 6) return '[MaxDepth]'
+	if (value instanceof Array) {
+		const out: any[] = []
+		const n = value.length > 50 ? 50 : value.length
+		for (let i = 0; i < n; i++) {
+			out.push(sanitizeForLog(value[i], depth + 1))
+		}
+		if (value.length > 50) out.push('…(items=' + value.length + ')')
+		return out
+	}
+	const out: Record<string, any> = {}
+	const keys = Object.keys(value)
+	for (let i = 0; i < keys.length; i++) {
+		const k = keys[i]
+		let sens = false
+		for (let j = 0; j < LOG_SENSITIVE_KEYS.length; j++) {
+			if (LOG_SENSITIVE_KEYS[j] == k) {
+				sens = true
+				break
+			}
+		}
+		out[k] = sens ? '***' : sanitizeForLog(value[k], depth + 1)
+	}
+	return out
+}
+
+/**
+ * 打印单次接口：method、url、入参、出参（正式版 OPEN_REQUEST_LOG=false 直接跳过）
+ */
+function reqLogApi(method: string, url: string, input: any, output: any, ok: boolean): void {
+	if (!OPEN_REQUEST_LOG) return
+	const tag = ok ? '[api]' : '[api:fail]'
+	console.log(tag, method, url)
+	console.log(tag + ' 入参', sanitizeForLog(input))
+	console.log(tag + ' 出参', sanitizeForLog(output))
 }
 
 /**
@@ -284,6 +336,8 @@ export function request(
 	const header = built.header
 	const gatewaySession = built.session
 	body = built.body
+	// 入参打业务明文（加密前的 data），不打密文信封
+	const logInput = data
 
 	return new Promise((resolve, reject) => {
 		uni.request({
@@ -298,7 +352,7 @@ export function request(
 				try {
 					bodyRes = decryptMsg(bodyRes, encryptPath, gatewaySession)
 				} catch (e) {
-					reqLog('请求结束 fail decrypt --------------> ' + encryptPath, 'error')
+					reqLogApi(method, finalUrl, logInput, { decryptError: true, status }, false)
 					if (!silent) showErrToast('响应解密失败')
 					reject(e)
 					return
@@ -308,7 +362,7 @@ export function request(
 				const is401 = status == 401 || code == 401
 
 				if (is401 && !skipRefresh) {
-					reqLog('请求结束 fail 401 --------------> ' + encryptPath, 'warn')
+					reqLogApi(method, finalUrl, logInput, bodyRes, false)
 					const rt = getRefreshToken()
 					if (rt.length == 0) {
 						clearToken()
@@ -343,21 +397,22 @@ export function request(
 				if (status >= 200 && status < 300) {
 					if (code != null && !isBizOk(code)) {
 						const errMsg = pickMessage(bodyRes)
-						reqLog('请求结束 fail biz --------------> ' + encryptPath + ' ' + errMsg, 'warn')
+						reqLogApi(method, finalUrl, logInput, bodyRes, false)
 						if (!silent) showErrToast(errMsg)
 						reject(bodyRes)
 						return
 					}
+					reqLogApi(method, finalUrl, logInput, bodyRes, true)
 					resolve(bodyRes != null ? bodyRes.data : null)
 					return
 				}
 
-				reqLog('请求结束 fail onResponseError --------------> ' + encryptPath, 'error')
+				reqLogApi(method, finalUrl, logInput, bodyRes != null ? bodyRes : { status }, false)
 				if (!silent) showErrToast(pickMessage(bodyRes))
 				reject(res)
 			},
 			fail: () => {
-				reqLog('请求结束 fail onRequestError --------------> ' + encryptPath, 'error')
+				reqLogApi(method, finalUrl, logInput, { networkError: true }, false)
 				if (!silent) showErrToast('网络错误，换个网络试试')
 				reject(new Error('network'))
 			},

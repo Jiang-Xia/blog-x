@@ -85,8 +85,37 @@ export const OPEN_ENCRYPT = false
 export const GATEWAY_CRYPTO: 'aes' | 'gm' = 'aes'
 
 /**
- * 开发模式日志开关
- * - true：打印加解密密文出入参（gateway-crypto）与请求失败类日志；不打印明文 body / 请求起止
- * - 发行前可改为 false
+ * 解析是否开启请求/网关开发日志
+ * - 微信：develop / trial 开，release 关（体验版常为 production 打包，不能只看 NODE_ENV）
+ * - 其余端：development 开，production 关
  */
-export const OPEN_REQUEST_LOG = true
+function resolveOpenRequestLog(): boolean {
+	// #ifdef MP-WEIXIN
+	// 小程序用 envVersion：开发版、体验版打印；正式版不打印
+	try {
+		const info = uni.getAccountInfoSync()
+		const v = info.miniProgram.envVersion
+		if (v == 'develop' || v == 'trial') {
+			return true
+		}
+		if (v == 'release') {
+			return false
+		}
+	} catch (e) {
+		// getAccountInfoSync 失败则回落 NODE_ENV
+	}
+	// #endif
+	// @ts-ignore process 仅打包工具注入
+	if (typeof process !== 'undefined' && process.env != null && process.env.NODE_ENV === 'development') {
+		return true
+	}
+	return false
+}
+
+/**
+ * 开发模式日志开关（模块加载时解析一次）
+ * - true：Console 打 method/url、业务入参、解密后出参；gateway-crypto 密文出入参
+ * - password / token 等敏感键脱敏为 ***；过长字符串截断
+ * - 微信正式版 / 生产构建为 false
+ */
+export const OPEN_REQUEST_LOG = resolveOpenRequestLog()

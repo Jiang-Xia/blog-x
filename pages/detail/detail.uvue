@@ -65,7 +65,7 @@
 				<image class="cover-hero-img" :src="article.coverUrl" mode="aspectFill"></image>
 			</view>
 
-			<!-- 正文：HTML 段用 rich-text；代码块用 x-code-block（可一键复制） -->
+			<!-- 正文：HTML→rich-text；table→横滑；代码→x-code-block（可复制） -->
 			<view v-if="bodySegments.length > 0" class="prose">
 				<view v-for="(seg, si) in bodySegments" :key="si" class="prose-seg">
 					<rich-text
@@ -73,6 +73,16 @@
 						class="prose-rich"
 						:nodes="seg.html"
 					></rich-text>
+					<scroll-view
+						v-else-if="seg.kind == 'table'"
+						class="prose-table-scroll"
+						scroll-x="true"
+						show-scrollbar="true"
+					>
+						<view class="prose-table-inner">
+							<rich-text class="prose-rich" :nodes="seg.html"></rich-text>
+						</view>
+					</scroll-view>
 					<x-code-block
 						v-else
 						:lang-label="seg.langLabel"
@@ -1113,6 +1123,18 @@ async function onTipPaid(amount: number): Promise<void> {
 
 .prose-seg {
 	width: 100%;
+}
+
+/* 宽表横滑：避免窄屏把单元格挤成竖排 */
+.prose-table-scroll {
+	width: 100%;
+	margin: 12px 0;
+	flex-direction: row;
+}
+
+.prose-table-inner {
+	flex-direction: row;
+	flex-wrap: nowrap;
 }
 
 /* rich-text 仅支持有限全局样式；细排版靠 HTML 内联 style（md-prose） */
