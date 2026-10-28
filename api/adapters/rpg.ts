@@ -139,17 +139,17 @@ export function mapLotteryPool(raw: any): LotteryPoolItem[] {
 		const p = arr[i]
 		if (p == null) continue
 		if (p.itemLinked === false) continue
-		list.push({
-			id: p.id != null ? Number(p.id) : i + 1,
-			itemCode: p.itemCode != null ? '' + p.itemCode : p.code != null ? '' + p.code : '' + i,
-			name: p.name != null ? '' + p.name : p.label != null ? '' + p.label : '奖品',
-			rarity: p.rarity != null ? '' + p.rarity : 'common',
-			rarityLabel: p.rarityLabel != null ? '' + p.rarityLabel : '',
-			rarityColor: p.rarityColor != null ? '' + p.rarityColor : '',
-			icon: toIconName(p.icon != null ? '' + p.icon : 'sparkles', 'sparkles'),
-			iconUrl: mapIconUrl(p.iconUrl),
-			itemLinked: p.itemLinked !== false,
-		})
+			list.push({
+				id: p.id != null ? Number(p.id) : i + 1,
+				itemCode: p.itemCode != null ? '' + p.itemCode : p.code != null ? '' + p.code : '' + i,
+				name: p.name != null ? '' + p.name : p.label != null ? '' + p.label : '奖品',
+				rarity: p.rarity != null ? '' + p.rarity : 'common',
+				rarityLabel: p.rarityLabel != null ? '' + p.rarityLabel : '',
+				rarityColor: p.rarityColor != null ? '' + p.rarityColor : '',
+				icon: toIconName(p.icon != null ? '' + p.icon : 'sparkles', 'sparkles'),
+				iconUrl: mapIconUrl(p.iconUrl),
+				itemLinked: p.itemLinked !== false,
+			})
 	}
 	return list
 }

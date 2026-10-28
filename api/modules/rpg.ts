@@ -202,7 +202,7 @@ export type BagItem = {
 	itemType: string
 	itemTypeLabel: string
 	sourceLabel: string
-	/** 后端 rpg_item_config.icon 键，前端直用不映射 */
+	/** 后端 rpg_item_config.icon 键，无 iconUrl 时走 x-icon */
 	icon: string
 	/** 管理端上传图标 URL（/static/rpgAssets/itemIcon/*），有则优先图片 */
 	iconUrl: string
@@ -229,7 +229,7 @@ export type BagPet = {
 	petCode: string
 	name: string
 	level: number
-	/** 后端宠物配置 icon 键，前端直用不映射 */
+	/** 后端宠物配置 icon 键，无 iconUrl 时走 x-icon */
 	icon: string
 	/** 管理端上传图标 URL，有则优先图片 */
 	iconUrl: string
@@ -258,7 +258,7 @@ export async function fetchInventory(itemType?: string): Promise<BagItem[]> {
 			itemType: type,
 			itemTypeLabel: cfg != null && cfg.itemTypeLabel != null ? '' + cfg.itemTypeLabel : type.length > 0 ? type : '其他',
 			sourceLabel: row.sourceLabel != null ? '' + row.sourceLabel : '',
-			// 图标以 rpg_item_config.icon 为准（前端不控制展示），有上传资产则带 URL
+			// 图标：iconUrl 优先，否则物品 icon 键走 x-icon
 			icon:
 				cfg != null && cfg.icon != null
 					? '' + cfg.icon
@@ -329,7 +329,7 @@ export async function fetchMyPets(): Promise<BagPet[]> {
 							? '' + row.petCode
 							: '宠物',
 			level: row.level != null ? Number(row.level) : 1,
-			// 图标以后端宠物配置为准，有上传资产则带 URL
+			// 图标：iconUrl 优先，否则宠物 icon 键走 x-icon
 			icon:
 				cfg != null && cfg.icon != null
 					? '' + cfg.icon

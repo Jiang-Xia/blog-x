@@ -1,0 +1,94 @@
+<template>
+	<!-- RPG 物品图标：iconUrl → x-icon（物品自身图标，不走类型 emoji） -->
+	<view class="rpg-ico" :style="boxStyle">
+		<image
+			v-if="showImg"
+			class="rpg-ico-img"
+			:src="iconUrl"
+			:style="imgStyle"
+			mode="aspectFit"
+			@error="onImgError"
+		></image>
+		<x-icon v-else :name="fallbackIcon" :size="iconSize" :color="color"></x-icon>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * RPG 游戏内容图标（easycom：x-rpg-item-icon）
+ * 只用物品自身图标：
+ * 1) API iconUrl（管理端上传）
+ * 2) x-icon（Tabler；icon 键经 toIconName，否则 fallback）
+ * 不消费 itemTypeIcon / rarityIcon，勿前端按类型/稀有度 map 回显
+ */
+import { toIconName } from '../../utils/icon-name'
+
+const props = defineProps({
+	/** 管理端上传图标完整 URL；空则走 x-icon */
+	iconUrl: { type: String, default: '' },
+	/** 配置 icon 键或已规范的 Tabler 名 */
+	icon: { type: String, default: '' },
+	/** x-icon 无法识别 icon 时的默认 Tabler 名 */
+	fallback: { type: String, default: 'sparkles' },
+	/** 图标区边长（px） */
+	size: { type: Number, default: 32 },
+	/** x-icon 颜色 */
+	color: { type: String, default: '#1c1a17' },
+})
+
+/** 图片加载失败后禁用 iconUrl，改走 x-icon */
+const imgBroken = ref(false)
+
+watch(
+	(): string => props.iconUrl,
+	() => {
+		imgBroken.value = false
+	},
+)
+
+/**
+ * 当前是否展示上传图
+ */
+const showImg = computed((): boolean => {
+	return props.iconUrl.length > 0 && !imgBroken.value
+})
+
+/**
+ * Tabler 名（未知 RPG icon 键回退 fallback）
+ */
+const fallbackIcon = computed((): string => {
+	return toIconName(props.icon, props.fallback)
+})
+
+const iconSize = computed((): number => {
+	const s = props.size
+	if (s <= 28) return 16
+	if (s <= 36) return 20
+	return 22
+})
+
+const boxStyle = computed((): string => {
+	const s = props.size
+	return 'width:' + s + 'px;height:' + s + 'px;'
+})
+
+const imgStyle = computed((): string => {
+	const s = props.size
+	return 'width:' + s + 'px;height:' + s + 'px;'
+})
+
+/**
+ * 上传图裂图：回退 x-icon
+ */
+function onImgError(): void {
+	imgBroken.value = true
+}
+</script>
+
+<style>
+.rpg-ico {
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+</style>

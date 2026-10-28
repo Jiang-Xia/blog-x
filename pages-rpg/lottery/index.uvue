@@ -66,13 +66,13 @@
 						<text class="cell-lb go-lb">{{ cell.label }}</text>
 					</template>
 					<template v-else>
-						<image
-							v-if="cell.iconUrl.length > 0"
+						<x-rpg-item-icon
 							class="cell-img"
-							:src="cell.iconUrl"
-							mode="aspectFit"
-						></image>
-						<x-icon v-else :name="cell.icon" :size="22" color="#1c1a17"></x-icon>
+							:icon-url="cell.iconUrl"
+							:icon="cell.icon"
+							fallback="sparkles"
+							:size="36"
+						></x-rpg-item-icon>
 						<text class="cell-lb">{{ cell.label }}</text>
 					</template>
 				</view>
@@ -105,15 +105,13 @@
 					class="pool-chip"
 					:style="poolChipStyle(item.rarityColor)"
 				>
-					<image
-						v-if="item.iconUrl.length > 0"
+					<x-rpg-item-icon
 						class="pool-img"
-						:src="item.iconUrl"
-						mode="aspectFit"
-					></image>
-					<view v-else class="pool-ico">
-						<x-icon :name="item.icon" :size="18" color="#1c1a17"></x-icon>
-					</view>
+						:icon-url="item.iconUrl"
+						:icon="item.icon"
+						fallback="sparkles"
+						:size="32"
+					></x-rpg-item-icon>
 					<text v-if="item.rarityLabel.length > 0" class="pool-rar" :style="rarColor(item.rarityColor)">
 						{{ item.rarityLabel }}
 					</text>
@@ -128,15 +126,13 @@
 			</view>
 			<view v-if="showHistory" class="hist-list">
 				<view v-for="rec in history" :key="rec.id" class="hist-row">
-					<image
-						v-if="rec.iconUrl.length > 0"
+					<x-rpg-item-icon
 						class="hist-img"
-						:src="rec.iconUrl"
-						mode="aspectFit"
-					></image>
-					<view v-else class="hist-ico">
-						<x-icon :name="rec.icon" :size="16" color="#1c1a17"></x-icon>
-					</view>
+						:icon-url="rec.iconUrl"
+						:icon="rec.icon"
+						fallback="sparkles"
+						:size="28"
+					></x-rpg-item-icon>
 					<view class="hist-body">
 						<text class="hist-name">{{ rec.poolName }}</text>
 						<text v-if="rec.rarityLabel.length > 0" class="hist-rar" :style="rarColor(rec.rarityColor)">
@@ -623,16 +619,6 @@ onShow(() => {
 }
 
 .pool-img {
-	width: 32px;
-	height: 32px;
-	margin-bottom: 4px;
-}
-
-.pool-ico {
-	width: 32px;
-	height: 32px;
-	align-items: center;
-	justify-content: center;
 	margin-bottom: 4px;
 }
 

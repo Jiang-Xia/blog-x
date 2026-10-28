@@ -37,13 +37,12 @@
 			<template v-if="isPetSeg">
 				<view v-for="pet in pets" :key="pet.id" class="x-card row">
 					<view class="ico">
-						<image
-							v-if="pet.iconUrl.length > 0"
-							class="ico-img"
-							:src="pet.iconUrl"
-							mode="aspectFill"
-						></image>
-						<x-icon v-else :name="petIcon(pet.icon)" :size="20" color="#1c1a17"></x-icon>
+						<x-rpg-item-icon
+							:icon-url="pet.iconUrl"
+							:icon="pet.icon"
+							fallback="paw"
+							:size="44"
+						></x-rpg-item-icon>
 					</view>
 					<view class="body">
 						<text class="name">{{ pet.name }}</text>
@@ -65,13 +64,12 @@
 			<template v-else>
 				<view v-for="item in filtered" :key="item.id" class="x-card row">
 					<view class="ico">
-						<image
-							v-if="item.iconUrl.length > 0"
-							class="ico-img"
-							:src="item.iconUrl"
-							mode="aspectFill"
-						></image>
-						<x-icon v-else :name="itemIcon(item.icon)" :size="20" color="#1c1a17"></x-icon>
+						<x-rpg-item-icon
+							:icon-url="item.iconUrl"
+							:icon="item.icon"
+							fallback="gift"
+							:size="44"
+						></x-rpg-item-icon>
 					</view>
 					<view class="body">
 						<text class="name">{{ item.name }}</text>
@@ -112,20 +110,9 @@ import {
 import { useListScroll } from '../../composables/useListScroll'
 import { useTheme } from '../../composables/useTheme'
 import { useUserStore } from '../../store/user'
-import { toIconName } from '../../utils/icon-name'
 import { showXToast } from '../../utils/toast'
 
 const { themeCssVars, syncNativeChrome } = useTheme()
-
-/** 背包物品图标：服务端可能仍是 emoji，规范为 Tabler 名 */
-function itemIcon(raw: string): string {
-	return toIconName(raw, 'gift')
-}
-
-/** 宠物图标兜底 */
-function petIcon(raw: string): string {
-	return toIconName(raw, 'paw')
-}
 
 const {
 	refreshing,

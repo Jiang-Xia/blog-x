@@ -38,7 +38,7 @@ export type RpgQuest = {
 
 /**
  * 抽奖奖池项（对齐 Nuxt LotteryPoolItem）
- * rarityLabel/rarityColor/iconUrl 来自后端 attachRarityDisplay + attachRpgItemAssetUrls
+ * rarityLabel/rarityColor/iconUrl 来自后端 enrich，勿本地 map
  */
 export type LotteryPoolItem = {
 	id: number
@@ -49,9 +49,9 @@ export type LotteryPoolItem = {
 	rarityLabel: string
 	/** 后端 rarityColor */
 	rarityColor: string
-	/** icon 键 → Tabler 兜底名 */
+	/** 物品 icon 键 → Tabler 兜底名（无 iconUrl 时） */
 	icon: string
-	/** 管理端上传图标完整 URL；空则用 x-icon */
+	/** 管理端上传图标完整 URL；优先展示 */
 	iconUrl: string
 	/** 未关联系统物品时应过滤（与后端 getPool 一致） */
 	itemLinked: boolean
