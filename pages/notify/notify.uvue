@@ -34,7 +34,7 @@
 			<view v-for="item in filtered" :key="item.id" class="msg" @click="onItemClick(item)">
 				<view class="msg-row">
 					<view class="msg-em">
-						<x-icon :name="item.icon" :size="22" color="#1c1a17"></x-icon>
+						<x-icon :name="item.icon" :size="22" :color="tokens.ink2"></x-icon>
 					</view>
 					<view class="msg-body">
 						<text class="msg-title">{{ item.title }}</text>
@@ -60,7 +60,7 @@ import { useListScroll } from '../../composables/useListScroll'
 import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 import { useTheme } from '../../composables/useTheme'
-const { themeCssVars, syncNativeChrome } = useTheme()
+const { themeCssVars, tokens, syncNativeChrome } = useTheme()
 
 const store = useMockStore()
 

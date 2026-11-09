@@ -101,7 +101,7 @@
 				@click="goAi"
 			>
 				<view class="ai-label-row">
-					<x-icon name="sparkles" :size="12" color="#2a8f76"></x-icon>
+					<x-icon name="sparkles" :size="12" :color="tokens.accentDeep"></x-icon>
 					<text class="ai-label">AI 摘要</text>
 				</view>
 				<text class="ai-body">{{ article.aiSummary }}</text>
@@ -266,7 +266,7 @@
 			</view>
 			<view class="act" @click="tipOpen = true">
 				<view class="ic tip">
-					<x-icon name="diamond" :size="14" color="#2a8f76"></x-icon>
+					<x-icon name="diamond" :size="14" :color="tokens.accentDeep"></x-icon>
 				</view>
 				<text class="act-t">赏</text>
 			</view>

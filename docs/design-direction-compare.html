@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>blog-x · 视觉方向静态对比稿</title>
+<style>
+  :root {
+    --x-bg: #f4f1ec;
+    --x-bg-2: #ebe6df;
+    --x-surface: #ffffff;
+    --x-ink: #1c1a17;
+    --x-ink-2: #5c574f;
+    --x-ink-3: #9a948a;
+    --x-line-old: rgba(28, 26, 23, 0.06);
+    --x-line-strong: rgba(28, 26, 23, 0.13);
+    --x-accent: #3db89a;
+    --x-accent-deep: #2a8f76;
+    --x-accent-tint: rgba(61, 184, 154, 0.12);
+    --x-on-ink: #ffffff;
+    --x-danger: #e8897a;
+    --x-lavender: #a99ad4;
+    --x-warm-tint: #ffe8d6;
+    --x-tab-bar-bg: rgba(255, 255, 255, 0.82);
+    --x-tab-bar-border: rgba(255, 255, 255, 0.7);
+    --page-bg: #ece9e3;
+    --page-ink: #24221f;
+    --page-ink-2: #6f6a62;
+    --page-line: #d9d4cb;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page-bg);
+    color: var(--page-ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 32px 28px 60px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  header { border-bottom: 1px solid var(--page-line); padding-bottom: 22px; margin-bottom: 26px; }
+  .kicker { font-size: 11px; letter-spacing: 2px; font-weight: 700; color: var(--page-ink-2); margin-bottom: 10px; }
+  h1 { font-size: 27px; font-weight: 700; letter-spacing: -0.5px; margin: 0 0 8px; }
+  .lede { font-size: 13px; color: var(--page-ink-2); line-height: 1.7; margin: 0; max-width: 780px; }
+
+  .toolbar { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 20px; }
+  .tool-label { font-size: 11px; font-weight: 600; color: var(--page-ink-2); letter-spacing: 0.5px; }
+  .dots { display: flex; gap: 9px; }
+  .dot {
+    width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent;
+    outline: 1px solid var(--page-line); cursor: pointer; padding: 0;
+  }
+  .dot.on { border-color: var(--page-bg); outline: 2px solid var(--page-ink); }
+  .mode-btn {
+    font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    padding: 7px 14px; border: 1px solid var(--page-line); border-radius: 6px;
+    background: transparent; color: var(--page-ink);
+  }
+  .mode-btn.on { background: var(--page-ink); color: var(--page-bg); border-color: var(--page-ink); }
+  .pal-name { font-size: 11px; color: var(--page-ink-2); }
+
+  .stage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .col { min-width: 0; }
+  .col-head { padding: 0 2px 12px; min-height: 68px; }
+  .col-tag {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+    padding: 3px 8px; border: 1px solid var(--page-line); border-radius: 4px; margin-bottom: 7px;
+  }
+  .col-name { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  .col-desc { font-size: 11px; color: var(--page-ink-2); line-height: 1.5; }
+
+  .phone {
+    width: 100%; max-width: 340px; height: 648px; margin: 0 auto;
+    background: var(--x-bg); border: 1px solid var(--page-line); border-radius: 26px;
+    overflow: hidden; display: flex; flex-direction: column; position: relative;
+    box-shadow: 0 8px 22px rgba(30, 26, 20, 0.07);
+  }
+  .statusbar {
+    height: 34px; flex: none; padding: 0 18px; display: flex; align-items: center;
+    justify-content: space-between; font-size: 10px; font-weight: 700; color: var(--x-ink);
+  }
+  .statusbar .sb-r { display: flex; gap: 5px; align-items: center; }
+  .sb-bat { width: 15px; height: 8px; border: 1px solid var(--x-ink); border-radius: 2px; }
+  .screen { flex: 1; overflow-y: auto; padding: 0 14px 16px; scrollbar-width: none; }
+  .screen::-webkit-scrollbar { display: none; }
+
+  .icon { width: 14px; height: 14px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .icon.s12 { width: 12px; height: 12px; }
+  .icon.s16 { width: 16px; height: 16px; }
+  .icon.s20 { width: 20px; height: 20px; }
+  .icon.s24 { width: 24px; height: 24px; }
+
+  .searchbar {
+    display: flex; align-items: center; gap: 8px; background: var(--x-surface);
+    border-radius: 999px; padding: 11px 12px 11px 14px; margin-bottom: 12px;
+    border: 1px solid transparent;
+  }
+  .search-ph { flex: 1; font-size: 12px; color: var(--x-ink-3); }
+  .bell-wrap { position: relative; color: var(--x-ink-2); display: flex; }
+  .bell-badge {
+    position: absolute; top: -6px; right: -7px; min-width: 15px; height: 15px;
+    border-radius: 8px; background: var(--x-danger); color: #fff;
+    font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .card {
+    background: var(--x-surface); border-radius: 22px; padding: 14px; margin-bottom: 12px;
+    border: 1px solid transparent;
+  }
+  .today { background: var(--x-accent-tint); display: flex; align-items: center; justify-content: space-between; }
+  .today-label { font-size: 11px; color: var(--x-ink-2); margin-bottom: 5px; }
+  .today-title { font-size: 16px; font-weight: 700; color: var(--x-ink); margin-bottom: 10px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600;
+    padding: 5px 10px; border-radius: 999px; background: var(--x-accent-tint);
+    color: var(--x-accent-deep); border: 1px solid transparent; white-space: nowrap;
+  }
+  .chip.lav { background: var(--x-bg-2); color: var(--x-lavender); }
+  .chip.dark { background: var(--x-ink); color: var(--x-bg); }
+  .chip.plain { background: var(--x-bg-2); color: var(--x-ink-2); }
+  .ring {
+    width: 66px; height: 66px; flex: none; border-radius: 50%;
+    background: var(--x-accent-tint); border: 6px solid var(--x-accent);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .ring-pct { font-size: 13px; font-weight: 700; color: var(--x-ink); line-height: 1.1; }
+  .ring-sub { font-size: 9px; color: var(--x-ink-3); }
+
+  .quick { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .scrollchips {
+    display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px;
+    scrollbar-width: none; padding: 2px 0;
+  }
+  .scrollchips::-webkit-scrollbar { display: none; }
+  .cat {
+    flex: none; height: 26px; padding: 0 11px; border-radius: 999px;
+    display: flex; align-items: center; font-size: 11px; font-weight: 500;
+    background: var(--x-bg-2); color: var(--x-ink-2); border: 1px solid transparent;
+  }
+  .cat.on { background: var(--x-accent-tint); color: var(--x-accent-deep); font-weight: 700; }
+
+  .section { display: flex; align-items: center; justify-content: space-between; margin: 6px 2px 10px; }
+  .sec-l { display: flex; align-items: center; gap: 0; }
+  .sec-bar { display: block; width: 0; height: 15px; border-radius: 2px; background: var(--x-accent-deep); margin-right: 0; }
+  .sec-title { font-size: 15px; font-weight: 700; color: var(--x-ink); }
+  .sec-more { font-size: 11px; font-weight: 600; color: var(--x-accent); }
+
+  .article { display: flex; gap: 10px; align-items: stretch; }
+  .article-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .art-meta { font-size: 10px; color: var(--x-ink-3); margin-bottom: 5px; }
+  .art-title { font-size: 15px; font-weight: 700; color: var(--x-ink); line-height: 1.35; margin-bottom: 8px; }
+  .art-stat { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--x-ink-3); }
+  .cover {
+    width: 66px; height: 66px; flex: none; border-radius: 14px;
+    background: var(--x-bg-2); color: var(--x-ink-2);
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid transparent;
+  }
+  .cover.warm { background: var(--x-warm-tint); }
+
+  .tabbar {
+    flex: none; height: 62px; display: flex; align-items: stretch;
+    background: var(--x-tab-bar-bg); border-top: 1px solid var(--x-tab-bar-border);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 -6px 20px rgba(40, 32, 20, 0.07);
+  }
+  .tabitem { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 5px; }
+  .tab-inner {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; width: 62px; padding: 4px 0; border-radius: 17px;
+    background: transparent; color: var(--x-ink-3);
+  }
+  .tabitem.on .tab-inner { background: var(--x-accent-tint); color: var(--x-accent-deep); }
+  .tab-label { font-size: 10px; font-weight: 600; }
+  .tab-mark { width: 0; height: 3px; border-radius: 2px; background: var(--x-accent-deep); }
+
+  /* ---------- 方案 A：轻改（5 处纯 CSS 微调） ---------- */
+  .phone[data-v="a"] .card,
+  .phone[data-v="b"] .card { border-color: var(--x-line-strong); }
+  .phone[data-v="a"] .searchbar,
+  .phone[data-v="b"] .searchbar { border-color: var(--x-line-strong); }
+  .phone[data-v="a"] .sec-bar,
+  .phone[data-v="b"] .sec-bar { width: 3px; margin-right: 8px; }
+  .phone[data-v="a"] .sec-title,
+  .phone[data-v="b"] .sec-title { font-size: 17px; }
+  .phone[data-v="a"] .cat.on,
+  .phone[data-v="b"] .cat.on { background: transparent; border-color: var(--x-accent); color: var(--x-accent-deep); }
+  .phone[data-v="a"] .tabitem.on .tab-inner,
+  .phone[data-v="b"] .tabitem.on .tab-inner { background: transparent; }
+  .phone[data-v="a"] .tabitem.on .tab-mark,
+  .phone[data-v="b"] .tabitem.on .tab-mark { width: 16px; }
+
+  /* ---------- 方案 B：A + 4 处 ---------- */
+  .phone[data-v="b"] .today { background: var(--x-surface); border-color: var(--x-accent); }
+  .phone[data-v="b"] .art-title { font-size: 16px; }
+  .phone[data-v="b"] .cover { border-color: var(--x-line-strong); }
+  /* 实底上用 --x-bg 反色字：亮色米白字 / 暗色深字，明暗都保住对比度 */
+  .phone[data-v="b"] .chip.dark { background: var(--x-accent-deep); color: var(--x-bg); }
+
+  /* ---------- 对照表 ---------- */
+  .panel { margin-top: 34px; border-top: 1px solid var(--page-line); padding-top: 24px; }
+  .panel h2 { font-size: 17px; font-weight: 700; margin: 0 0 6px; }
+  .panel .sub { font-size: 12px; color: var(--page-ink-2); margin: 0 0 16px; line-height: 1.6; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--page-line); vertical-align: top; }
+  th { font-size: 11px; font-weight: 700; color: var(--page-ink-2); letter-spacing: 0.5px; }
+  td:first-child { width: 23%; font-weight: 600; }
+  td:nth-child(2) { width: 26%; color: var(--page-ink-2); }
+  td:nth-child(3), td:nth-child(4) { width: 25.5%; }
+  code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 3px; }
+  .yes { color: #1f7a5c; font-weight: 700; }
+  .no { color: var(--page-ink-2); }
+
+  .notes { margin-top: 26px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .note { border: 1px solid var(--page-line); border-radius: 8px; padding: 16px 18px; }
+  .note h3 { font-size: 13px; font-weight: 700; margin: 0 0 10px; }
+  .note ul { margin: 0; padding-left: 18px; font-size: 12px; line-height: 1.85; color: var(--page-ink-2); }
+  .note b { color: var(--page-ink); }
+  .foot { margin-top: 24px; font-size: 11px; color: var(--page-ink-2); line-height: 1.7; border-top: 1px solid var(--page-line); padding-top: 16px; }
+
+  @media (max-width: 980px) {
+    .stage { grid-template-columns: 1fr; }
+    .phone { max-width: 360px; }
+    .col-head { min-height: 0; }
+    .notes { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">BLOG-X / VISUAL DIRECTION</div>
+    <h1>视觉方向静态对比稿</h1>
+    <p class="lede">左边是<b>当前代码</b>（已回滚到改版前，按真实 CSS 值还原），中 / 右是两个<b>克制微调</b>方案。这轮不重做设计、不动结构，只回答一个问题：在保持原来那个 App 的前提下，怎么让它别那么素。点头之前不会改任何样式代码。</p>
+    <div class="toolbar">
+      <span class="tool-label">色系</span>
+      <div class="dots" id="dots"></div>
+      <span class="pal-name" id="palName">青苔 mint</span>
+      <span class="tool-label" style="margin-left:8px">模式</span>
+      <button class="mode-btn on" id="btnLight">亮色</button>
+      <button class="mode-btn" id="btnDark">暗色</button>
+    </div>
+  </header>
+
+  <div class="stage" id="stage"></div>
+
+  <section class="panel">
+    <h2>改动逐项对照</h2>
+    <p class="sub">A 只动 5 处、B 在 A 上再加 4 处；全部是已有 class 的属性值调整，不新增组件、不新增页面、不改任何 props / 接口 / 业务逻辑。</p>
+    <table>
+      <thead>
+        <tr><th>位置</th><th>现状（当前代码）</th><th>方案 A · 轻改</th><th>方案 B · 加一点</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>卡片边界<br><code>.x-card</code></td>
+          <td>纯白底 + 22px 圆角，<b>无描边</b>，靠 6% 明度差和米色底区分</td>
+          <td class="yes">加 1px 细描边</td>
+          <td class="yes">同 A</td>
+        </tr>
+        <tr>
+          <td>线色令牌<br><code>--x-line</code></td>
+          <td>亮 <code>0.06</code> / 暗 <code>0.08</code>，几乎看不见</td>
+          <td class="yes">亮 <code>0.13</code> / 暗 <code>0.16</code></td>
+          <td class="yes">同 A</td>
+        </tr>
+        <tr>
+          <td>章节标题<br><code>.x-section-title</code></td>
+          <td>15px 加粗，纯文字</td>
+          <td class="yes">17px + 左侧 3px 主题色竖条</td>
+          <td class="yes">同 A</td>
+        </tr>
+        <tr>
+          <td>筛选选中态<br><code>.cat-chip-on</code></td>
+          <td>12% 透明 tint 底，选中反馈很弱</td>
+          <td class="yes">透明底 + 1px 主题色描边 + 深色字</td>
+          <td class="yes">同 A</td>
+        </tr>
+        <tr>
+          <td>底部 Tab 选中<br><code>.tab-inner-on</code></td>
+          <td>17px 圆角 tint 色块</td>
+          <td class="yes">去掉色块，改图标上方 16×3px 主题色短横</td>
+          <td class="yes">同 A</td>
+        </tr>
+        <tr>
+          <td>搜索框</td>
+          <td>纯白胶囊，无边界</td>
+          <td class="yes">加 1px 细描边</td>
+          <td class="yes">同 A</td>
+        </tr>
+        <tr>
+          <td>今日进度卡<br><code>.today</code></td>
+          <td>tint 浅绿底</td>
+          <td class="no">不动</td>
+          <td class="yes">改白底 + 1px 主题色描边（圆环仍是主题色）</td>
+        </tr>
+        <tr>
+          <td>文章标题 / 封面</td>
+          <td>标题 15px；封面色块无边界</td>
+          <td class="no">不动</td>
+          <td class="yes">标题 16px；封面加 1px 细描边</td>
+        </tr>
+        <tr>
+          <td>AI 助手 chip<br><code>.x-chip-dark</code></td>
+          <td>ink 黑底</td>
+          <td class="no">不动</td>
+          <td class="yes">改主题色深实底 + <code>--x-bg</code> 反色字（明暗都可读，全页唯一一块实色）</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <div class="notes">
+    <div class="note">
+      <h3>刻意不做的事</h3>
+      <ul>
+        <li><b>不改结构</b>：页面顺序、组件划分、Tab 逻辑、圆环、毛玻璃底栏全部保持原样。</li>
+        <li><b>不改圆角</b>：22px 卡片、999px 胶囊都留着，这轮不碰形态。</li>
+        <li><b>不搞编排</b>：没有大数字 hero、序号块、墨块、行式列表、报头——上一版被否的就是这些。</li>
+        <li><b>不新增视觉手法</b>：零渐变、零发光、零新阴影、零 CSS 动画、零插画。</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>真机能跑 / 落地成本</h3>
+      <ul>
+        <li>提案栏<b>只用 uvue 支持的属性</b>：纯色、1px border、小圆角、flex。真机里 border 会分写成 <code>border-width / style / color</code>。</li>
+        <li>6 套色系 × 明暗机制<b>完全不动</b>；只把 <code>--x-line</code> 两个值调深，其余令牌原封不动。</li>
+        <li>A ≈ 改 <code>constants/theme.ts</code> 2 个值 + <code>styles/x-base.css</code> 2 个类 + 2 个 chips 组件 + 底栏，约 6 个文件。</li>
+        <li>B 在 A 上再加 3 个类，仍是同一批文件。<b>零新增图标名</b>，不用重跑 <code>subset-icons.py</code>。</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="foot">
+    说明：三栏共用同一份内容与 DOM，差异只来自 CSS 覆盖，所以对比是公平的；「现状」栏按改版前 <code>styles/x-base.css</code> / <code>constants/theme.ts</code> / <code>x-tab-home.uvue</code> / <code>pages/index/index.uvue</code> 的真实值还原，用于确认方向，非像素级截图。<br>
+    本稿是静态提案，<b>没有改动任何产品样式代码</b>；当前工作区只有独立的 bug 修复。
+  </p>
+
+</div>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M18 16l.7 1.8L20.5 18.5l-1.8.7L18 21l-.7-1.8-1.8-.7 1.8-.7z"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L20 8l-4-4L4 16z"/><path d="M14 6l4 4"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></symbol>
+  <symbol id="i-dice" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1"/><circle cx="16" cy="16" r="1"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></symbol>
+  <symbol id="i-thumb" viewBox="0 0 24 24"><path d="M7 10v10H4V10zM7 10l4-7c1.5 0 2.5 1 2.5 2.5V9H19a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 20H7"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path d="M20 15a3 3 0 0 1-3 3H8l-4 3V6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"/><path d="M8 7h7M8 11h5"/></symbol>
+</svg>
+
+<script>
+var LIGHT = {
+  '--page-bg': '#ece9e3', '--page-ink': '#24221f', '--page-ink-2': '#6f6a62', '--page-line': '#d9d4cb',
+  '--x-bg': '#f4f1ec', '--x-bg-2': '#ebe6df', '--x-surface': '#ffffff',
+  '--x-ink': '#1c1a17', '--x-ink-2': '#5c574f', '--x-ink-3': '#9a948a',
+  '--x-line-old': 'rgba(28, 26, 23, 0.06)', '--x-line-strong': 'rgba(28, 26, 23, 0.13)',
+  '--x-on-ink': '#ffffff', '--x-danger': '#e8897a', '--x-lavender': '#a99ad4', '--x-warm-tint': '#ffe8d6',
+  '--x-tab-bar-bg': 'rgba(255, 255, 255, 0.82)', '--x-tab-bar-border': 'rgba(255, 255, 255, 0.7)'
+};
+var DARK = {
+  '--page-bg': '#171614', '--page-ink': '#eee9e1', '--page-ink-2': '#a49e94', '--page-line': '#37342f',
+  '--x-bg': '#161513', '--x-bg-2': '#1e1c1a', '--x-surface': '#242220',
+  '--x-ink': '#f0ebe3', '--x-ink-2': '#c4bdb3', '--x-ink-3': '#8a847a',
+  '--x-line-old': 'rgba(240, 235, 227, 0.08)', '--x-line-strong': 'rgba(240, 235, 227, 0.16)',
+  '--x-on-ink': '#ffffff', '--x-danger': '#e89888', '--x-lavender': '#b8a8d8', '--x-warm-tint': '#3a322c',
+  '--x-tab-bar-bg': 'rgba(36, 34, 32, 0.92)', '--x-tab-bar-border': 'rgba(240, 235, 227, 0.1)'
+};
+/* 色值逐套抄自 constants/theme.ts 的 ACCENT_LIGHT / ACCENT_DARK */
+var PAL = {
+  mint:    { n:'青苔 mint',    l:['#3db89a','#2a8f76','rgba(61, 184, 154, 0.12)'],  d:['#5ecfb0','#3db89a','rgba(94, 207, 176, 0.16)'] },
+  haze:    { n:'雾蓝 haze',    l:['#6f8fad','#557491','rgba(111, 143, 173, 0.14)'], d:['#8aadc8','#6f8fad','rgba(138, 173, 200, 0.16)'] },
+  blush:   { n:'胭粉 blush',   l:['#c4908a','#a6726c','rgba(196, 144, 138, 0.14)'], d:['#d4a8a0','#c4908a','rgba(212, 168, 160, 0.16)'] },
+  oat:     { n:'燕麦 oat',     l:['#b89a72','#96784f','rgba(184, 154, 114, 0.16)'], d:['#d0b48c','#b89a72','rgba(208, 180, 140, 0.16)'] },
+  lilac:   { n:'丁香 lilac',   l:['#9585b0','#766694','rgba(149, 133, 176, 0.14)'], d:['#b0a0c8','#9585b0','rgba(176, 160, 200, 0.16)'] },
+  apricot: { n:'杏橘 apricot', l:['#d4a07a','#b07e58','rgba(212, 160, 122, 0.16)'],d:['#e0b890','#d4a07a','rgba(224, 184, 144, 0.16)'] }
+};
+var palKeys = Object.keys(PAL);
+var curPal = 'mint', isDark = false;
+
+function svg(id, cls) { return '<svg class="icon ' + (cls||'') + '"><use href="#' + id + '"/></svg>'; }
+
+function phoneHTML(v, tag, name, desc) {
+  var article = function(meta, title, likes, comments, coverCls, ico) {
+    return '<div class="card article">' +
+      '<div class="article-body"><div>' +
+        '<div class="art-meta">' + meta + '</div>' +
+        '<div class="art-title">' + title + '</div></div>' +
+        '<div class="art-stat">' + svg('i-thumb','s12') + '<span>' + likes + '</span>' + svg('i-msg','s12') + '<span>' + comments + '</span></div>' +
+      '</div>' +
+      '<div class="cover ' + coverCls + '">' + svg(ico,'s24') + '</div>' +
+    '</div>';
+  };
+  var tabs = [
+    ['i-home','首页',true],['i-compass','发现',false],['i-dice','RPG',false],['i-user','我的',false]
+  ];
+  var tabHTML = '';
+  for (var i=0;i<tabs.length;i++) {
+    tabHTML += '<div class="tabitem' + (tabs[i][2] ? ' on' : '') + '">' +
+      '<div class="tab-inner">' + svg(tabs[i][0],'s20') +
+      '<span class="tab-label">' + tabs[i][1] + '</span>' +
+      '<span class="tab-mark"></span></div></div>';
+  }
+  return '<div class="col">' +
+    '<div class="col-head"><div class="col-tag">' + tag + '</div>' +
+      '<div class="col-name">' + name + '</div>' +
+      '<div class="col-desc">' + desc + '</div></div>' +
+    '<div class="phone" data-v="' + v + '">' +
+      '<div class="statusbar"><span>9:41</span><span class="sb-r"><span>5G</span><span class="sb-bat"></span></span></div>' +
+      '<div class="screen">' +
+        '<div class="searchbar">' + svg('i-search','s16') +
+          '<span class="search-ph">搜索文章、标签、作者</span>' +
+          '<span class="bell-wrap">' + svg('i-bell','s16') + '<span class="bell-badge">3</span></span>' +
+        '</div>' +
+        '<div class="card today">' +
+          '<div style="flex:1;min-width:0;margin-right:10px">' +
+            '<div class="today-label">今日进度</div>' +
+            '<div class="today-title">连续签到 12 天</div>' +
+            '<div class="chip-row"><span class="chip">12 天</span><span class="chip lav">未读 3</span></div>' +
+          '</div>' +
+          '<div class="ring"><span class="ring-pct">68%</span><span class="ring-sub">任务</span></div>' +
+        '</div>' +
+        '<div class="quick">' +
+          '<span class="chip dark">' + svg('i-sparkles','s12') + 'AI 助手</span>' +
+          '<span class="chip plain">今日任务 2/3</span>' +
+          '<span class="chip plain">' + svg('i-pencil','s12') + '写文章</span>' +
+        '</div>' +
+        '<div class="scrollchips"><span class="cat on">全部</span><span class="cat">技术</span><span class="cat">随笔</span><span class="cat">读书</span><span class="cat">生活</span></div>' +
+        '<div class="scrollchips"><span class="cat">NestJS</span><span class="cat">uni-app x</span><span class="cat">设计</span><span class="cat">Redis</span></div>' +
+        '<div class="section"><div class="sec-l"><span class="sec-bar"></span><span class="sec-title">最新文章</span></div><span class="sec-more">全部</span></div>' +
+        article('技术 · 2 小时前', '从单体到事件驱动：Redis Stream 落地笔记', '128', '24', '', 'i-book') +
+        article('随笔 · 昨天', '把博客小程序重做一遍之后，我改了什么', '86', '12', 'warm', 'i-pencil') +
+        article('技术 · 3 天前', 'uni-app x 的 CSS 子集：哪些写法真机不生效', '203', '37', '', 'i-book') +
+      '</div>' +
+      '<div class="tabbar">' + tabHTML + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function applyTheme() {
+  var base = isDark ? DARK : LIGHT;
+  var p = PAL[curPal][isDark ? 'd' : 'l'];
+  var all = {};
+  for (var k in base) all[k] = base[k];
+  all['--x-accent'] = p[0];
+  all['--x-accent-deep'] = p[1];
+  all['--x-accent-tint'] = p[2];
+  for (var k2 in all) document.documentElement.style.setProperty(k2, all[k2]);
+  document.getElementById('palName').textContent = PAL[curPal].n;
+  var dots = document.querySelectorAll('.dot');
+  for (var j=0;j<dots.length;j++) dots[j].className = 'dot' + (palKeys[j] === curPal ? ' on' : '');
+  document.getElementById('btnLight').className = 'mode-btn' + (isDark ? '' : ' on');
+  document.getElementById('btnDark').className = 'mode-btn' + (isDark ? ' on' : '');
+}
+
+(function init() {
+  document.getElementById('stage').innerHTML =
+    phoneHTML('current', 'CURRENT / 现状', '当前代码', '回滚后的真实样子：白卡 22px 圆角、999px 胶囊、tint 底、无描边。') +
+    phoneHTML('a', 'OPTION A / 轻改', '方案 A · 轻改', '只加边界与一点点主题色：5 处 CSS 值调整，结构零改动。') +
+    phoneHTML('b', 'OPTION B / 加一点', '方案 B · 加一点', 'A 再加 4 处：今日卡换白底、标题提 1px、一块实色 chip。');
+
+  var dotsHTML = '';
+  for (var i=0;i<palKeys.length;i++) {
+    dotsHTML += '<button class="dot" data-pal="' + palKeys[i] + '" style="background:' + PAL[palKeys[i]].l[0] + '" title="' + PAL[palKeys[i]].n + '"></button>';
+  }
+  document.getElementById('dots').innerHTML = dotsHTML;
+  var dots = document.querySelectorAll('.dot');
+  for (var j=0;j<dots.length;j++) {
+    dots[j].onclick = function() { curPal = this.getAttribute('data-pal'); applyTheme(); };
+  }
+  document.getElementById('btnLight').onclick = function() { isDark = false; applyTheme(); };
+  document.getElementById('btnDark').onclick = function() { isDark = true; applyTheme(); };
+  applyTheme();
+})();
+</script>
+</body>
+</html>

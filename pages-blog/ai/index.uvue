@@ -16,7 +16,7 @@
 				<view v-else class="bubble bot">
 					<text class="bubble-t">{{ m.content.length > 0 ? m.content : (streaming ? '…' : '') }}</text>
 					<view v-if="m.cite.length > 0" class="cite-row">
-						<x-icon name="paperclip" :size="12" color="#9a948a"></x-icon>
+						<x-icon name="paperclip" :size="12" :color="tokens.ink3"></x-icon>
 						<text class="cite">{{ m.cite }}</text>
 					</view>
 				</view>
@@ -65,7 +65,7 @@ import { useUserStore } from '../../store/user'
 import { parseUiTextDelta, startSseStream } from '../../utils/sse-stream'
 import { showXToast } from '../../utils/toast'
 import { useTheme } from '../../composables/useTheme'
-const { themeCssVars, syncNativeChrome } = useTheme()
+const { themeCssVars, tokens, syncNativeChrome } = useTheme()
 
 type ChatMsg = { role: string; content: string; cite: string }
 

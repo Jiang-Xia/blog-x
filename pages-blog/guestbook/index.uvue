@@ -55,7 +55,7 @@
 				</view>
 				<view v-if="replyingId == item.id" class="compose-inline">
 					<textarea
-						class="compose-area compose-area-box"
+						class="compose-area compose-area-box compose-area-inline"
 						v-model="replyDraft"
 						:focus="replyFocus"
 						maxlength="300"
@@ -621,7 +621,8 @@ onShow(() => {
 	border-color: #d9d3c9;
 }
 
-.compose-inline .compose-area-box {
+/* uvue 不支持后代选择器：内联回复用独立 class 表达同一组样式 */
+.compose-area-inline {
 	background-color: var(--x-bg, #f4f1ec);
 	border-color: var(--x-bg-2, #ebe6df);
 }

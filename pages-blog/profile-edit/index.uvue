@@ -16,7 +16,7 @@
 						:src="previewUrl"
 						mode="aspectFill"
 					></image>
-					<x-icon v-else name="paw" :size="28" color="#1c1a17"></x-icon>
+					<x-icon v-else name="paw" :size="28" :color="tokens.ink2"></x-icon>
 				</view>
 				<!-- 微信小程序：必须用 button open-type=chooseAvatar 才能拉起微信头像 -->
 				<!-- #ifdef MP-WEIXIN -->
@@ -115,7 +115,7 @@ import { uploadAvatar } from '../../api/modules/resources'
 import { resolveStaticUrl, toStaticPath } from '../../utils/static-url'
 import { showXToast } from '../../utils/toast'
 import { useTheme } from '../../composables/useTheme'
-const { themeCssVars, syncNativeChrome } = useTheme()
+const { themeCssVars, tokens, syncNativeChrome } = useTheme()
 
 const userStore = useUserStore()
 
@@ -271,11 +271,7 @@ onShow(() => {
 	line-height: 1.2;
 }
 
-/* #ifdef MP-WEIXIN */
-.x-btn-reset::after {
-	border: none;
-}
-/* #endif */
+/* uvue 不支持伪元素与 border 简写；.x-btn-reset 已设 border-width: 0，无需 ::after 兜底 */
 
 .avatar-row {
 	flex-direction: row;

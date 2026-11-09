@@ -53,7 +53,7 @@
 			</view>
 			<view class="x-chip x-chip-plain chip-with-ico" @click="onWrite">
 				<x-icon name="pencil" :size="12" :color="tokens.ink2"></x-icon>
-				<text class="chip-t">写文章</text>
+				<text class="chip-t chip-t-ico">写文章</text>
 			</view>
 		</view>
 
@@ -378,14 +378,6 @@ function goDetail(id: string): void {
 	align-items: center;
 }
 
-.chip-with-ico .chip-t-dark {
-	margin-left: 4px;
-}
-
-.chip-with-ico .chip-t {
-	margin-left: 4px;
-}
-
 .search-ph {
 	flex: 1;
 	font-size: 13px;
@@ -471,6 +463,12 @@ function goDetail(id: string): void {
 	font-size: 11px;
 	color: var(--x-bg, #f4f1ec);
 	font-weight: 500;
+	margin-left: 4px;
+}
+
+/* 原 .chip-with-ico .chip-t 后代规则（uvue 不支持）；只给带图标的那个 text 加 */
+.chip-t-ico {
+	margin-left: 4px;
 }
 
 .ring {

@@ -15,7 +15,7 @@
 			<view class="x-card bal-card">
 				<text class="bal-label">当前钻石</text>
 				<view class="bal-n-row">
-					<x-icon name="diamond" :size="22" color="#1c1a17"></x-icon>
+					<x-icon name="diamond" :size="22" :color="tokens.ink2"></x-icon>
 					<text class="bal-n">{{ diamonds }}</text>
 				</view>
 				<text class="rate-hint">{{ rateText }}</text>
@@ -90,7 +90,7 @@ import { useMockStore } from '../../composables/useMockStore'
 import { showXToast } from '../../utils/toast'
 import { useTheme } from '../../composables/useTheme'
 
-const { themeCssVars, syncNativeChrome } = useTheme()
+const { themeCssVars, tokens, syncNativeChrome } = useTheme()
 
 const presetOptions = RPG_RECHARGE_AMOUNT_OPTIONS
 const rateText = RPG_RECHARGE_RATE_TEXT

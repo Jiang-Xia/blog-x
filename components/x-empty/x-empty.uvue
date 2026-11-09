@@ -2,7 +2,7 @@
 	<!-- 空状态：x-icon + 文案 + 可选操作按钮 -->
 	<view class="x-empty">
 		<view class="x-empty-ico">
-			<x-icon :name="icon" :size="40" color="#9a948a"></x-icon>
+			<x-icon :name="icon" :size="40" :color="tokens.ink3"></x-icon>
 		</view>
 		<text class="x-empty-text">{{ text }}</text>
 		<view v-if="actionText.length > 0" class="x-empty-btn" @click="onAction">
@@ -15,6 +15,10 @@
 /**
  * 空状态展示组件
  */
+import { useTheme } from '../../composables/useTheme'
+
+const { tokens } = useTheme()
+
 defineProps({
 	/** Tabler 图标名 */
 	icon: { type: String, default: 'mailbox' },

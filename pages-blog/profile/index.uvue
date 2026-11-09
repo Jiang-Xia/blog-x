@@ -21,7 +21,7 @@
 						:src="avatarUrl"
 						mode="aspectFill"
 					></image>
-					<x-icon v-else name="paw" :size="30" color="#1c1a17"></x-icon>
+					<x-icon v-else name="paw" :size="30" :color="tokens.ink2"></x-icon>
 				</view>
 				<text class="name">{{ nickname }}</text>
 				<text class="bio">{{ bio }}</text>
@@ -109,7 +109,7 @@ import { useListScroll } from '../../composables/useListScroll'
 import { useUserStore } from '../../store/user'
 import { resolveStaticUrl } from '../../utils/static-url'
 import { useTheme } from '../../composables/useTheme'
-const { themeCssVars, syncNativeChrome } = useTheme()
+const { themeCssVars, tokens, syncNativeChrome } = useTheme()
 
 type ProfileTab = 'article' | 'collect' | 'like'
 

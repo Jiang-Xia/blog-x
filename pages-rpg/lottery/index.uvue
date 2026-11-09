@@ -16,12 +16,12 @@
 			<view class="x-card bal-card">
 				<view class="bal-row">
 					<view class="bal-item">
-						<x-icon name="ticket" :size="16" color="#1c1a17"></x-icon>
+						<x-icon name="ticket" :size="16" :color="tokens.ink2"></x-icon>
 						<text class="bal-n">{{ tickets }}</text>
 						<text class="bal-lb">抽奖券</text>
 					</view>
 					<view class="bal-item">
-						<x-icon name="diamond" :size="16" color="#1c1a17"></x-icon>
+						<x-icon name="diamond" :size="16" :color="tokens.ink2"></x-icon>
 						<text class="bal-n">{{ diamonds }}</text>
 						<text class="bal-lb">钻石</text>
 					</view>
@@ -178,7 +178,7 @@ import {
 import { toIconName } from '../../utils/icon-name'
 import { showXToast } from '../../utils/toast'
 
-const { themeCssVars, syncNativeChrome } = useTheme()
+const { themeCssVars, tokens, syncNativeChrome } = useTheme()
 
 const CURRENCY_COST = LOTTERY_CURRENCY_COST
 const EPIC_PITY = LOTTERY_EPIC_PITY_THRESHOLD

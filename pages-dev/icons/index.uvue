@@ -23,7 +23,7 @@
 				<text class="pick-count">{{ shown.length }} 个图标{{ keyword.length > 0 ? '（最多展示 200）' : '' }}，点击复制名称</text>
 				<view class="pick-grid">
 					<view v-for="item in shown" :key="item.name" class="pick-cell" @click="onPick(item.name)">
-						<x-icon :name="item.name" :filled="filled" :size="24" color="#1c1a17"></x-icon>
+						<x-icon :name="item.name" :filled="filled" :size="24" :color="tokens.ink2"></x-icon>
 						<text class="pick-name">{{ item.name }}</text>
 					</view>
 				</view>
@@ -42,7 +42,7 @@ import type { IconGlyph } from '../../components/x-icon/icons-full'
 import { ICON_OUTLINE, ICON_FILLED } from '../../components/x-icon/icons-full'
 import { showXToast } from '../../utils/toast'
 import { useTheme } from '../../composables/useTheme'
-const { themeCssVars, syncNativeChrome } = useTheme()
+const { themeCssVars, tokens, syncNativeChrome } = useTheme()
 
 const keyword = ref('')
 const filled = ref(false)
