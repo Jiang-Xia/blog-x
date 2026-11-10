@@ -1,0 +1,202 @@
+<template>
+	<!-- 用户协议 / 隐私政策：登录页协议链接的落地文档页，type 区分两份文档 -->
+	<view class="x-page-flex" :style="themeCssVars">
+		<x-navbar :title="doc.title"></x-navbar>
+		<!-- 纯静态文档：仅纵向滚动，关闭刷新/触底/回顶 -->
+		<x-scroll-page
+			:enable-refresh="false"
+			:enable-load-more="false"
+			:show-footer="false"
+			:enable-back-top="false"
+		>
+			<view class="x-scroll-page-inner">
+				<text class="meta">版本 {{ doc.version }} · 更新于 {{ doc.updated }}</text>
+				<text class="lead">{{ doc.lead }}</text>
+				<view v-for="(sec, i) in doc.sections" :key="i" class="x-card sec">
+					<text class="sec-t">{{ i + 1 }}. {{ sec.title }}</text>
+					<text v-for="(p, j) in sec.paras" :key="j" class="sec-p">{{ p }}</text>
+				</view>
+				<text class="contact">如有疑问，可通过博客留言板或邮箱联系站长。</text>
+			</view>
+		</x-scroll-page>
+	</view>
+</template>
+
+<script setup lang="ts">
+/**
+ * 协议文档页：?type=user|privacy
+ * 纯静态文档，无接口；内容由站主维护，更新时直接改本文件
+ * 滚动：x-page-flex + x-scroll-page（仅纵向滚动，关闭刷新/触底/回顶）
+ */
+import { useTheme } from '../../composables/useTheme'
+const { themeCssVars } = useTheme()
+
+/** 单个章节 */
+interface Sec {
+	title: string
+	paras: string[]
+}
+
+/** 一份文档 */
+interface Doc {
+	title: string
+	version: string
+	updated: string
+	lead: string
+	sections: Sec[]
+}
+
+const USER_DOC: Doc = {
+	title: '用户协议',
+	version: 'v1.0',
+	updated: '2026-11-10',
+	lead: '欢迎使用「江夏的博客」应用（以下简称"本应用"）。请在注册或登录前仔细阅读本协议，使用本应用即表示你已理解并同意本协议全部内容。',
+	sections: [
+		{
+			title: '账号与登录',
+			paras: [
+				'本应用提供账号密码登录与微信一键登录两种方式。你应妥善保管账号与密码，因保管不善造成的损失由你自行承担。',
+				'账号仅限本人使用，不得出借、出租、转让或与他人共用。',
+				'发现账号被盗用或存在安全风险时，请立即联系站长处理。',
+			],
+		},
+		{
+			title: '用户行为规范',
+			paras: [
+				'你通过本应用发布的评论、留言等内容，应遵守法律法规及公序良俗，不得包含违法违规、侵权、骚扰、恶意广告或其它不当内容。',
+				'站长对违规内容有权不经通知予以删除，并视情节限制相关账号的评论、留言等功能。',
+				'因你发布的内容引起的纠纷与责任，由你自行承担。',
+			],
+		},
+		{
+			title: '内容与版权',
+			paras: [
+				'本应用内由站长发布的文章、图片等内容，版权归站长所有，未经授权不得转载、摘编或用于商业用途。',
+				'你发布的评论与留言，即视为授权本应用在站内展示与必要时引用。',
+				'你应保证发布的内容不侵犯任何第三方的合法权益。',
+			],
+		},
+		{
+			title: '服务说明',
+			paras: [
+				'本应用为个人非营利性质，功能（含博客浏览、评论、收藏、签到、抽奖等）可能随站点调整而变更、暂停或终止。',
+				'签到、抽奖、钻石等积分玩法为站点娱乐功能，不构成任何财产权益，不可兑换法定货币。',
+				'因系统维护、故障或不可抗力导致服务中断造成的损失，站长在法律允许范围内不承担责任。',
+			],
+		},
+		{
+			title: '协议的变更与终止',
+			paras: [
+				'本协议更新后将在本页面发布，继续使用即视为接受更新后的协议。',
+				'你可随时停止使用本应用；如需删除账号及关联数据，请通过留言板或邮箱联系站长处理。',
+			],
+		},
+	],
+}
+
+const PRIVACY_DOC: Doc = {
+	title: '隐私政策',
+	version: 'v1.0',
+	updated: '2026-11-10',
+	lead: '「江夏的博客」（以下简称"本应用"）非常重视你的个人信息。本政策说明本应用收集哪些信息、如何使用与保护这些信息，以及你享有的权利。',
+	sections: [
+		{
+			title: '我们收集的信息',
+			paras: [
+				'账号信息：注册时收集用户名与密码（密码仅以加密形式存储，站长无法查看明文）。',
+				'登录凭证：登录成功后签发的访问令牌（Token），用于维持登录状态。',
+				'头像与昵称：使用微信登录时，经你授权获取微信头像与昵称。',
+				'操作数据：评论、留言、收藏、签到、抽奖等记录，用于提供对应功能。',
+				'验证码：登录过程中的图形验证码，用于人机校验。',
+			],
+		},
+		{
+			title: '信息的使用',
+			paras: [
+				'仅用于实现账号识别、内容展示、互动功能与站点安全，不用于任何形式的商业出售。',
+				'不会向任何无关第三方提供、共享或转让你的个人信息，法律法规要求的除外。',
+			],
+		},
+		{
+			title: '第三方服务',
+			paras: [
+				'微信登录：由腾讯提供身份识别能力，相关信息的收集与处理遵循微信的隐私政策。',
+				'数据统计：站点接入的第三方访问统计服务仅收集匿名化的访问数据，不关联你的身份。',
+			],
+		},
+		{
+			title: '信息的存储与保护',
+			paras: [
+				'你的信息存储于站点服务器，采取传输加密、访问控制、密文存储等措施防止未授权访问。',
+				'仅站长及必要的运维方式可以接触后台数据，接触行为以提供服务为限。',
+				'你停止使用后，账号关联数据的保留与删除依照法律法规要求执行。',
+			],
+		},
+		{
+			title: '你的权利',
+			paras: [
+				'你可以在「我的 - 编辑资料」中查看与修改头像、昵称等个人信息。',
+				'你可以删除自己发布的评论与留言。',
+				'如需导出或彻底删除账号数据，可通过留言板或邮箱联系站长，将在合理期限内处理并答复。',
+			],
+		},
+		{
+			title: '未成年人保护',
+			paras: [
+				'本应用面向一般用户。若你是未满 14 周岁的未成年人，请在监护人陪同下阅读本政策，并在征得监护人同意后使用本应用。',
+			],
+		},
+	],
+}
+
+/** 当前文档：?type=user|privacy，缺省用户协议 */
+const docType = ref<'user' | 'privacy'>('user')
+const doc = computed((): Doc => (docType.value === 'privacy' ? PRIVACY_DOC : USER_DOC))
+
+onLoad((q) => {
+	const query = (q ?? {}) as Record<string, string>
+	if (query.type === 'privacy') {
+		docType.value = 'privacy'
+		uni.setNavigationBarTitle({ title: '隐私政策' })
+	}
+})
+</script>
+
+<style>
+.meta {
+	font-size: 11px;
+	color: var(--x-ink-3, #9a948a);
+	margin-bottom: 6px;
+}
+
+.lead {
+	font-size: 13px;
+	line-height: 1.7;
+	color: var(--x-ink-2, #5c574f);
+	margin-bottom: 14px;
+}
+
+.sec {
+	padding: 14px;
+}
+
+.sec-t {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--x-ink, #1c1a17);
+	margin-bottom: 8px;
+}
+
+.sec-p {
+	font-size: 13px;
+	line-height: 1.7;
+	color: var(--x-ink-2, #5c574f);
+	margin-bottom: 6px;
+}
+
+.contact {
+	font-size: 12px;
+	color: var(--x-ink-3, #9a948a);
+	margin: 4px 0 24px;
+}
+</style>

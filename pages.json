@@ -135,12 +135,19 @@
 					}
 				},
 				{
-					"path": "write/index",
+				"path": "write/index",
+				"style": {
+					"navigationBarTitleText": "写文章",
+					"disableScroll": true
+				}
+			},
+			{
+					"path": "agreement/index",
 					"style": {
-						"navigationBarTitleText": "写文章",
+						"navigationBarTitleText": "用户协议",
 						"disableScroll": true
 					}
-				}
+			}
 			]
 		},
 		{

@@ -1360,13 +1360,10 @@ async function onTipPaid(amount: number): Promise<void> {
 .reply {
 	flex-direction: row;
 	margin-top: 10px;
-	/* 回复嵌套小卡：与评论气泡同材质的玻璃卡，替代原分隔线裸排 */
+	/* 回复嵌套小卡：bg-2 实底内嵌，与玻璃评论气泡拉开层次（玻璃套玻璃会糊） */
 	padding: 8px 10px;
-	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
+	background-color: var(--x-bg-2, #ebe6df);
 	border-radius: 12px;
-	border-width: 1px;
-	border-style: solid;
-	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
 }
 
 .rav {

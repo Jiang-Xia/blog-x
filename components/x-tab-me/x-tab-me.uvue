@@ -80,14 +80,14 @@
 					</view>
 					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
-				<view v-if="!loggedIn" class="mrow" @click="goLogin">
-					<view class="m-ico"><x-icon name="message" :size="16" :color="tokens.ink"></x-icon></view>
-					<text class="m-label">登录 / 绑定</text>
-					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
-				</view>
-				<view :class="loggedIn ? 'mrow' : 'mrow last'" @click="goNotify">
+				<view class="mrow" @click="goNotify">
 					<view class="m-ico"><x-icon name="bell" :size="16" :color="tokens.ink"></x-icon></view>
 					<text class="m-label">站内通知</text>
+					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
+				</view>
+				<view v-if="!loggedIn" class="mrow last" @click="goLogin">
+					<view class="m-ico"><x-icon name="message" :size="16" :color="tokens.ink"></x-icon></view>
+					<text class="m-label">登录 / 绑定</text>
 					<x-icon name="chevron-right" :size="16" :color="tokens.ink3"></x-icon>
 				</view>
 				<view v-if="loggedIn" class="mrow last" @click="onLogout">
@@ -338,6 +338,7 @@ function goNotify(): void {
 	width: 72px;
 	height: 72px;
 	border-radius: 36px;
+	/* 未登录默认头像 = warm-tint 圆底 + avatarIcon 图标（tokens.ink 色）；此底色即默认底 */
 	background-color: var(--x-warm-tint, #ffe8d6);
 	border-width: 3px;
 	border-style: solid;

@@ -1,110 +1,124 @@
 <template>
-	<!-- 登录：账号密码 + 微信一键；成功后由 Pinia 统一写态 -->
+	<!-- 登录：成熟小程序登录方案——原生导航栏 + 品牌区 + 账号表单 + 协议弹框确认 + 微信一键（MP 端） -->
 	<view class="x-page" :style="themeCssVars">
-		<x-navbar title="登录"></x-navbar>
 		<view class="x-page-inner">
-		<view class="brand">
-			<view class="brand-em">
+			<!-- 品牌区：logo + 欢迎语，无装饰容器 -->
+			<view class="hero">
 				<image
-					class="brand-logo"
+					class="logo"
 					src="/static/favicon_io/android-chrome-192x192.png"
 					mode="aspectFit"
 				></image>
+				<text class="hi">欢迎回来</text>
+				<text class="hi-sub">登录「江夏的博客」，继续你的记录</text>
 			</view>
-			<text class="brand-name">江夏的博客</text>
-			<text class="brand-sub">账号登录或微信一键登录</text>
-		</view>
 
-		<view class="login-card">
-		<view class="mode-row">
-			<view
-				class="mode-chip"
-				:class="mode == 'account' ? 'mode-on' : ''"
-				@click="setModeAccount"
-			>
-				<text class="mode-t" :class="mode == 'account' ? 'mode-t-on' : ''">账号登录</text>
-			</view>
-			<view
-				class="mode-chip"
-				:class="mode == 'weixin' ? 'mode-on' : ''"
-				@click="setModeWeixin"
-			>
-				<text class="mode-t" :class="mode == 'weixin' ? 'mode-t-on' : ''">微信登录</text>
-			</view>
-		</view>
+			<!-- 登录主卡：玻璃材质包住切换 + 表单 + 协议勾选；高度固定，切换不跳动 -->
+			<view class="login-card">
+				<!-- 登录方式切换：两枚居中胶囊（原版样式） -->
+				<view class="mode-row">
+					<view
+						class="mode-chip"
+						:class="mode == 'account' ? 'mode-on' : ''"
+						@click="setModeAccount"
+					>
+						<text class="mode-t" :class="mode == 'account' ? 'mode-t-on' : ''">账号登录</text>
+					</view>
+					<view
+						class="mode-chip"
+						:class="mode == 'weixin' ? 'mode-on' : ''"
+						@click="setModeWeixin"
+					>
+						<text class="mode-t" :class="mode == 'weixin' ? 'mode-t-on' : ''">微信登录</text>
+					</view>
+				</view>
 
-		<view v-if="mode == 'account'" class="form">
-			<input
-				class="field"
-				type="text"
-				v-model="username"
-				placeholder="用户名 / 手机号"
-				placeholder-class="ph"
-			/>
-			<input
-				class="field"
-				type="password"
-				password="true"
-				v-model="password"
-				placeholder="密码"
-				placeholder-class="ph"
-			/>
-			<view class="captcha-row">
-				<input
-					class="field captcha-input"
-					type="text"
-					v-model="authCode"
-					placeholder="验证码"
-					placeholder-class="ph"
-					@confirm="onAccountLogin"
-				/>
-				<view class="captcha-box" @click="loadCaptcha">
-					<image
-						v-if="captchaSrc.length > 0"
-						class="captcha-img"
-						:src="captchaSrc"
-						mode="aspectFit"
-					></image>
-					<text v-else class="captcha-tip">点此获取</text>
+				<!-- 中部主体：登录方式内容 + 协议行作为一组整体垂直居中，协议始终贴近登录按钮 -->
+				<view class="card-body">
+					<view v-if="mode == 'account'" class="form">
+						<input
+							class="field"
+							type="text"
+							v-model="username"
+							placeholder="用户名 / 手机号"
+							placeholder-class="ph"
+						/>
+						<input
+							class="field"
+							type="password"
+							password="true"
+							v-model="password"
+							placeholder="密码"
+							placeholder-class="ph"
+						/>
+						<view class="captcha-row">
+							<input
+								class="field captcha-input"
+								type="text"
+								v-model="authCode"
+								placeholder="验证码"
+								placeholder-class="ph"
+								@confirm="onAccountLogin"
+							/>
+							<view class="captcha-box" @click="loadCaptcha">
+								<image
+									v-if="captchaSrc.length > 0"
+									class="captcha-img"
+									:src="captchaSrc"
+									mode="aspectFit"
+								></image>
+								<text v-else class="captcha-tip">点此获取</text>
+							</view>
+						</view>
+						<view
+							class="submit-btn"
+							:class="submitting ? 'btn-disabled' : ''"
+							@click="onAccountLogin"
+						>
+							<text class="submit-t">{{ submitting ? '登录中…' : '登录' }}</text>
+						</view>
+					</view>
+
+					<!-- 微信一键登录：真实微信 logo + 文字，非微信端给提示 -->
+					<view v-else class="wx-wrap">
+						<view
+							class="wx-btn"
+							:class="submitting ? 'btn-disabled' : ''"
+							@click="onWxLogin"
+						>
+							<image
+								class="wx-logo"
+								src="/static/images/wechat.png"
+								mode="aspectFit"
+							></image>
+							<text class="wx-text">{{ submitting ? '登录中…' : '微信一键登录' }}</text>
+						</view>
+						<!-- #ifndef MP-WEIXIN -->
+						<text class="wx-hint">微信一键登录需在微信小程序端使用；其它端请用账号登录</text>
+						<!-- #endif -->
+					</view>
+
+					<!-- 协议勾选：紧跟登录按钮下方；未勾选时点登录会弹框「继续登录」，确认后自动勾选 -->
+					<view class="agreement">
+						<view class="ag-box" :class="agreed ? 'ag-on' : ''" @click="toggleAgreed">
+							<x-icon v-if="agreed" name="check" :size="12" color="#ffffff"></x-icon>
+						</view>
+						<text class="ag-t">已阅读并同意</text>
+						<text class="ag-link" @click="goAgreement('user')">用户协议</text>
+						<text class="ag-t">与</text>
+						<text class="ag-link" @click="goAgreement('privacy')">隐私政策</text>
+					</view>
 				</view>
 			</view>
-			<view
-				class="submit-btn"
-				:class="submitting ? 'btn-disabled' : ''"
-				@click="onAccountLogin"
-			>
-				<text class="submit-t">{{ submitting ? '登录中…' : '登录' }}</text>
-			</view>
-		</view>
-
-		<view v-else class="wx-wrap">
-			<view
-				class="wx-btn"
-				:class="submitting ? 'btn-disabled' : ''"
-				@click="onWxLogin"
-			>
-				<text class="wx-text">{{ submitting ? '登录中…' : '微信一键登录' }}</text>
-			</view>
-			<!-- #ifndef MP-WEIXIN -->
-			<text class="wx-hint">微信一键登录需在微信小程序端使用；其它端请用账号登录</text>
-			<!-- #endif -->
-		</view>
-		</view>
-
-		<view class="unlock">
-			<text class="x-chip">评论回复</text>
-			<text class="x-chip x-chip-peach">签到抽奖</text>
-			<text class="x-chip x-chip-lav">收藏同步</text>
-		</view>
-		<text class="proto">登录即表示同意用户协议与隐私政策</text>
 		</view>
 	</view>
 </template>
 
 <script setup lang="ts">
 /**
- * 登录页：账号密码（验证码）+ 微信一键登录
+ * 登录页：账号密码（图形验证码）+ 微信一键登录（MP-WEIXIN）
  * 数据来源：GET /user/authCode、POST /user/login、微信 miniprogram；态写入 Pinia useUserStore
+ * 协议：登录前须勾选《用户协议》《隐私政策》（真实文档页 pages-blog/agreement）
  */
 import { storeToRefs } from 'pinia'
 import { fetchAuthCode } from '../../api/modules/auth'
@@ -127,11 +141,42 @@ const mode = ref('weixin')
 // #ifndef MP-WEIXIN
 const mode = ref('account')
 // #endif
+
 const username = ref('')
 const password = ref('')
 const authCode = ref('')
 const captchaId = ref('')
 const captchaSrc = ref('')
+/** 协议是否已勾选（未勾选时点登录直接弹框确认，确认后自动勾选并继续登录） */
+const agreed = ref(false)
+
+/**
+ * 协议确认弹框：未勾选时点登录直接弹框，确认后自动勾选并继续登录
+ * 无需用户再手动点击勾选框
+ */
+function ensureAgreedThenContinue(continueLogin: () => void): void {
+	if (agreed.value) {
+		continueLogin()
+		return
+	}
+	uni.showModal({
+		title: '服务协议及隐私保护',
+		content: '为更好地保障您的合法权益，请阅读并同意以下协议《用户协议》《隐私政策》',
+		// 微信小程序 confirmText/cancelText 最多 4 个字符，超长会导致弹框直接 fail（表现为点击无反应）
+		confirmText: '继续登录',
+		cancelText: '不同意',
+		success: (res) => {
+			if (res.confirm) {
+				agreed.value = true
+				continueLogin()
+			}
+		},
+		fail: () => {
+			// 弹框异常时退回 Toast 提示，保证点击始终有反馈
+			showXToast('alert-triangle', '请先同意协议', '勾选「已阅读并同意」后再登录')
+		},
+	})
+}
 
 /**
  * 切换到账号登录并刷新验证码
@@ -146,6 +191,22 @@ function setModeAccount(): void {
  */
 function setModeWeixin(): void {
 	mode.value = 'weixin'
+}
+
+/**
+ * 切换协议勾选
+ */
+function toggleAgreed(): void {
+	agreed.value = !agreed.value
+}
+
+/**
+ * 查看协议文档：?type=user|privacy 落地到分包真实文档页
+ */
+function goAgreement(type: 'user' | 'privacy'): void {
+	uni.navigateTo({
+		url: '/pages-blog/agreement/index?type=' + type,
+	})
 }
 
 /**
@@ -200,9 +261,18 @@ function leaveLogin(toast: boolean): void {
 }
 
 /**
- * 账号密码登录
+ * 账号密码登录入口：先过协议确认弹框
  */
-async function onAccountLogin(): Promise<void> {
+function onAccountLogin(): void {
+	ensureAgreedThenContinue(() => {
+		doAccountLogin()
+	})
+}
+
+/**
+ * 账号密码登录（协议已确认后执行）
+ */
+async function doAccountLogin(): Promise<void> {
 	if (userStore.submitting) return
 	const u = username.value.trim()
 	const p = password.value
@@ -232,9 +302,18 @@ async function onAccountLogin(): Promise<void> {
 }
 
 /**
- * 微信一键登录
+ * 微信一键登录入口（仅 MP-WEIXIN 模板渲染入口）：先过协议确认弹框
  */
-async function onWxLogin(): Promise<void> {
+function onWxLogin(): void {
+	ensureAgreedThenContinue(() => {
+		doWxLogin()
+	})
+}
+
+/**
+ * 微信一键登录（协议已确认后执行）
+ */
+async function doWxLogin(): Promise<void> {
 	if (userStore.submitting) return
 	try {
 		const ok = await userStore.loginByWeixin()
@@ -262,55 +341,52 @@ onShow(() => {
 </script>
 
 <style>
-.brand {
+/* 品牌区：纯元素裸排，无卡片无装饰 */
+.hero {
 	align-items: center;
-	padding: 36px 0 20px;
+	padding: 56px 0 40px;
 }
 
-.brand-em {
-	/* 玻璃圆钮托底 logo：与详情页返回圆钮同材质，登录页焦点更聚 */
-	width: 88px;
-	height: 88px;
-	border-radius: 44px;
-	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
-	border-width: 1px;
-	border-style: solid;
-	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
-	backdrop-filter: blur(16px);
-	margin-bottom: 12px;
-	align-items: center;
-	justify-content: center;
+.logo {
+	width: 72px;
+	height: 72px;
+	border-radius: 16px;
+	margin-bottom: 16px;
 }
 
-.brand-logo {
-	width: 56px;
-	height: 56px;
-}
-
-.brand-name {
-	font-size: 20px;
+.hi {
+	font-size: 22px;
 	font-weight: 700;
 	color: var(--x-ink, #1c1a17);
-	margin-bottom: 6px;
+	margin-bottom: 8px;
 }
 
-.brand-sub {
-	font-size: 12px;
+.hi-sub {
+	font-size: 13px;
 	color: var(--x-ink-3, #9a948a);
 }
 
+/* 登录主卡：玻璃材质，包住登录切换 + 表单 + 提交；高度固定，切换模式不跳动
+   切换胶囊钉在顶部，主体（登录方式内容 + 协议行）作为一组在剩余空间垂直居中 */
 .login-card {
-	/* 登录主卡：玻璃材质，容纳登录切换 + 表单 + 提交，页面不再裸排 */
 	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 22px;
-	padding: 18px 16px 16px;
-	margin-bottom: 18px;
+	padding: 18px 16px 14px;
+	/* 账号表单为最高内容形态，按其撑开量定死高度 */
+	height: 356px;
 	border-width: 1px;
 	border-style: solid;
-	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.72));
 	backdrop-filter: blur(16px);
 }
 
+/* 主体容器：tab 与卡片底之间的剩余空间内垂直居中，协议行随登录按钮一起居中 */
+.card-body {
+	flex: 1;
+	justify-content: center;
+}
+
+/* 登录方式切换：两枚居中胶囊，选中态 ink 反色 */
 .mode-row {
 	flex-direction: row;
 	justify-content: center;
@@ -338,20 +414,19 @@ onShow(() => {
 	color: var(--x-on-ink, #ffffff);
 }
 
+/* 表单：普通块，随 .card-body 整体居中 */
 .form {
-	width: 100%;
-	margin-bottom: 0;
+	margin-bottom: 2px;
 }
 
 .field {
-	height: 44px;
-	/* 输入框用次级实底：与玻璃主卡分层，避免玻璃叠玻璃糊在一起 */
+	height: 48px;
 	background-color: var(--x-bg-2, #ebe6df);
 	border-radius: 14px;
-	padding: 0 14px;
+	padding: 0 16px;
 	font-size: 14px;
 	color: var(--x-ink, #1c1a17);
-	margin-bottom: 10px;
+	margin-bottom: 12px;
 }
 
 .ph {
@@ -362,7 +437,7 @@ onShow(() => {
 .captcha-row {
 	flex-direction: row;
 	align-items: center;
-	margin-bottom: 10px;
+	margin-bottom: 12px;
 }
 
 .captcha-input {
@@ -373,7 +448,7 @@ onShow(() => {
 
 .captcha-box {
 	width: 110px;
-	height: 44px;
+	height: 48px;
 	border-radius: 14px;
 	background-color: var(--x-bg-2, #ebe6df);
 	align-items: center;
@@ -383,7 +458,7 @@ onShow(() => {
 
 .captcha-img {
 	width: 110px;
-	height: 44px;
+	height: 48px;
 }
 
 .captcha-tip {
@@ -394,36 +469,91 @@ onShow(() => {
 .submit-btn {
 	background-color: var(--x-accent, #3db89a);
 	border-radius: 999px;
-	padding: 13px;
+	padding: 14px;
 	align-items: center;
 	margin-top: 6px;
 }
 
 .submit-t {
-	font-size: 14px;
+	font-size: 15px;
 	font-weight: 600;
 	color: var(--x-on-ink, #ffffff);
 }
 
-.wx-wrap {
-	align-items: center;
-	margin-bottom: 0;
+.btn-disabled {
+	opacity: 0.55;
 }
 
+/* 协议勾选行：勾选钮单独响应点击，链接文本单独跳转，互不干扰 */
+.agreement {
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	margin-top: 14px;
+}
+
+.ag-box {
+	width: 16px;
+	height: 16px;
+	border-radius: 8px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-ink-3, #9a948a);
+	align-items: center;
+	justify-content: center;
+	margin-right: 6px;
+}
+
+.ag-on {
+	background-color: var(--x-accent, #3db89a);
+	border-color: var(--x-accent, #3db89a);
+}
+
+.ag-t {
+	font-size: 11px;
+	color: var(--x-ink-3, #9a948a);
+	line-height: 1.6;
+}
+
+.ag-link {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--x-accent, #3db89a);
+	padding: 0 2px;
+	line-height: 1.6;
+}
+
+.wx-wrap {
+	align-items: center;
+	/* 普通块随 .card-body 整体居中 */
+	margin-bottom: 2px;
+}
+
+/* 微信一键登录：x-chip-dark 同款黑（ink 底 + bg 字，跟主题），图标自带绿色圆底 */
 .wx-btn {
-	background-color: #07c160;
+	flex-direction: row;
+	align-items: center;
+	justify-content: center;
+	background-color: var(--x-ink, #1c1a17);
 	border-radius: 999px;
 	padding: 13px;
-	align-items: center;
-	align-self: center;
 	width: 260px;
-	margin-bottom: 10px;
+	/* 卡内整体已垂直居中，此处再给一段上边距让一键登录按钮落在中线以下 */
+	margin-top: 48px;
+}
+
+.wx-logo {
+	width: 22px;
+	height: 22px;
+	margin-right: 8px;
 }
 
 .wx-text {
 	font-size: 14px;
 	font-weight: 600;
-	color: var(--x-on-ink, #ffffff);
+	/* ink 底上用 bg 字（同 x-chip-dark）：深色模式 ink 变浅，白字会失去对比 */
+	color: var(--x-bg, #f4f1ec);
 }
 
 .wx-hint {
@@ -431,24 +561,7 @@ onShow(() => {
 	color: var(--x-ink-3, #9a948a);
 	text-align: center;
 	line-height: 1.5;
+	margin-top: 10px;
 	padding: 0 24px;
-}
-
-.btn-disabled {
-	opacity: 0.55;
-}
-
-.unlock {
-	flex-direction: row;
-	flex-wrap: wrap;
-	justify-content: center;
-	margin-bottom: 24px;
-}
-
-.proto {
-	font-size: 11px;
-	color: var(--x-ink-3, #9a948a);
-	text-align: center;
-	line-height: 1.5;
 }
 </style>

@@ -559,7 +559,8 @@ onShow(() => {
 	margin-top: 8px;
 	margin-left: 8px;
 	padding: 8px 10px;
-	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
+	/* 与详情页回复小卡统一：bg-2 实底内嵌，和玻璃留言卡拉开层次 */
+	background-color: var(--x-bg-2, #ebe6df);
 	border-radius: 10px;
 }
 
