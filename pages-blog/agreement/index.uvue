@@ -154,7 +154,8 @@ const docType = ref<'user' | 'privacy'>('user')
 const doc = computed((): Doc => (docType.value === 'privacy' ? PRIVACY_DOC : USER_DOC))
 
 onLoad((q) => {
-	const query = (q ?? {}) as Record<string, string>
+	// 不用 ?? / ?. ：uni-app x 编译 MP 时不转译该语法，微信开发者工具上传会报 Unexpected token
+	const query = (q != null ? q : {}) as Record<string, string>
 	if (query.type === 'privacy') {
 		docType.value = 'privacy'
 		uni.setNavigationBarTitle({ title: '隐私政策' })
