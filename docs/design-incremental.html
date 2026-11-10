@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>blog-x · 原风格渐进优化路线（静态稿）</title>
+<style>
+  /* 说明：本页是浏览器静态预览，:root / box-shadow 仅用于还原现有毛玻璃底栏与手机框。
+     提案本身只用 uvue 支持的属性：font-size / font-weight / line-height / margin / padding / color。 */
+  :root {
+    --x-bg: #f4f1ec;
+    --x-bg-2: #ebe6df;
+    --x-surface: #ffffff;
+    --x-ink: #1c1a17;
+    --x-ink-2: #5c574f;
+    --x-ink-3: #9a948a;
+    --x-line: rgba(28, 26, 23, 0.06);
+    --x-accent: #3db89a;
+    --x-accent-deep: #2a8f76;
+    --x-accent-tint: rgba(61, 184, 154, 0.12);
+    --x-warm-tint: #ffe8d6;
+    --x-peach: #f0a07a;
+    --x-lavender: #a99ad4;
+    --x-danger: #e8897a;
+    --x-tab-bar-bg: rgba(255, 255, 255, 0.82);
+    --x-tab-bar-border: rgba(255, 255, 255, 0.7);
+    --page-bg: #ece9e3;
+    --doc-ink: #26241f;
+    --doc-mute: #7d776d;
+    --doc-line: #dcd6cc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 36px 64px;
+    background: var(--page-bg);
+    color: var(--doc-ink);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 21px; font-weight: 600; margin: 0 0 8px; letter-spacing: .2px; }
+  .lede { font-size: 13px; line-height: 1.85; color: var(--doc-mute); max-width: 900px; margin: 0 0 18px; }
+  .lede b { color: var(--doc-ink); font-weight: 600; }
+  .toolbar {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 18px;
+    padding: 12px 0; margin-bottom: 22px;
+    border-top: 1px solid var(--doc-line); border-bottom: 1px solid var(--doc-line);
+    font-size: 12px; color: var(--doc-mute);
+  }
+  .tgroup { display: flex; align-items: center; gap: 7px; }
+  .tgroup > span { margin-right: 3px; }
+  .dot { width: 17px; height: 17px; border-radius: 50%; border: 1px solid rgba(0,0,0,.14); cursor: pointer; padding: 0; }
+  .dot.on { outline: 2px solid var(--doc-ink); outline-offset: 2px; }
+  .seg { display: flex; border: 1px solid var(--doc-line); border-radius: 4px; overflow: hidden; }
+  .seg button {
+    border: 0; background: transparent; padding: 5px 12px; cursor: pointer;
+    font-size: 12px; color: var(--doc-mute); font-family: inherit;
+  }
+  .seg button.on { background: var(--doc-ink); color: #fff; }
+
+  /* 2 × 2 网格：一行两屏，方便左右对照相邻两步 */
+  .row {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 34px 28px; align-items: start;
+  }
+  .step { min-width: 0; }
+  .step-head { min-height: 128px; padding: 0 2px 14px; }
+  .step-n { font-size: 10px; letter-spacing: 1.4px; color: var(--doc-mute); text-transform: uppercase; }
+  .step-t { font-size: 15px; font-weight: 600; margin: 5px 0 6px; }
+  .step-d { font-size: 12px; line-height: 1.75; color: var(--doc-mute); }
+  .step-d em { font-style: normal; color: var(--doc-ink); }
+  .step-diff {
+    margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--doc-line);
+    font-size: 11px; line-height: 1.6; color: var(--x-accent-deep);
+    font-family: Consolas, Menlo, monospace;
+  }
+
+  .phone {
+    width: 250px; height: 660px; position: relative; overflow: hidden;
+    background: var(--x-bg); border: 1px solid var(--doc-line); border-radius: 14px;
+    /* 等比放大 2 倍：视觉 500×1320；加高是为了让两张文章卡完整可见（差异主要在这里） */
+    zoom: 2;
+  }
+  /* 窄面板仍保持「一行两个」，由 JS 按列宽自适应缩放比例 */
+  @media (max-width: 560px) {
+    .row { grid-template-columns: 1fr; justify-items: center; }
+  }
+  .scroll { height: 100%; overflow-y: auto; padding: 46px 14px 40px; }
+  .scroll::-webkit-scrollbar { width: 0; }
+  .statusbar {
+    position: absolute; top: 0; left: 0; right: 0; height: 34px; z-index: 3;
+    display: flex; align-items: center; justify-content: space-between; padding: 0 14px;
+    font-size: 10px; font-weight: 600; color: var(--x-ink-2); background: var(--x-bg);
+  }
+  .tabbar {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 54px; z-index: 3;
+    display: flex; align-items: center; justify-content: space-around;
+    background: var(--x-tab-bar-bg); border-top: 1px solid var(--x-tab-bar-border);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9px; color: var(--x-ink-3); }
+  .tab.on { color: var(--x-accent-deep); font-weight: 600; }
+  .tab i { display: block; width: 15px; height: 15px; border: 1.5px solid currentColor; border-radius: 4px; }
+  .tab.on i { background: currentColor; }
+
+  .title { font-size: 22px; font-weight: 700; color: var(--x-ink); margin: 0 0 12px; }
+  .search {
+    display: flex; align-items: center; border-radius: 999px; background: var(--x-surface);
+    padding: 10px 12px 10px 14px; margin-bottom: 12px; font-size: 13px; color: var(--x-ink-3);
+  }
+  .search svg { width: 13px; height: 13px; margin-right: 8px; flex: none; }
+  .bell { margin-left: auto; width: 13px; height: 13px; position: relative; }
+  .bell b {
+    position: absolute; top: -5px; right: -6px; min-width: 13px; height: 13px; line-height: 13px;
+    border-radius: 7px; background: var(--x-danger); color: #fff; font-size: 8px; text-align: center; font-weight: 600;
+  }
+  .card {
+    background: var(--x-surface); border-radius: 22px; padding: 14px; margin-bottom: 12px;
+  }
+  .today { display: flex; align-items: center; justify-content: space-between; background: var(--x-accent-tint); }
+  .today-label { font-size: 12px; color: var(--x-ink-2); margin-bottom: 4px; }
+  .today-title { font-size: 16px; font-weight: 700; color: var(--x-ink); margin-bottom: 8px; line-height: 1.35; }
+  .chiprow { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-size: 11px; padding: 5px 10px; border-radius: 999px; font-weight: 500;
+    background: var(--x-accent-tint); color: var(--x-accent-deep); white-space: nowrap;
+  }
+  .chip.lav { background: var(--x-bg-2); color: var(--x-lavender); }
+  .chip.dark { background: var(--x-ink); color: var(--x-bg); display: flex; align-items: center; gap: 4px; }
+  .chip.plain { background: var(--x-bg-2); color: var(--x-ink-2); display: flex; align-items: center; gap: 4px; }
+  .chip svg { width: 11px; height: 11px; }
+  .quick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .cats { display: flex; gap: 6px; overflow: hidden; margin-bottom: 8px; }
+  .cats .chip.sel { background: var(--x-ink); color: var(--x-bg); }
+  .sec { display: flex; align-items: center; justify-content: space-between; margin: 4px 2px 10px; }
+  .sec-t { font-size: 15px; font-weight: 700; color: var(--x-ink); }
+  .sec-more { font-size: 12px; color: var(--x-accent); font-weight: 500; }
+  .art { display: flex; align-items: center; }
+  .art-body { flex: 1; min-width: 0; margin-right: 10px; }
+  .art-meta { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--x-ink-3); margin-bottom: 4px; }
+  .art-title {
+    font-size: 14px; font-weight: 650; color: var(--x-ink); line-height: 1.35; margin-bottom: 5px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .art-stat { display: flex; align-items: center; gap: 9px; font-size: 11px; color: var(--x-ink-2); }
+  .art-stat span { display: flex; align-items: center; gap: 2px; }
+  .art-stat svg { width: 11px; height: 11px; }
+  .cover { width: 68px; height: 68px; border-radius: 16px; flex: none; background: var(--x-warm-tint); }
+  .cover.b { background: var(--x-accent-tint); }
+  .ring {
+    width: 62px; height: 62px; border-radius: 31px; flex: none;
+    background: var(--x-accent-tint); border: 6px solid var(--x-accent);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .ring-pct { font-size: 14px; font-weight: 700; color: var(--x-ink); }
+  .ring-sub { font-size: 9px; color: var(--x-ink-3); }
+
+  /* ===== 四步：只用排版属性叠加，零新增元素 / 零描边 / 零圆角变化 / 零阴影 ===== */
+  /* Step 1 只把字排顺 */
+  .s1 .title { font-size: 24px; font-weight: 600; }
+  .s1 .today-label { font-size: 11px; }
+  .s1 .today-title { font-size: 17px; font-weight: 600; line-height: 1.4; }
+  .s1 .sec-t { font-size: 16px; font-weight: 600; }
+  .s1 .art-title { font-size: 15px; font-weight: 600; line-height: 1.45; }
+  .s1 .ring-pct { font-size: 15px; }
+  /* Step 2 只把留白理顺（含 Step 1 全部） */
+  .s2 .card { padding: 16px; margin-bottom: 14px; }
+  .s2 .title { margin-bottom: 14px; }
+  .s2 .sec { margin: 8px 2px 12px; }
+  .s2 .quick { margin-bottom: 14px; }
+  .s2 .art-title { margin-bottom: 7px; line-height: 1.5; }
+  /* Step 3 只把已有信息的主次排清（含 Step 1+2 全部） */
+  .s3 .art-cat { color: var(--x-accent-deep); font-weight: 600; }
+  .s3 .art-num { font-size: 12px; font-weight: 600; color: var(--x-ink); }
+  .s3 .art-time { color: var(--x-ink-3); }
+
+  .notes { margin-top: 34px; border-top: 1px solid var(--doc-line); padding-top: 20px; }
+  .notes h2 { font-size: 15px; font-weight: 600; margin: 0 0 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--doc-line); vertical-align: top; line-height: 1.7; }
+  th { font-weight: 600; color: var(--doc-mute); background: rgba(255,255,255,.36); }
+  td code { font-family: Consolas, Menlo, monospace; font-size: 11px; color: var(--x-accent-deep); }
+  .foot { margin-top: 18px; font-size: 12px; line-height: 1.9; color: var(--doc-mute); }
+  .foot b { color: var(--doc-ink); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>沿原风格慢慢优化 · 四步渐进线</h1>
+  <p class="lede">
+    上一版的问题是<b>加了一堆装饰符号</b>（描边、竖条、短横、实底块、序号、墨块），那正是 AI 味。
+    这一版<b>一个元素都不加</b>：22px 圆角白卡、999px 胶囊、圆环、毛玻璃底栏、6 套配色全部原样保留，
+    只按顺序调整字重、字号、行高和留白。四步是<b>累加</b>关系，可以随时停在任意一步。
+  </p>
+
+  <div class="toolbar">
+    <div class="tgroup"><span>明暗</span>
+      <div class="seg" id="mode">
+        <button class="on" data-mode="light">浅色</button>
+        <button data-mode="dark">深色</button>
+      </div>
+    </div>
+    <div class="tgroup"><span>色系</span><span id="palettes" style="display:flex;gap:7px"></span></div>
+    <div style="margin-left:auto;font-size:11px">2×2 排列 · 整屏等比放大 2 倍便于查看 · 左右两屏可直接对照</div>
+  </div>
+
+  <div class="row" id="row"></div>
+
+  <div class="notes">
+    <h2>每一步的精确改动（属性 / 原值 → 新值 / 落点）</h2>
+    <table>
+      <tr><th style="width:70px">步骤</th><th style="width:110px">改动量</th><th>具体数值</th><th style="width:190px">落点文件</th></tr>
+      <tr>
+        <td>Step 1<br>把字排顺</td>
+        <td>7 个数值<br>0 个元素</td>
+        <td>
+          <code>.x-page-title</code> 22px/700 → 24px/600 ·
+          <code>.today-label</code> 12 → 11px ·
+          <code>.today-title</code> 16px/700 → 17px/600，line-height 1.4 ·
+          <code>.x-section-title</code> 15px/700 → 16px/600 ·
+          <code>.article-title</code> 14px/650 → 15px/600，line-height 1.35 → 1.45 ·
+          <code>.ring-pct</code> 14 → 15px
+        </td>
+        <td><code>styles/x-base.css</code><br><code>x-tab-home.uvue</code><br><code>x-article-card.uvue</code></td>
+      </tr>
+      <tr>
+        <td>Step 2<br>留白呼吸</td>
+        <td>5 个数值<br>0 个元素</td>
+        <td>
+          在 Step 1 上叠加：<code>.x-card</code> padding 14 → 16px、margin-bottom 12 → 14px ·
+          <code>.x-page-title</code> margin-bottom 12 → 14px ·
+          <code>.x-section-head</code> margin 4/2/10 → 8/2/12px ·
+          <code>.chip-gap</code> 12 → 14px ·
+          <code>.article-title</code> margin-bottom 4 → 7px、line-height 1.5
+        </td>
+        <td>同上 3 个文件<br><code>x-card</code> 会惠及全站白卡</td>
+      </tr>
+      <tr>
+        <td>Step 3<br>信息主次</td>
+        <td>3 个数值<br>0 个元素</td>
+        <td>
+          在 Step 1+2 上叠加，<b>不新增任何文案或字段</b>，只用已有的 categoryName / likeCount / timeLabel：
+          分类名 11px → 11px + <code>--x-accent-deep</code> + 600 字重；点赞评论数字 11 → 12px + 600 字重 + <code>--x-ink</code>；时间保持 ink-3 弱化
+        </td>
+        <td><code>x-article-card.uvue</code><br>仅此 1 个文件</td>
+      </tr>
+    </table>
+    <div class="foot">
+      <b>共同约束：</b>全部改动只用 <code>font-size / font-weight / line-height / margin / padding / color</code>，
+      零新增节点、零描边、零圆角变化、零阴影、零渐变、零动画，uvue 真机全支持；不碰主题机制，6 套色系与明暗自动跟随。<br>
+      <b>预览稿实现差异：</b>本页为了让四栏共用一份 DOM 用了后代选择器、单参数 <code>var()</code> 和 <code>:root</code>，
+      <b>这些只是浏览器稿的写法</b>；真机落地会写成单 class 选择器 + 双参数 <code>var(--x-xxx, fallback)</code>，颜色由页面根注入，不会照搬。<br>
+      <b>怎么推进：</b>你说「停在 Step N」或「先落 Step 1」，我再动代码，一次只走一步，每步都能单独撤回。
+      <b>本稿未修改任何产品样式代码</b>，工作区当前仍是你已提交的 <code>2758026</code>（原版 + bug 修复）。
+    </div>
+  </div>
+</div>
+
+<script>
+var PALETTES = [
+  { id:'mint',    n:'青苔', c:'#3db89a', deep:'#2a8f76', tint:'rgba(61,184,154,.12)',  darkC:'#5ecfb0', darkDeep:'#3db89a', darkTint:'rgba(94,207,176,.16)' },
+  { id:'haze',    n:'雾蓝', c:'#6f8fad', deep:'#557491', tint:'rgba(111,143,173,.14)', darkC:'#8aadc8', darkDeep:'#6f8fad', darkTint:'rgba(138,173,200,.16)' },
+  { id:'blush',   n:'胭脂', c:'#c4908a', deep:'#a6726c', tint:'rgba(196,144,138,.14)', darkC:'#d4a8a0', darkDeep:'#c4908a', darkTint:'rgba(212,168,160,.16)' },
+  { id:'oat',     n:'燕麦', c:'#b89a72', deep:'#96784f', tint:'rgba(184,154,114,.16)', darkC:'#d0b48c', darkDeep:'#b89a72', darkTint:'rgba(208,180,140,.16)' },
+  { id:'lilac',   n:'藤紫', c:'#9585b0', deep:'#766694', tint:'rgba(149,133,176,.14)', darkC:'#b0a0c8', darkDeep:'#9585b0', darkTint:'rgba(176,160,200,.16)' },
+  { id:'apricot', n:'杏橙', c:'#d4a07a', deep:'#b07e58', tint:'rgba(212,160,122,.16)', darkC:'#e0b890', darkDeep:'#d4a07a', darkTint:'rgba(224,184,144,.16)' }
+];
+var STEPS = [
+  { k:'s0', n:'STEP 0', t:'现状（原版）', d:'按 <em>2758026</em> 的真实 CSS 值还原，未作任何修饰。',
+    diff:'基准 · 标题 22/700 · 章节 15/700 · 文章标题 14/650 · 卡片 padding 14' },
+  { k:'s1', n:'STEP 1', t:'把字排顺', d:'只改 <em>字重与字号</em>：标题从生硬的 700 松到 600，主次拉开 1px。颜色和形状一律没动。',
+    diff:'↑ 标题 22/700→24/600 · 章节 15→16/600 · 文章标题 14→15/600 · 行高 1.45' },
+  { k:'s2', n:'STEP 2', t:'留白呼吸', d:'在 Step 1 上只加 <em>间距</em>：白卡 14→16px 内边距，章节上下留白放宽。仍然一个元素没加。',
+    diff:'↑ 卡片 padding 14→16 · 卡片间距 12→14 · 章节 margin 4/2/10→8/2/12' },
+  { k:'s3', n:'STEP 3', t:'信息主次', d:'在 Step 1+2 上只把文章卡<em>已有文字</em>排出主次：分类显色、数字加重、时间弱化。不新增字段。',
+    diff:'↑ 分类 → accent-deep 600 · 点赞数字 11→12/600 · 时间保持 ink-3 弱化' }
+];
+
+function ico(path) {
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + path + '</svg>';
+}
+var I = {
+  search: ico('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>'),
+  bell:   ico('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/>'),
+  spark:  ico('<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/>'),
+  pencil: ico('<path d="M4 20h4l10-10-4-4L4 16z"/><path d="M14 6l4 4"/>'),
+  heart:  ico('<path d="M20 8.5c0 4-8 9-8 9s-8-5-8-9a4 4 0 0 1 8-1 4 4 0 0 1 8 1z"/>'),
+  msg:    ico('<path d="M20 15a2 2 0 0 1-2 2H8l-4 3V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z"/>')
+};
+
+function phoneHTML(step) {
+  return '' +
+  '<div class="phone ' + step.k + '">' +
+    '<div class="statusbar"><span>9:41</span><span>·· ···</span></div>' +
+    '<div class="scroll">' +
+      '<div class="title">早上好，江夏</div>' +
+      '<div class="search">' + I.search + '<span>搜索文章、标签、作者</span>' +
+        '<span class="bell">' + I.bell + '<b>3</b></span>' +
+      '</div>' +
+      '<div class="card today">' +
+        '<div style="flex:1;min-width:0;margin-right:10px">' +
+          '<div class="today-label">今日进度</div>' +
+          '<div class="today-title">再读两篇，<br>本周目标就达成了</div>' +
+          '<div class="chiprow"><span class="chip">连续 12 天</span><span class="chip lav">3 条未读</span></div>' +
+        '</div>' +
+        '<div class="ring"><span class="ring-pct">68%</span><span class="ring-sub">任务</span></div>' +
+      '</div>' +
+      '<div class="quick">' +
+        '<span class="chip dark">' + I.spark + 'AI 助手</span>' +
+        '<span class="chip plain">今日任务 2/3</span>' +
+        '<span class="chip plain">' + I.pencil + '写文章</span>' +
+      '</div>' +
+      '<div class="cats">' +
+        '<span class="chip sel">全部</span><span class="chip plain">技术</span>' +
+        '<span class="chip plain">随笔</span><span class="chip plain">读书</span>' +
+      '</div>' +
+      '<div class="sec"><span class="sec-t">最新文章</span><span class="sec-more">全部</span></div>' +
+      '<div class="card art">' +
+        '<div class="art-body">' +
+          '<div class="art-meta"><span class="art-cat">技术</span><span>·</span><span class="art-time">2 天前</span></div>' +
+          '<div class="art-title">用 Redis Stream 把博客的事件流跑起来</div>' +
+          '<div class="art-stat"><span>' + I.heart + '<b class="art-num">128</b></span><span>' + I.msg + '<b class="art-num">24</b></span></div>' +
+        '</div>' +
+        '<div class="cover"></div>' +
+      '</div>' +
+      '<div class="card art">' +
+        '<div class="art-body">' +
+          '<div class="art-meta"><span class="art-cat">随笔</span><span>·</span><span class="art-time">5 天前</span></div>' +
+          '<div class="art-title">关于把小程序做得不要太满这件事</div>' +
+          '<div class="art-stat"><span>' + I.heart + '<b class="art-num">86</b></span><span>' + I.msg + '<b class="art-num">11</b></span></div>' +
+        '</div>' +
+        '<div class="cover b"></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="tabbar">' +
+      '<div class="tab on"><i></i>首页</div><div class="tab"><i></i>发现</div>' +
+      '<div class="tab"><i></i>RPG</div><div class="tab"><i></i>我的</div>' +
+    '</div>' +
+  '</div>';
+}
+
+var row = document.getElementById('row');
+var html = '';
+for (var i = 0; i < STEPS.length; i++) {
+  var s = STEPS[i];
+  html += '<div class="step">' +
+    '<div class="step-head"><div class="step-n">' + s.n + '</div>' +
+    '<div class="step-t">' + s.t + '</div><div class="step-d">' + s.d + '</div>' +
+    '<div class="step-diff">' + s.diff + '</div></div>' +
+    phoneHTML(s) + '</div>';
+}
+row.innerHTML = html;
+
+/* 预览面板宽度不固定：按实际列宽自适应等比缩放，始终维持「一行两个」 */
+var phones = document.querySelectorAll('.phone');
+function fitZoom() {
+  var cols = window.innerWidth <= 560 ? 1 : 2;
+  var colW = (row.clientWidth - 28 * (cols - 1)) / cols;
+  var z = Math.max(1, Math.min(2, colW / 250));
+  for (var i = 0; i < phones.length; i++) phones[i].style.setProperty('zoom', String(z));
+}
+fitZoom();
+window.addEventListener('resize', fitZoom);
+
+var palBox = document.getElementById('palettes');
+var ph = '';
+for (var p = 0; p < PALETTES.length; p++) {
+  ph += '<button class="dot' + (p === 0 ? ' on' : '') + '" data-p="' + p + '" title="' + PALETTES[p].n +
+        '" style="background:' + PALETTES[p].c + '"></button>';
+}
+palBox.innerHTML = ph;
+
+var mode = 'light', pal = 0;
+function applyTheme() {
+  var P = PALETTES[pal], r = document.documentElement.style, dark = mode === 'dark';
+  r.setProperty('--x-accent', dark ? P.darkC : P.c);
+  r.setProperty('--x-accent-deep', dark ? P.darkDeep : P.deep);
+  r.setProperty('--x-accent-tint', dark ? P.darkTint : P.tint);
+  r.setProperty('--x-bg', dark ? '#161513' : '#f4f1ec');
+  r.setProperty('--x-bg-2', dark ? '#1e1c1a' : '#ebe6df');
+  r.setProperty('--x-surface', dark ? '#242220' : '#ffffff');
+  r.setProperty('--x-ink', dark ? '#f0ebe3' : '#1c1a17');
+  r.setProperty('--x-ink-2', dark ? '#c4bdb3' : '#5c574f');
+  r.setProperty('--x-ink-3', dark ? '#8a847a' : '#9a948a');
+  r.setProperty('--x-warm-tint', dark ? '#3a322c' : '#ffe8d6');
+  r.setProperty('--x-tab-bar-bg', dark ? 'rgba(36,34,32,.92)' : 'rgba(255,255,255,.82)');
+  r.setProperty('--x-tab-bar-border', dark ? 'rgba(240,235,227,.1)' : 'rgba(255,255,255,.7)');
+  r.setProperty('--page-bg', dark ? '#11100f' : '#ece9e3');
+  r.setProperty('--doc-ink', dark ? '#efe9e1' : '#26241f');
+  r.setProperty('--doc-mute', dark ? '#9b948a' : '#7d776d');
+  r.setProperty('--doc-line', dark ? '#3a3733' : '#dcd6cc');
+}
+applyTheme();
+
+var modeBtns = document.querySelectorAll('#mode button');
+for (var m = 0; m < modeBtns.length; m++) {
+  modeBtns[m].onclick = function () {
+    mode = this.getAttribute('data-mode');
+    for (var q = 0; q < modeBtns.length; q++) modeBtns[q].className = '';
+    this.className = 'on';
+    applyTheme();
+  };
+}
+var dots = document.querySelectorAll('#palettes .dot');
+for (var d = 0; d < dots.length; d++) {
+  dots[d].onclick = function () {
+    pal = +this.getAttribute('data-p');
+    for (var q = 0; q < dots.length; q++) dots[q].className = 'dot';
+    this.className = 'dot on';
+    applyTheme();
+  };
+}
+</script>
+</body>
+</html>

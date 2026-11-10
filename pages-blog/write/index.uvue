@@ -644,7 +644,7 @@ onShow(() => {
 	height: 140px;
 	border-radius: 10px;
 	margin-bottom: 10px;
-	background-color: #f0ebe3;
+	background-color: var(--x-bg-2, #ebe6df);
 }
 
 .cover-acts {

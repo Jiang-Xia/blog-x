@@ -15,6 +15,7 @@
 			<text class="brand-sub">账号登录或微信一键登录</text>
 		</view>
 
+		<view class="login-card">
 		<view class="mode-row">
 			<view
 				class="mode-chip"
@@ -87,6 +88,7 @@
 			<!-- #ifndef MP-WEIXIN -->
 			<text class="wx-hint">微信一键登录需在微信小程序端使用；其它端请用账号登录</text>
 			<!-- #endif -->
+		</view>
 		</view>
 
 		<view class="unlock">
@@ -266,14 +268,23 @@ onShow(() => {
 }
 
 .brand-em {
+	/* 玻璃圆钮托底 logo：与详情页返回圆钮同材质，登录页焦点更聚 */
+	width: 88px;
+	height: 88px;
+	border-radius: 44px;
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	backdrop-filter: blur(16px);
 	margin-bottom: 12px;
 	align-items: center;
 	justify-content: center;
 }
 
 .brand-logo {
-	width: 72px;
-	height: 72px;
+	width: 56px;
+	height: 56px;
 }
 
 .brand-name {
@@ -288,10 +299,22 @@ onShow(() => {
 	color: var(--x-ink-3, #9a948a);
 }
 
+.login-card {
+	/* 登录主卡：玻璃材质，容纳登录切换 + 表单 + 提交，页面不再裸排 */
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
+	border-radius: 22px;
+	padding: 18px 16px 16px;
+	margin-bottom: 18px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	backdrop-filter: blur(16px);
+}
+
 .mode-row {
 	flex-direction: row;
 	justify-content: center;
-	margin-bottom: 18px;
+	margin-bottom: 16px;
 }
 
 .mode-chip {
@@ -317,13 +340,13 @@ onShow(() => {
 
 .form {
 	width: 100%;
-	padding: 0 8px;
-	margin-bottom: 16px;
+	margin-bottom: 0;
 }
 
 .field {
 	height: 44px;
-	background-color: var(--x-surface, #ffffff);
+	/* 输入框用次级实底：与玻璃主卡分层，避免玻璃叠玻璃糊在一起 */
+	background-color: var(--x-bg-2, #ebe6df);
 	border-radius: 14px;
 	padding: 0 14px;
 	font-size: 14px;
@@ -352,7 +375,7 @@ onShow(() => {
 	width: 110px;
 	height: 44px;
 	border-radius: 14px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-bg-2, #ebe6df);
 	align-items: center;
 	justify-content: center;
 	overflow: hidden;
@@ -384,7 +407,7 @@ onShow(() => {
 
 .wx-wrap {
 	align-items: center;
-	margin-bottom: 16px;
+	margin-bottom: 0;
 }
 
 .wx-btn {

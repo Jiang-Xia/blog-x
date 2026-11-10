@@ -52,7 +52,7 @@ function onBack(): void {
 	width: 36px;
 	height: 36px;
 	border-radius: 18px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	align-items: center;
 	justify-content: center;
 	margin-right: 10px;

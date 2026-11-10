@@ -612,7 +612,7 @@ onShow(() => {
 	border-width: 1px;
 	border-style: solid;
 	border-color: var(--x-line, #e5e0d8);
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	align-items: center;
 	padding: 8px 4px;
 	margin-bottom: 8px;

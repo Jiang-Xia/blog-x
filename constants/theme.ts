@@ -39,6 +39,10 @@ export type ThemeTokens = {
 	/** 悬浮底栏半透明底 */
 	tabBarBg: string
 	tabBarBorder: string
+	/** 玻璃卡片：小卡风格半透明底 / 白色高光边 / 柔阴影（对齐 prototypes/blog-app-xiaoka-style.html .card） */
+	glassBg: string
+	glassBorder: string
+	glassShadow: string
 }
 
 /** 色系元信息（选择器展示） */
@@ -76,7 +80,7 @@ export const THEME_PALETTE_LIST: ThemePaletteMeta[] = [
  */
 const LIGHT_NEUTRAL: Pick<
 	ThemeTokens,
-	'bg' | 'bg2' | 'surface' | 'ink' | 'ink2' | 'ink3' | 'line' | 'onInk' | 'tabBarBg' | 'tabBarBorder' | 'warmTint'
+	'bg' | 'bg2' | 'surface' | 'ink' | 'ink2' | 'ink3' | 'line' | 'onInk' | 'tabBarBg' | 'tabBarBorder' | 'warmTint' | 'glassBg' | 'glassBorder' | 'glassShadow'
 > = {
 	bg: '#f4f1ec',
 	bg2: '#ebe6df',
@@ -89,6 +93,10 @@ const LIGHT_NEUTRAL: Pick<
 	tabBarBg: 'rgba(255, 255, 255, 0.82)',
 	tabBarBorder: 'rgba(255, 255, 255, 0.7)',
 	warmTint: '#ffe8d6',
+	/* 玻璃卡片：半透明白 + 白色高光边 + 柔阴影，数值对齐小卡风格原型 .card */
+	glassBg: 'rgba(255, 255, 255, 0.78)',
+	glassBorder: 'rgba(255, 255, 255, 0.72)',
+	glassShadow: '0 8px 28px rgba(60, 48, 32, 0.11)',
 }
 
 /**
@@ -96,7 +104,7 @@ const LIGHT_NEUTRAL: Pick<
  */
 const DARK_NEUTRAL: Pick<
 	ThemeTokens,
-	'bg' | 'bg2' | 'surface' | 'ink' | 'ink2' | 'ink3' | 'line' | 'onInk' | 'tabBarBg' | 'tabBarBorder' | 'warmTint'
+	'bg' | 'bg2' | 'surface' | 'ink' | 'ink2' | 'ink3' | 'line' | 'onInk' | 'tabBarBg' | 'tabBarBorder' | 'warmTint' | 'glassBg' | 'glassBorder' | 'glassShadow'
 > = {
 	bg: '#161513',
 	bg2: '#1e1c1a',
@@ -109,6 +117,10 @@ const DARK_NEUTRAL: Pick<
 	tabBarBg: 'rgba(36, 34, 32, 0.92)',
 	tabBarBorder: 'rgba(240, 235, 227, 0.1)',
 	warmTint: '#3a322c',
+	/* 暗色玻璃：抬一点底色亮度、白边压到 10%，阴影改用纯黑避免发灰 */
+	glassBg: 'rgba(48, 45, 42, 0.72)',
+	glassBorder: 'rgba(240, 235, 227, 0.10)',
+	glassShadow: '0 8px 28px rgba(0, 0, 0, 0.28)',
 }
 
 /** 各色系强调色（亮） */
@@ -284,6 +296,9 @@ export function resolveThemeTokens(palette: ThemePaletteId, mode: ThemeMode): Th
 		tabBarBg: neutral.tabBarBg,
 		tabBarBorder: neutral.tabBarBorder,
 		warmTint: neutral.warmTint,
+		glassBg: neutral.glassBg,
+		glassBorder: neutral.glassBorder,
+		glassShadow: neutral.glassShadow,
 		accent: accent.accent,
 		accentDeep: accent.accentDeep,
 		accentTint: accent.accentTint,
@@ -339,6 +354,12 @@ export function tokensToCssVars(t: ThemeTokens): string {
 		t.tabBarBg +
 		';--x-tab-bar-border:' +
 		t.tabBarBorder +
+		';--x-glass-bg:' +
+		t.glassBg +
+		';--x-glass-border:' +
+		t.glassBorder +
+		';--x-glass-shadow:' +
+		t.glassShadow +
 		';'
 	)
 }

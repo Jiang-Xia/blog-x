@@ -559,7 +559,7 @@ onShow(() => {
 	margin-top: 8px;
 	margin-left: 8px;
 	padding: 8px 10px;
-	background-color: var(--x-bg-2, #ebe6df);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 10px;
 }
 
@@ -606,7 +606,7 @@ onShow(() => {
 	width: 100%;
 	min-height: 72px;
 	border-radius: 12px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	padding: 10px 12px;
 	font-size: 13px;
 	color: var(--x-ink, #1c1a17);
@@ -615,7 +615,7 @@ onShow(() => {
 
 /* 与卡片/弹层底色区分，明确是输入框 */
 .compose-area-box {
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-width: 1px;
 	border-style: solid;
 	border-color: #d9d3c9;
@@ -623,7 +623,7 @@ onShow(() => {
 
 /* uvue 不支持后代选择器：内联回复用独立 class 表达同一组样式 */
 .compose-area-inline {
-	background-color: var(--x-bg, #f4f1ec);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-color: var(--x-bg-2, #ebe6df);
 }
 
@@ -649,10 +649,14 @@ onShow(() => {
 }
 
 .sheet {
-	background-color: var(--x-bg, #f4f1ec);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-top-left-radius: 18px;
 	border-top-right-radius: 18px;
 	padding: 16px 16px 28px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	backdrop-filter: blur(16px);
 }
 
 .sheet-title {
@@ -666,7 +670,7 @@ onShow(() => {
 	width: 100%;
 	height: 40px;
 	border-radius: 12px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-width: 1px;
 	border-style: solid;
 	border-color: #d9d3c9;

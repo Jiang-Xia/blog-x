@@ -90,7 +90,10 @@
 	flex: 1;
 	width: 100%;
 	height: 100%;
-	background-color: var(--x-bg, #f4f1ec);
+	/* 透明以透出 x-scroll-page 铺的彩色光晕；底色由主壳 .tab-shell 提供 */
+	background-color: transparent;
+	position: relative;
+	z-index: 1;
 	/* 无左右 padding，滚动条贴边；内边距放 x-page-tab-inner */
 	padding: 0;
 }
@@ -102,10 +105,16 @@
 }
 
 .x-card {
-	background-color: var(--x-surface, #ffffff);
+	/* 小卡风格玻璃卡片：半透明底 + 背景模糊 + 白色高光边 + 柔阴影 */
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 22px;
 	padding: 14px;
 	margin-bottom: 12px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	box-shadow: 0 2px 10px rgba(60, 48, 32, 0.07);
+	backdrop-filter: blur(16px);
 }
 
 .x-chip {
@@ -198,11 +207,18 @@
 }
 
 .x-tile {
-	background-color: var(--x-surface, #ffffff);
+	/* 磁贴与卡片同材质，玻璃感统一 */
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 22px;
 	padding: 14px;
 	min-height: 96px;
-	margin-bottom: 10px;
+	/* 行缝 12px：容纳阴影向下延伸，第一行顶晕落进上方 12px 卡距 */
+	margin-bottom: 12px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	box-shadow: 0 2px 10px rgba(60, 48, 32, 0.07);
+	backdrop-filter: blur(16px);
 	/* 图标 + 文案纵向对齐，左右两列视觉统一 */
 	flex-direction: column;
 	align-items: flex-start;
@@ -240,19 +256,26 @@
 	flex-direction: row;
 	flex-wrap: wrap;
 	justify-content: space-between;
+	/* 列缝 8%：容纳磁贴阴影的横向延伸，避免压到邻居身上显断层 */
 	margin-bottom: 12px;
 }
 
 .x-grid-2-item {
-	width: 48%;
+	width: 46%;
 }
 
 .x-seg {
 	flex-direction: row;
-	background-color: var(--x-surface, #ffffff);
+	/* 分段控件也用玻璃底，与卡片统一材质 */
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 999px;
 	padding: 3px;
 	margin-bottom: 12px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	box-shadow: 0 2px 10px rgba(60, 48, 32, 0.07);
+	backdrop-filter: blur(16px);
 }
 
 .x-seg-item {

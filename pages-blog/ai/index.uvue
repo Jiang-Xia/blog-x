@@ -262,7 +262,7 @@ onShow(() => {
 
 .bot {
 	align-self: flex-start;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 }
 
 .bubble-t-w {
@@ -310,7 +310,7 @@ onShow(() => {
 	flex: 1;
 	height: 40px;
 	border-radius: 16px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	padding: 0 14px;
 	font-size: 13px;
 	color: var(--x-ink, #1c1a17);

@@ -354,7 +354,7 @@ onShow(() => {
 	width: 48%;
 	border-radius: 16px;
 	padding: 12px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-width: 1.5px;
 	border-style: solid;
 	border-color: var(--x-bg-2, #ebe6df);
@@ -381,7 +381,7 @@ onShow(() => {
 .custom-row {
 	flex-direction: row;
 	align-items: center;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 14px;
 	border-width: 1.5px;
 	border-style: solid;

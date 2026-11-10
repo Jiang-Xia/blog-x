@@ -971,7 +971,7 @@ async function onTipPaid(amount: number): Promise<void> {
 }
 
 .toc-panel {
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 14px;
 	padding: 12px 14px;
 	margin-bottom: 12px;
@@ -1013,7 +1013,7 @@ async function onTipPaid(amount: number): Promise<void> {
 
 .adj-card {
 	flex: 1;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 14px;
 	padding: 10px 12px;
 	margin-right: 8px;
@@ -1093,7 +1093,7 @@ async function onTipPaid(amount: number): Promise<void> {
 	border-radius: 999px;
 	border-width: 1px;
 	border-style: solid;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	margin-right: 8px;
 	margin-bottom: 6px;
 }
@@ -1192,7 +1192,7 @@ async function onTipPaid(amount: number): Promise<void> {
 	flex-shrink: 0;
 	border-radius: 14px;
 	padding: 10px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	margin-right: 8px;
 }
 
@@ -1242,7 +1242,7 @@ async function onTipPaid(amount: number): Promise<void> {
 	flex: 1;
 	height: 40px;
 	border-radius: 14px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	padding: 0 12px;
 	font-size: 13px;
 	color: var(--x-ink, #1c1a17);
@@ -1293,9 +1293,12 @@ async function onTipPaid(amount: number): Promise<void> {
 
 .bubble {
 	flex: 1;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 16px;
 	padding: 10px 12px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
 }
 
 .c-name {
@@ -1357,10 +1360,13 @@ async function onTipPaid(amount: number): Promise<void> {
 .reply {
 	flex-direction: row;
 	margin-top: 10px;
-	padding-top: 10px;
-	border-top-width: 1px;
-	border-top-color: var(--x-line, rgba(28, 26, 23, 0.06));
-	border-top-style: solid;
+	/* 回复嵌套小卡：与评论气泡同材质的玻璃卡，替代原分隔线裸排 */
+	padding: 8px 10px;
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
+	border-radius: 12px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
 }
 
 .rav {

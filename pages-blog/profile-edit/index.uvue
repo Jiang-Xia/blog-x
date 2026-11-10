@@ -319,7 +319,7 @@ onShow(() => {
 	height: 44px;
 	padding: 0 12px;
 	border-radius: 12px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	font-size: 14px;
 	color: var(--x-ink, #1c1a17);
 	margin-bottom: 14px;
@@ -329,7 +329,7 @@ onShow(() => {
 	min-height: 88px;
 	padding: 10px 12px;
 	border-radius: 12px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	font-size: 14px;
 	color: var(--x-ink, #1c1a17);
 	margin-bottom: 14px;

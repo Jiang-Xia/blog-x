@@ -88,7 +88,7 @@ onShow(() => {
 .pick-input {
 	flex: 1;
 	height: 36px;
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 999px;
 	padding: 0 14px;
 	font-size: 12px;

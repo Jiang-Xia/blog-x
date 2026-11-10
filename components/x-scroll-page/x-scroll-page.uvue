@@ -228,6 +228,8 @@ function onBackTop(): void {
 	background-color: rgba(28, 26, 23, 0.72);
 	align-items: center;
 	justify-content: center;
+	/* 卡片带 backdrop-filter 会被提升为合成层，浮层必须显式压顶 */
+	z-index: 10;
 }
 
 /* Tab 变体：抬高避让底部悬浮 tab 栏 */

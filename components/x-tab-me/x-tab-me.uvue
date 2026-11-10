@@ -341,7 +341,8 @@ function goNotify(): void {
 	background-color: var(--x-warm-tint, #ffe8d6);
 	border-width: 3px;
 	border-style: solid;
-	border-color: var(--x-surface, #ffffff);
+	/* 相片描边改玻璃高光边，跟主题（深色下不再刺白） */
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
 	align-items: center;
 	justify-content: center;
 	margin-bottom: 10px;
@@ -381,11 +382,17 @@ function goNotify(): void {
 
 .stat {
 	flex: 1;
-	background-color: var(--x-surface, #ffffff);
+	/* 三张统计小卡同样走玻璃材质，避免白块与玻璃卡混搭 */
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 14px;
 	padding: 12px 6px;
 	align-items: center;
 	margin: 0 4px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	box-shadow: 0 2px 10px rgba(60, 48, 32, 0.07);
+	backdrop-filter: blur(16px);
 }
 
 .stat-n {

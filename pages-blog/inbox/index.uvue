@@ -221,7 +221,8 @@ onShow(() => {
 .reply-input {
 	height: 40px;
 	border-radius: 12px;
-	background-color: var(--x-bg, #f4f1ec);
+	/* 输入框统一次级实底，与玻璃卡分层 */
+	background-color: var(--x-bg-2, #ebe6df);
 	padding: 0 12px;
 	font-size: 13px;
 	color: var(--x-ink, #1c1a17);

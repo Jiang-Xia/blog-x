@@ -364,7 +364,7 @@ onShow(() => {
 }
 
 .audit-item {
-	background-color: var(--x-surface, #ffffff);
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 18px;
 	padding: 12px 13px;
 	margin-bottom: 10px;

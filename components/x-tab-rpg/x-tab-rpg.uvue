@@ -43,7 +43,7 @@
 							:src="avatarUrl"
 							mode="aspectFill"
 						></image>
-						<x-icon v-else name="paw" :size="22" color="#ffffff"></x-icon>
+						<x-icon v-else name="paw" :size="22" :color="tokens.ink"></x-icon>
 					</view>
 					<view class="hero-meta">
 						<text class="hero-label">旅行者 · {{ travelerName }} · 连续签到 {{ streakDays }}</text>
@@ -55,11 +55,11 @@
 				</view>
 				<view class="bal-row">
 					<view class="bal">
-						<x-icon name="diamond" :size="14" color="#ffffff"></x-icon>
+						<x-icon name="diamond" :size="14" :color="tokens.ink"></x-icon>
 						<text class="bal-t">{{ diamonds }}</text>
 					</view>
 					<view class="bal">
-						<x-icon name="coin" :size="14" color="#ffffff"></x-icon>
+						<x-icon name="coin" :size="14" :color="tokens.ink"></x-icon>
 						<text class="bal-t">{{ hero.coins }}</text>
 					</view>
 					<text class="bal-t">抽奖券 ×{{ hero.lotteryTickets }}</text>
@@ -377,10 +377,16 @@ function onBag(): void {
 }
 
 .poster-card {
-	background-color: var(--x-surface, #ffffff);
+	/* 活动海报卡：玻璃底 + 白高光边；图片本身仍不透明 */
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 22px;
 	overflow: hidden;
 	margin-bottom: 12px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	box-shadow: 0 2px 10px rgba(60, 48, 32, 0.07);
+	backdrop-filter: blur(16px);
 }
 
 .poster-img {
@@ -421,10 +427,15 @@ function onBag(): void {
 }
 
 .rpg-hero {
-	background-color: #2d6b5c;
+	/* 冒险者信息卡：玻璃材质并跟随主题（原为写死深绿，不随色系/明暗） */
+	background-color: var(--x-glass-bg, rgba(255, 255, 255, 0.78));
 	border-radius: 22px;
 	padding: 16px;
 	margin-bottom: 12px;
+	border-width: 1px;
+	border-style: solid;
+	border-color: var(--x-glass-border, rgba(255, 255, 255, 0.65));
+	backdrop-filter: blur(16px);
 }
 
 .hero-top {
@@ -437,7 +448,7 @@ function onBag(): void {
 	width: 48px;
 	height: 48px;
 	border-radius: 24px;
-	background-color: rgba(255, 255, 255, 0.18);
+	background-color: var(--x-bg-2, #ebe6df);
 	align-items: center;
 	justify-content: center;
 	margin-right: 12px;
@@ -455,20 +466,20 @@ function onBag(): void {
 
 .hero-label {
 	font-size: 12px;
-	color: rgba(255, 255, 255, 0.78);
+	color: var(--x-ink-2, #5c574f);
 	margin-bottom: 4px;
 }
 
 .hero-lv {
 	font-size: 16px;
 	font-weight: 700;
-	color: var(--x-on-ink, #ffffff);
+	color: var(--x-ink, #1c1a17);
 	line-height: 1.3;
 }
 
 .bar {
 	height: 8px;
-	background-color: rgba(255, 255, 255, 0.2);
+	background-color: var(--x-bg-2, #ebe6df);
 	border-radius: 999px;
 	overflow: hidden;
 	margin-bottom: 6px;
@@ -494,7 +505,7 @@ function onBag(): void {
 
 .bal-t {
 	font-size: 11px;
-	color: rgba(255, 255, 255, 0.9);
+	color: var(--x-ink-2, #5c574f);
 	margin-left: 4px;
 }
 
